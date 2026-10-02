@@ -77,7 +77,7 @@ async function lesson(req, path) {
   // 교안이 스스로 하려는 일 가운데 이 앱에서는 필요 없는 것
   if (path === 'sw.js') return new Response('', { status: 404 });
   if (path === 'manifest.webmanifest') return shellFetch(new Request(new URL('manifest.webmanifest', BASE).href));
-  if (path === 'assets/install.js' || path === 'assets/editor.js')
+  if (path === 'assets/install.js')
     return new Response('/* 앱 안에서는 쓰지 않음 */', { headers: { 'Content-Type': TYPES.js } });
 
   var key;

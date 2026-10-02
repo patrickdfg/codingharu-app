@@ -10,7 +10,9 @@ const MIN_PASS = 10;
 // 학생에게 줄 필요 없는 것 (관리자 편집기, 작업 파일, 옛 PWA 파일, 문서)
 const SKIP_TOP = new Set(['.git', '.github', 'admin', 'work', 'node_modules']);
 const SKIP_FILE = new Set(['sw.js', 'manifest.webmanifest', 'offline.html', '.nojekyll', '.gitignore',
-  'README.md', 'assets/editor.js', 'assets/editor.css', 'assets/install.js', 'assets/install.css']);
+  'README.md', 'assets/install.js', 'assets/install.css']);
+// 관리자 폴더에서 학생 화면의 '소스 편집' 단추가 읽는 주소 파일 하나만 넣는다 (편집 권한은 Apps Script 가 구글 계정으로 따로 검사한다)
+const ALLOW = new Set(['admin/apps-script-url.json']);
 
 const [src, outArg] = process.argv.slice(2);
 const out = path.resolve(outArg || '.');
@@ -37,9 +39,9 @@ const nameFor = (p) => createHash('sha256').update(p + '|' + meta.salt).digest('
 function* walk(dir, rel = '') {
   for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
     const r = rel ? rel + '/' + e.name : e.name;
-    if (!rel && SKIP_TOP.has(e.name)) continue;
+    if (!rel && SKIP_TOP.has(e.name) && !(e.isDirectory() && [...ALLOW].some((a) => a.startsWith(e.name + '/')))) continue;
     if (e.isDirectory()) yield* walk(path.join(dir, e.name), r);
-    else if (!SKIP_FILE.has(r)) yield r;
+    else if (!SKIP_FILE.has(r) && (!r.startsWith('admin/') || ALLOW.has(r))) yield r;
   }
 }
 
