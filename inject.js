@@ -37,14 +37,27 @@
   document.addEventListener('visibilitychange', function () { if (!document.hidden) check(); });
 
   // ---- 앱 설치 단추 ----
-  var deferred = null;
-  addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); deferred = e; });
+  // 설치할 수 있을 때만 단추를 보인다: 앱으로 실행 중이거나, 설치를 마쳤거나,
+  // 설치 창을 띄울 수 없는 상태(이미 설치됨 포함)면 숨긴다.
+  var deferred = null, installed = false;
+  try { installed = localStorage.getItem('chInstalled') === '1'; } catch (e) {}
+  var style = document.createElement('style');
+  document.head.appendChild(style);
+  function sync() {
+    var hide = standalone || installed || !deferred;
+    style.textContent = hide ? '[data-install]{display:none !important}' : '';
+  }
+  sync();
+  addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); deferred = e; installed = false; sync(); });
+  addEventListener('appinstalled', function () {
+    installed = true; deferred = null;
+    try { localStorage.setItem('chInstalled', '1'); } catch (e) {}
+    sync();
+  });
   document.addEventListener('click', function (e) {
     var t = e.target.closest && e.target.closest('[data-install]');
     if (!t) return;
     e.preventDefault(); e.stopImmediatePropagation();
-    if (standalone) { alert('이미 앱으로 실행 중이에요.'); return; }
-    if (deferred) { deferred.prompt(); deferred.userChoice.finally(function () { deferred = null; }); return; }
-    alert('크롬 오른쪽 위 ⋮ 메뉴 → "앱 설치" 또는 "홈 화면에 추가"를 눌러 주세요.');
+    if (deferred) { deferred.prompt(); deferred.userChoice.finally(function () { deferred = null; sync(); }); }
   }, true);
 })();
