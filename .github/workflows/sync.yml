@@ -1,0 +1,52 @@
+name: 교안 동기화
+
+# class(비공개) main 의 최신 교안을 비밀번호로 잠가 이 저장소에 올린다.
+# 필요한 저장소 비밀값(Settings → Secrets and variables → Actions)
+#   CLASS_READ_TOKEN : class 저장소만, Contents 읽기 전용인 fine-grained 토큰
+#   SITE_PASS        : 학생이 입력할 비밀번호 (10자 이상)
+on:
+  workflow_dispatch:
+  repository_dispatch:
+    types: [class-updated]
+  schedule:
+    - cron: '*/15 * * * *'
+
+concurrency:
+  group: sync
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: class main 받기
+        uses: actions/checkout@v4
+        with:
+          repository: patrickdfg/class
+          ref: main
+          token: ${{ secrets.CLASS_READ_TOKEN }}
+          path: class-src
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: 잠그기
+        env:
+          SITE_PASS: ${{ secrets.SITE_PASS }}
+        run: node tools/build.mjs class-src .
+
+      - name: 바뀐 것만 올리기
+        run: |
+          git config user.name "codingharu-sync"
+          git config user.email "sync@users.noreply.github.com"
+          git add -A content crypt.json check.enc version.json
+          if git diff --cached --quiet; then echo "바뀐 교안 없음"; exit 0; fi
+          git commit -m "교안 동기화"
+          git push

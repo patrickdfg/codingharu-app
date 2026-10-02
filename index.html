@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#234c3d">
+<title>코딩하루</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<style>
+  :root { --green:#234c3d; --bg:#f8f9f4; --ink:#1d2b25; --warn:#b3261e; }
+  * { box-sizing:border-box; }
+  body { margin:0; min-height:100vh; display:grid; place-items:center; background:var(--bg); color:var(--ink);
+         font:18px/1.6 system-ui,"Noto Sans KR",sans-serif; }
+  main { width:min(420px,92vw); text-align:center; padding:32px 0; }
+  img { width:96px; height:96px; border-radius:22px; }
+  h1 { margin:12px 0 4px; font-size:30px; color:var(--green); }
+  p { margin:0 0 20px; color:#4b5b54; }
+  form { display:grid; gap:12px; }
+  input { font:inherit; padding:16px; border:2px solid #cfd8d2; border-radius:14px; text-align:center; background:#fff; }
+  input:focus { outline:none; border-color:var(--green); }
+  button { font:700 18px system-ui,sans-serif; padding:16px; border:0; border-radius:14px; background:var(--green); color:#fff; }
+  button:disabled { opacity:.6; }
+  button.link { background:none; color:var(--green); font-weight:600; text-decoration:underline; padding:8px; }
+  #msg { min-height:1.6em; margin:12px 0 0; color:var(--warn); font-weight:600; }
+  #msg.ok { color:var(--green); }
+  [hidden] { display:none !important; }
+</style>
+</head>
+<body>
+<main>
+  <img src="icons/icon-192.png" alt="" width="96" height="96">
+  <h1>코딩하루</h1>
+  <p id="lead">수업 비밀번호를 입력해 주세요.<br>이 태블릿에서는 처음 한 번만 입력하면 돼요.</p>
+
+  <form id="form" autocomplete="off" hidden>
+    <input id="pass" type="password" placeholder="비밀번호" autocapitalize="off" autocorrect="off" spellcheck="false" required>
+    <button id="go" type="submit">들어가기</button>
+  </form>
+  <button id="install" class="link" type="button" hidden>이 태블릿에 앱으로 설치</button>
+  <p id="msg" role="status" aria-live="polite"></p>
+</main>
+
+<script src="core.js"></script>
+<script>
+(function () {
+  var BASE = new URL('./', location.href).href;
+  var form = document.getElementById('form'), pass = document.getElementById('pass'),
+      go = document.getElementById('go'), msg = document.getElementById('msg'),
+      installBtn = document.getElementById('install');
+
+  function say(t, ok) { msg.textContent = t || ''; msg.className = ok ? 'ok' : ''; }
+
+  // 로그인 시도 제한 (이 기기 안에서만 적용되는 안내용 지연이다)
+  function lockLeft() {
+    try { var u = +localStorage.getItem('chLockUntil') || 0; return Math.max(0, u - Date.now()); } catch (e) { return 0; }
+  }
+  function fail() {
+    try {
+      var n = (+localStorage.getItem('chFails') || 0) + 1;
+      localStorage.setItem('chFails', n);
+      if (n >= 5) { localStorage.setItem('chLockUntil', Date.now() + Math.min(300000, 15000 * Math.pow(2, n - 5))); }
+    } catch (e) {}
+  }
+  function clearFails() { try { localStorage.removeItem('chFails'); localStorage.removeItem('chLockUntil'); } catch (e) {} }
+
+  var deferred = null;
+  addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); deferred = e; installBtn.hidden = false; });
+  installBtn.onclick = function () { if (deferred) { deferred.prompt(); deferred = null; installBtn.hidden = true; } };
+
+  var swReady = null;
+  if ('serviceWorker' in navigator) {
+    swReady = navigator.serviceWorker.register('sw.js', { scope: './', updateViaCache: 'none' })
+      .then(function () { return navigator.serviceWorker.ready; });
+  }
+
+  function enter() { location.replace('v/index.html'); }
+
+  async function boot() {
+    if (!('serviceWorker' in navigator) || !window.isSecureContext) {
+      say('이 브라우저에서는 앱을 열 수 없어요. 크롬으로 열어 주세요.'); return;
+    }
+    if (/[?&]expired=1/.test(location.search)) say('비밀번호가 바뀌었어요. 새 비밀번호를 입력해 주세요.');
+    var key = null;
+    try {
+      key = await CHCore.loadKey();
+      if (key && await CHCore.keyWorks(BASE, key)) { await swReady; return enter(); }
+      if (key) { await CHCore.forgetKey(); say('비밀번호가 바뀌었어요. 새 비밀번호를 입력해 주세요.'); }
+    } catch (e) {
+      if (key) { say('인터넷에 연결되어 있지 않아요. 교안은 인터넷이 있어야 열 수 있어요.'); return; }
+    }
+    form.hidden = false; pass.focus();
+  }
+
+  form.addEventListener('submit', async function (e) {
+    e.preventDefault();
+    var left = lockLeft();
+    if (left > 0) { say(Math.ceil(left / 1000) + '초 뒤에 다시 입력해 주세요.'); return; }
+    go.disabled = true; say('확인하는 중…', true);
+    try {
+      var meta = await CHCore.getJSON(BASE, 'crypt.json');
+      var key = await CHCore.deriveKey(pass.value, meta);
+      if (!(await CHCore.keyWorks(BASE, key))) { fail(); say('비밀번호가 맞지 않아요.'); go.disabled = false; pass.select(); return; }
+      await CHCore.saveKey(key);
+      clearFails();
+      pass.value = '';
+      await swReady;
+      enter();
+    } catch (err) {
+      say('교안 서버에 연결하지 못했어요. 인터넷을 확인해 주세요.'); go.disabled = false;
+    }
+  });
+
+  boot();
+})();
+</script>
+</body>
+</html>
