@@ -78,6 +78,29 @@
     applyZoom();
   }
 
+  // ---- 파일 내려받기 ----
+  // 안드로이드 크롬은 download 링크를 서비스 워커를 거치지 않고 다시 직접 요청한다(여기엔 없는 가상 주소라 실패).
+  // 그래서 앱 안에서 받아 풀어서 그 데이터로 저장하게 한다.
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('a[href]');
+    if (!a || e.defaultPrevented) return;
+    var u = new URL(a.href, location.href);
+    if (u.origin !== location.origin || u.pathname.indexOf(base + 'v/') !== 0) return;
+    if (!(a.hasAttribute('download') || /\.(ent|rbxl)$/i.test(u.pathname))) return;
+    e.preventDefault();
+    var name = decodeURIComponent(u.pathname.split('/').pop());
+    fetch(u.href).then(function (r) {
+      if (!r.ok) throw new Error(r.status);
+      return r.blob();
+    }).then(function (blob) {
+      var url = URL.createObjectURL(new Blob([blob], { type: 'application/octet-stream' }));
+      var tmp = document.createElement('a');
+      tmp.href = url; tmp.download = name; tmp.style.display = 'none';
+      document.body.appendChild(tmp); tmp.click(); tmp.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
+    }).catch(function () { alert('파일을 받지 못했어요. 인터넷 연결을 확인하고 다시 눌러 주세요.'); });
+  }, true);
+
   // ---- 앱 설치 단추 ----
   // 설치할 수 있을 때만 단추를 보인다: 앱으로 실행 중이거나, 설치를 마쳤거나,
   // 설치 창을 띄울 수 없는 상태(이미 설치됨 포함)면 숨긴다.
