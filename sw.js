@@ -104,7 +104,7 @@ async function lesson(req, path) {
   var ext = (path.split('.').pop() || '').toLowerCase();
   var type = TYPES[ext] || 'application/octet-stream';
   var headers = { 'Content-Type': type, 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex, nofollow' };
-  if (ext === 'ent') headers['Content-Disposition'] = 'attachment';
+  if (ext === 'ent' || ext === 'rbxl') headers['Content-Disposition'] = 'attachment';
 
   if (ext === 'html') {
     var html = new TextDecoder().decode(plain);

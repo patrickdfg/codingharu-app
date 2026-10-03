@@ -14,7 +14,8 @@ const SKIP_FILE = new Set(['sw.js', 'manifest.webmanifest', 'offline.html', '.no
 // 관리자 폴더에서 학생 화면의 '소스 편집' 단추가 읽는 주소 파일 하나만 넣는다 (편집 권한은 Apps Script 가 구글 계정으로 따로 검사한다)
 const ALLOW = new Set(['admin/apps-script-url.json']);
 
-const [src, outArg] = process.argv.slice(2);
+// 사용법: build.mjs <class> [내보낼 폴더] [접두어=폴더 ...]   예) roblox/treasure=roblox-src
+const [src, outArg, ...mounts] = process.argv.slice(2);
 const out = path.resolve(outArg || '.');
 const pass = process.env.SITE_PASS || '';
 if (!src) { console.error('사용법: SITE_PASS=... node tools/build.mjs <class 폴더> [내보낼 폴더]'); process.exit(2); }
@@ -45,14 +46,31 @@ function* walk(dir, rel = '') {
   }
 }
 
+// 다른 저장소의 교안도 앱 안에 넣는다 (접두어 아래로). 그 저장소의 README·.git 은 뺀다.
+const sources = [['', src]];
+for (const m of mounts) { const i = m.indexOf('='); sources.push([m.slice(0, i), m.slice(i + 1)]); }
+// 공개 저장소로 연결되던 링크를 앱 안 주소로 바꾼다
+const REWRITE = { 'roblox/index.html': [['https://patrickdfg.github.io/roblox/', 'treasure/']] };
+
 const contentDir = path.join(out, 'content');
 fs.rmSync(contentDir, { recursive: true, force: true });
 fs.mkdirSync(contentDir, { recursive: true });
 
 const sum = createHash('sha256');
 let n = 0;
-for (const rel of [...walk(src)].sort()) {
-  const blob = seal(fs.readFileSync(path.join(src, rel)), rel);
+const all = [];
+for (const [prefix, dir] of sources) {
+  for (const r of walk(dir)) all.push([prefix ? prefix + '/' + r : r, path.join(dir, r)]);
+}
+all.sort((a, b) => (a[0] < b[0] ? -1 : 1));
+for (const [rel, file] of all) {
+  let data = fs.readFileSync(file);
+  if (REWRITE[rel]) {
+    let t = data.toString('utf8');
+    for (const [from, to] of REWRITE[rel]) t = t.split(from).join(to);
+    data = Buffer.from(t, 'utf8');
+  }
+  const blob = seal(data, rel);
   fs.writeFileSync(path.join(contentDir, nameFor(rel)), blob);
   sum.update(rel).update(blob);
   n++;

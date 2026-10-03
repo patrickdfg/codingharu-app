@@ -33,6 +33,14 @@ jobs:
           path: class-src
           persist-credentials: false
 
+      - name: 로블록스 보물섬 워크북 받기 (공개 저장소)
+        uses: actions/checkout@v4
+        with:
+          repository: patrickdfg/roblox
+          ref: main
+          path: roblox-src
+          persist-credentials: false
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -40,7 +48,7 @@ jobs:
       - name: 잠그기
         env:
           SITE_PASS: ${{ secrets.SITE_PASS }}
-        run: node tools/build.mjs class-src .
+        run: node tools/build.mjs class-src . roblox/treasure=roblox-src
 
       - name: 바뀐 것만 올리기
         run: |

@@ -36,6 +36,48 @@
   setInterval(check, 60000);
   document.addEventListener('visibilitychange', function () { if (!document.hidden) check(); });
 
+  // ---- 글자 크기 막대: 화면에 자체 − + 단추가 없는 페이지(워크북·알고리즘 등)에만 붙인다 ----
+  if (!document.querySelector('[data-font-step]')) {
+    var step = 0;
+    try { step = parseInt(localStorage.getItem('codingharu-zoom'), 10) || 0; } catch (e) {}
+    var pages = document.querySelectorAll('.page');          // A4 고정 쪽이면 쪽만, 아니면 본문 전체를 키운다
+    var targets = pages.length ? pages : [document.body];
+    if (pages.length) {                                      // 인쇄용 A4 쪽 → 화면 폭에 맞춰 이어지는 긴 페이지
+      var flow = document.createElement('style');
+      flow.textContent = 'body{background:#fff!important}' +
+        '.page{width:auto!important;max-width:210mm;height:auto!important;margin:0 auto!important;padding:6mm 5mm 3mm;overflow:visible!important;' +
+        'box-shadow:none!important;border-bottom:.3mm solid #dde5ef}' +
+        '.page .content{position:static!important;height:auto!important}' +
+        '.page .foot{position:static!important;margin-top:3mm}' +
+        '.page img{max-width:100%}';
+      document.head.appendChild(flow);
+    }
+    var bar = document.createElement('div');
+    bar.setAttribute('role', 'group');
+    bar.setAttribute('aria-label', '글자 크기 조절');
+    bar.id = 'ch-zoom';
+    bar.innerHTML = '<button type="button" aria-label="글자 작게">−</button><span aria-hidden="true"></span><button type="button" aria-label="글자 크게">+</button>';
+    var st = document.createElement('style');
+    st.textContent = '#ch-zoom{position:fixed;bottom:14px;right:14px;z-index:2147483646;display:flex;align-items:center;gap:4px;padding:4px;' +
+      'border-radius:10px;background:rgba(255,255,255,.95);border:1px solid #cbd8cc;box-shadow:0 2px 8px rgba(0,0,0,.2);zoom:1!important}' +
+      '#ch-zoom button{width:36px;height:36px;border:1px solid #cbd8cc;border-radius:8px;background:#fff;color:#234c3d;font:700 20px/1 sans-serif}' +
+      '#ch-zoom span{min-width:44px;text-align:center;font:12px sans-serif;color:#234c3d}' +
+      '@media print{#ch-zoom{display:none!important}}';
+    document.head.appendChild(st);
+    var label = bar.querySelector('span'), btns = bar.querySelectorAll('button');
+    function applyZoom() {
+      var z = 1 + step * 0.1;
+      for (var i = 0; i < targets.length; i++) targets[i].style.zoom = z;
+      label.textContent = Math.round(z * 100) + '%';
+      btns[0].disabled = step <= -3; btns[1].disabled = step >= 10;
+      try { localStorage.setItem('codingharu-zoom', String(step)); } catch (e) {}
+    }
+    btns[0].onclick = function () { step = Math.max(-3, step - 1); applyZoom(); };
+    btns[1].onclick = function () { step = Math.min(10, step + 1); applyZoom(); };
+    document.documentElement.appendChild(bar);
+    applyZoom();
+  }
+
   // ---- 앱 설치 단추 ----
   // 설치할 수 있을 때만 단추를 보인다: 앱으로 실행 중이거나, 설치를 마쳤거나,
   // 설치 창을 띄울 수 없는 상태(이미 설치됨 포함)면 숨긴다.
