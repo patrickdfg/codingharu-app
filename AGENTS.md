@@ -101,3 +101,6 @@ curl -s https://patrickdfg.github.io/codingharu-app/version.json
 
 - 2026-10-06 Claude: class에 특강 카테고리·도서관 6차시 AI 활용 추가, roblox 워크북 섬 만들기 W→R 슬라이더 수정(roblox 698d474). 예약 동기화가 몇 시간 간격으로만 돌아 수동 실행(dispatch)으로 반영함.
   앱 화면에서 바꾼 글자는 원본 저장소에 저장되지 않는다. 로블록스 워크북은 patrickdfg/roblox, 나머지는 class를 고친 뒤 동기화해야 한다.
+
+- 2026-10-06 Codex: class main bf655f5에 COS 2급 모의고사 2회 엔트리 워크북 10개·40미션·시작/완성/원본 30파일·미리보기를 추가. 교안 동기화 #41 성공, 잠긴 자료 수 309→359.
+  모바일 배치·기록 저장·검색·다운로드 링크·자료 보존 및 로컬 엔트리 20파일 열기 통과. 정맥 인식 완성본은 클릭 선택으로 보완했고 정답/오답 실행 확인. 실제 태블릿·공식 엔트리 앱 실행은 미확인; 상세는 class/work/cos2-02-verification.md.
