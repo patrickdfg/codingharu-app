@@ -98,3 +98,6 @@ curl -s https://patrickdfg.github.io/codingharu-app/version.json
 
 - 2026-10-03 Codex: class main에 인형맞히기 워크북·시작/원본 파일·미리보기를 추가(5ceb87a). 기존 디자인, 4미션, 좌표 정수 표기 유지. 모바일 배치·답안/체크 저장·검색·시작 파일 자료 보존 검사 통과. 실제 엔트리 실행·태블릿 다운로드는 미확인.
   이전 동기화 실행 재시도에서 오래된 앱 커밋으로 인한 push 충돌을 확인하여 checkout을 main으로 고정하고 워크플로 수정 시 동기화 실행을 추가함.
+
+- 2026-10-06 Claude: class에 특강 카테고리·도서관 6차시 AI 활용 추가, roblox 워크북 섬 만들기 W→R 슬라이더 수정(roblox 698d474). 예약 동기화가 몇 시간 간격으로만 돌아 수동 실행(dispatch)으로 반영함.
+  앱 화면에서 바꾼 글자는 원본 저장소에 저장되지 않는다. 로블록스 워크북은 patrickdfg/roblox, 나머지는 class를 고친 뒤 동기화해야 한다.
