@@ -17,6 +17,7 @@
   function banner() {
     shown = true;
     var b = document.createElement('div');
+    b.setAttribute('data-ch-app', '');
     b.setAttribute('role', 'status');
     b.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:2147483647;display:flex;gap:12px;align-items:center;' +
       'justify-content:space-between;padding:12px 16px;border-radius:14px;background:#234c3d;color:#fff;font:600 16px/1.4 sans-serif;box-shadow:0 6px 24px rgba(0,0,0,.3)';
@@ -44,6 +45,7 @@
     var targets = pages.length ? pages : [document.body];
     if (pages.length) {                                      // 인쇄용 A4 쪽 → 화면 폭에 맞춰 이어지는 긴 페이지
       var flow = document.createElement('style');
+      flow.setAttribute('data-ch-app', '');
       flow.textContent = 'body{background:#fff!important}' +
         '.page{width:auto!important;max-width:210mm;height:auto!important;margin:0 auto!important;padding:6mm 5mm 3mm;overflow:visible!important;' +
         'box-shadow:none!important;border-bottom:.3mm solid #dde5ef}' +
@@ -58,6 +60,7 @@
     bar.id = 'ch-zoom';
     bar.innerHTML = '<button type="button" aria-label="글자 작게">−</button><span aria-hidden="true"></span><button type="button" aria-label="글자 크게">+</button>';
     var st = document.createElement('style');
+    st.setAttribute('data-ch-app', '');
     st.textContent = '#ch-zoom{position:fixed;bottom:14px;right:14px;z-index:2147483646;display:flex;align-items:center;gap:4px;padding:4px;' +
       'border-radius:10px;background:rgba(255,255,255,.95);border:1px solid #cbd8cc;box-shadow:0 2px 8px rgba(0,0,0,.2);zoom:1!important}' +
       '#ch-zoom button{width:36px;height:36px;border:1px solid #cbd8cc;border-radius:8px;background:#fff;color:#234c3d;font:700 20px/1 sans-serif}' +
@@ -107,6 +110,7 @@
   var deferred = null, installed = false;
   try { installed = localStorage.getItem('chInstalled') === '1'; } catch (e) {}
   var style = document.createElement('style');
+  style.setAttribute('data-ch-app', '');   // 워크북 [저장]이 이 표시가 붙은 것을 빼고 저장한다
   document.head.appendChild(style);
   function sync() {
     var hide = standalone || installed || !deferred;
