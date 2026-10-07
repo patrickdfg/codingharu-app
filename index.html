@@ -44,6 +44,7 @@
 </main>
 
 <script src="core.js"></script>
+<script src="record.js"></script>
 <script>
 (function () {
   var BASE = new URL('./', location.href).href;
@@ -76,7 +77,10 @@
       .then(function () { return navigator.serviceWorker.ready; });
   }
 
-  function enter() { location.replace('v/index.html'); }
+  function enter() {
+    // 수업 기록이 켜져 있고 이 기기에 선생님 등록·학생 선택이 안 됐으면 로그인 화면으로
+    CHRecord.needsLogin().then(function (n) { location.replace(n ? 'login.html' : 'v/index.html'); }, function () { location.replace('v/index.html'); });
+  }
 
   async function boot() {
     if (!('serviceWorker' in navigator) || !window.isSecureContext) {

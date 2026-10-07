@@ -130,3 +130,94 @@
     if (deferred) { deferred.prompt(); deferred.userChoice.finally(function () { deferred = null; sync(); }); }
   }, true);
 })();
+
+/* ---- 수업 기록: 학생 이름 표시·바꾸기, 워크북 기록을 기록 서버(구글 시트)와 주고받기, 연 페이지 기록 ----
+ * record-config.json 이 비어 있으면 아무것도 하지 않는다. 교안의 app.js 가 window.CodingHaruWorkbook 을 열어 준다. */
+(function () {
+  if (!window.CHRecord) return;
+  CHRecord.config().then(function (cfg) {
+    if (!cfg.on) return;
+    var dev = CHRecord.device(), stu = CHRecord.student();
+    var page = decodeURIComponent(location.pathname.split('/v/')[1] || 'index.html');
+    var login = CHRecord.base + 'login.html?next=' + encodeURIComponent('v/' + page);
+
+    // 왼쪽 아래 학생 표시
+    var tag = document.createElement('div');
+    tag.setAttribute('data-ch-app', ''); tag.id = 'ch-student';
+    var css = document.createElement('style'); css.setAttribute('data-ch-app', '');
+    css.textContent = '#ch-student{position:fixed;left:14px;bottom:14px;z-index:2147483646;display:flex;align-items:center;gap:8px;padding:6px 8px 6px 14px;' +
+      'border-radius:999px;background:rgba(255,255,255,.96);border:1px solid #cbd8cc;box-shadow:0 2px 8px rgba(0,0,0,.18);font:600 15px/1.2 sans-serif;color:#234c3d}' +
+      '#ch-student button,#ch-student a{border:0;border-radius:999px;background:#234c3d;color:#fff;font:700 13px sans-serif;padding:7px 12px;text-decoration:none;cursor:pointer}' +
+      '#ch-student .st{font-size:12px;font-weight:500;color:#6b7a72}@media print{#ch-student{display:none!important}}';
+    document.head.appendChild(css);
+    if (dev && stu) {
+      tag.innerHTML = '<span></span><span class="st"></span><button type="button">학생 바꾸기</button>';
+      tag.firstChild.textContent = stu.name;
+      tag.querySelector('button').onclick = function () {
+        if (!confirm(stu.name + ' 학생 기록을 마치고 다른 학생으로 바꿀까요?')) return;
+        flush(); CHRecord.setStudent(null); location.href = login;
+      };
+    } else {
+      tag.innerHTML = '<span>기록이 이 기기에만 남아요</span><a>학생 로그인</a>';
+      tag.querySelector('a').href = login;
+    }
+    document.documentElement.appendChild(tag);
+    var stEl = tag.querySelector('.st');
+    function status(m) { if (stEl) stEl.textContent = m; var wb = window.CodingHaruWorkbook; if (wb && m) wb.setStatus(m); }
+    if (!dev || !stu) return;
+
+    function fail(err) {
+      if (err && err.unpaired) { CHRecord.forgetDevice(); status('기기 등록이 풀렸어요'); return; }
+      status('인터넷이 끊겨 이 기기에만 저장했어요. 연결되면 다시 보낼게요.');
+    }
+
+    // 수업 기록: 목록 페이지가 아닌 교안을 열면 남긴다
+    if (page !== 'index.html' && !document.querySelector('[data-lessons]')) {
+      CHRecord.api('visit', { studentId: stu.id, page: page, title: document.title }).catch(function () {});
+    }
+
+    var wb = window.CodingHaruWorkbook;
+    if (!wb) return;
+    var wbId = wb.id + '-v' + wb.version, metaKey = wb.key + '-meta';
+    function meta() { try { return JSON.parse(localStorage.getItem(metaKey) || '{}') || {}; } catch (e) { return {}; } }
+    function setMeta(m) { try { localStorage.setItem(metaKey, JSON.stringify(m)); } catch (e) {} }
+    function body() { return { studentId: stu.id, workbook: wbId, title: wb.title, page: page, state: wb.getState(), progress: wb.progress() }; }
+    var timer = null, sending = false;
+    function push() {
+      clearTimeout(timer); timer = null;
+      if (sending) { timer = setTimeout(push, 1500); return; }
+      sending = true;
+      CHRecord.api('save', body()).then(function (out) {
+        setMeta({ updatedAt: out.updatedAt, dirty: false });
+        status('선생님 기록에도 저장했어요');
+      }, fail).then(function () { sending = false; });
+    }
+    function flush() {
+      if (!meta().dirty) return;
+      CHRecord.config().then(function (c) {
+        var data = Object.assign({ action: 'save', token: dev.token }, body());
+        try { navigator.sendBeacon(c.apiUrl, new Blob([JSON.stringify(data)], { type: 'text/plain;charset=utf-8' })); } catch (e) {}
+      });
+    }
+    document.addEventListener('codingharu:save', function () {
+      setMeta({ updatedAt: Date.now(), dirty: true });
+      status('저장하는 중…');
+      clearTimeout(timer); timer = setTimeout(push, 1500);
+    });
+    addEventListener('online', function () { if (meta().dirty) push(); });
+    addEventListener('pagehide', flush);
+
+    // 처음 열 때: 서버 기록이 더 새로우면 화면에 채우고, 이 기기 것이 더 새로우면 서버로 보낸다
+    status('기록을 불러오는 중…');
+    CHRecord.api('load', { studentId: stu.id, workbook: wbId }).then(function (out) {
+      var m = meta();
+      if (out.state && out.updatedAt > (m.updatedAt || 0) && !m.dirty) {
+        wb.applyState(out.state, { message: '선생님 기록에 있던 내용을 불러왔어요.' });
+        setMeta({ updatedAt: out.updatedAt, dirty: false });
+        status('기록을 불러왔어요');
+      } else if (m.dirty || (!out.state && Object.keys(wb.getState()).length)) {
+        push();
+      } else status('기록과 같아요');
+    }, fail);
+  });
+})();

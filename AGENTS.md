@@ -39,6 +39,8 @@ Codex(ChatGPT)는 `AGENTS.md`, Claude Code 는 `CLAUDE.md` 를 자동으로 읽�
 | `.github/workflows/sync.yml` | 받기 → 잠그기 → 바뀐 것만 커밋 |
 | `test/interop.test.mjs` | 잠금·풀기 호환 시험 (`node test/interop.test.mjs`) |
 | `SETUP.md` | 처음 설정 순서(비밀값 넣는 법 등) |
+| `record.js` · `login.html` · `record-config.json` | 수업 기록: 기기 등록 열쇠·학생 선택 보관, 기록 서버 호출, 선생님 구글 로그인·학생 이름/PIN 화면 |
+| `server/record.gs` | 수업 기록 서버(구글 시트에 붙인 Apps Script). 이 저장소에서는 배포되지 않는다 — 시트의 Apps Script 에 붙여 넣는다 |
 
 `content/`·`crypt.json`·`check.enc`·`version.json` 은 **봇이 만드는 파일**이다. 손으로 고치지 않는다.
 
@@ -104,3 +106,5 @@ curl -s https://patrickdfg.github.io/codingharu-app/version.json
 
 - 2026-10-06 Codex: class main bf655f5에 COS 2급 모의고사 2회 엔트리 워크북 10개·40미션·시작/완성/원본 30파일·미리보기를 추가. 교안 동기화 #41 성공, 잠긴 자료 수 309→359.
   모바일 배치·기록 저장·검색·다운로드 링크·자료 보존 및 로컬 엔트리 20파일 열기 통과. 정맥 인식 완성본은 클릭 선택으로 보완했고 정답/오답 실행 확인. 실제 태블릿·공식 엔트리 앱 실행은 미확인; 상세는 class/work/cos2-02-verification.md.
+- 2026-10-08 Claude: 수업 기록 추가(선생님 구글 로그인 GIS → server/record.gs 가 ID 토큰 확인 후 기기 열쇠 발급, 학생 이름+PIN, 워크북 state 학생별 시트 저장·다른 기기 이어쓰기, 연 교안 기록). class app.js 는 학생별 localStorage 키와 window.CodingHaruWorkbook 을 연다.
+  가짜 로그인·가짜 서버로 두 태블릿 이어쓰기·학생 분리·PIN 오류를 시험함. 실제 구글 로그인·Apps Script 배포는 사람이 설정 후 확인해야 한다(SETUP.md 수업 기록). record-config.json 비어 있으면 꺼짐.

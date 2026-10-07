@@ -6,8 +6,8 @@
 importScripts('core.js');
 
 var BASE = new URL('./', self.location.href);
-var SHELL_CACHE = 'codingharu-shell-1';
-var SHELL = ['./', 'index.html', 'core.js', 'inject.js', 'manifest.webmanifest',
+var SHELL_CACHE = 'codingharu-shell-2';
+var SHELL = ['./', 'index.html', 'core.js', 'inject.js', 'record.js', 'login.html', 'record-config.json', 'manifest.webmanifest',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/icon-180.png'];
 
 var TYPES = {
@@ -111,6 +111,7 @@ async function lesson(req, path) {
     html = html.replace(/<link[^>]+rel=["']manifest["'][^>]*>/ig, '');
     var tag = '<meta name="robots" content="noindex,nofollow">' +
       '<link rel="manifest" href="' + BASE.pathname + 'manifest.webmanifest">' +
+      '<script src="' + BASE.pathname + 'record.js" defer></script>' +
       '<script src="' + BASE.pathname + 'inject.js" defer></script>';
     html = /<\/head>/i.test(html) ? html.replace(/<\/head>/i, tag + '</head>') : tag + html;
     return new Response(html, { headers: headers });
