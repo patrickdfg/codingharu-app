@@ -1,8 +1,8 @@
 {
   "id": "./",
-  "name": "코딩하루 · 수업 모음",
-  "short_name": "코딩하루",
-  "description": "코딩하루 수업 교안 앱",
+  "name": "코드마루 · 수업 모음",
+  "short_name": "코드마루",
+  "description": "코드마루 수업 교안 앱",
   "lang": "ko",
   "start_url": "./",
   "scope": "./",

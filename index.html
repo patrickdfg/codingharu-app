@@ -1,12 +1,12 @@
 <!doctype html>
-<!-- 코딩하루 처음 화면: 로그인·가입하기 두 탭. 학생은 이름과 4자리 번호로 가입·로그인하고, 선생님은 구글 계정으로 로그인한다. 수업 기록이 꺼져 있으면 예전처럼 수업 비밀번호만 묻는다. -->
+<!-- 코드마루 처음 화면: 로그인·가입하기 두 탭. 학생은 이름과 4자리 번호로 가입·로그인하고, 선생님은 구글 계정으로 로그인한다. 수업 기록이 꺼져 있으면 예전처럼 수업 비밀번호만 묻는다. -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
 <meta name="theme-color" content="#0056d2">
-<title>코딩하루</title>
+<title>코드마루</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
@@ -19,6 +19,7 @@
   img.logo { width:76px; height:76px; border-radius:18px; box-shadow:0 6px 18px rgba(0,86,210,.28); }
   h1 { margin:14px 0 4px; font-size:28px; font-weight:800; letter-spacing:-.02em; color:var(--green); }
   p { margin:0 0 18px; color:#3c4658; }
+  p.tagline { margin:0 0 10px; font-weight:600; font-size:15px; letter-spacing:.04em; color:var(--green); }
   h2 { margin:0 0 6px; font-size:20px; color:var(--green); }
   form { display:grid; gap:12px; }
   input, select { font:inherit; padding:15px; border:1px solid #b9c4d8; border-radius:8px; text-align:center; background:#fff; width:100%; }
@@ -59,7 +60,8 @@
 <body>
 <main id="main">
   <img class="logo" src="icons/icon-192.png" alt="" width="84" height="84">
-  <h1>코딩하루</h1>
+  <h1>코드마루</h1>
+  <p class="tagline">코딩·AI 탐구학원</p>
   <p id="lead"></p>
 
   <!-- 수업 비밀번호: 기록이 꺼져 있을 때, 또는 선생님이 새 태블릿을 처음 등록할 때 한 번 -->

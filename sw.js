@@ -6,7 +6,7 @@
 importScripts('core.js');
 
 var BASE = new URL('./', self.location.href);
-var SHELL_CACHE = 'codingharu-shell-3';
+var SHELL_CACHE = 'codingharu-shell-4';
 var SHELL = ['./', 'index.html', 'core.js', 'inject.js', 'record.js', 'login.html', 'record-config.json', 'manifest.webmanifest',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/icon-180.png'];
 

@@ -233,7 +233,7 @@
         document.body.appendChild(wrap);
         function mark(on) {
           var m = dget(), ts = Date.now(); m[key] = on ? ts : -ts; dput(m); paint(m);
-          var title = '완료 · ' + document.title.replace(/\s*·\s*코딩하루\s*$/, '');
+          var title = '완료 · ' + document.title.replace(/\s*·\s*(?:코드마루|코딩하루)\s*$/, '');
           try { var tt = JSON.parse(localStorage.getItem(DKEY + '-t') || '{}') || {}; tt[key] = title; localStorage.setItem(DKEY + '-t', JSON.stringify(tt)); } catch (e) {}
           sync();
         }
