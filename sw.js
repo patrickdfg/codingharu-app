@@ -6,7 +6,7 @@
 importScripts('core.js');
 
 var BASE = new URL('./', self.location.href);
-var SHELL_CACHE = 'codingharu-shell-2';
+var SHELL_CACHE = 'codingharu-shell-3';
 var SHELL = ['./', 'index.html', 'core.js', 'inject.js', 'record.js', 'login.html', 'record-config.json', 'manifest.webmanifest',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/icon-180.png'];
 
@@ -57,7 +57,7 @@ function redirect(to) { return Response.redirect(new URL(to, BASE).href, 302); }
 function page(status, title, body) {
   return new Response('<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
     '<meta name="robots" content="noindex,nofollow"><title>' + title + '</title>' +
-    '<body style="font:18px/1.6 sans-serif;padding:40px 24px;text-align:center;color:#234c3d">' +
+    '<body style="font:18px/1.6 sans-serif;padding:40px 24px;text-align:center;color:#0056d2">' +
     '<h1>' + title + '</h1><p>' + body + '</p><p><a href="' + BASE.pathname + '">처음 화면으로</a></p></body>',
     { status: status, headers: { 'Content-Type': TYPES.html, 'Cache-Control': 'no-store' } });
 }

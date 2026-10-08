@@ -20,11 +20,11 @@
     b.setAttribute('data-ch-app', '');
     b.setAttribute('role', 'status');
     b.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:2147483647;display:flex;gap:12px;align-items:center;' +
-      'justify-content:space-between;padding:12px 16px;border-radius:14px;background:#234c3d;color:#fff;font:600 16px/1.4 sans-serif;box-shadow:0 6px 24px rgba(0,0,0,.3)';
+      'justify-content:space-between;padding:12px 16px;border-radius:14px;background:#0056d2;color:#fff;font:600 16px/1.4 sans-serif;box-shadow:0 6px 24px rgba(0,0,0,.3)';
     b.innerHTML = '<span>새 교안이 올라왔어요. 지금 입력 중인 내용은 그대로 두었어요.</span>';
     var go = document.createElement('button');
     go.textContent = '새로고침';
-    go.style.cssText = 'flex:none;padding:10px 16px;border:0;border-radius:10px;background:#fff;color:#234c3d;font:700 16px sans-serif';
+    go.style.cssText = 'flex:none;padding:10px 16px;border:0;border-radius:10px;background:#fff;color:#0056d2;font:700 16px sans-serif';
     go.onclick = function () { location.reload(); };
     var later = document.createElement('button');
     later.textContent = '나중에';
@@ -62,9 +62,9 @@
     var st = document.createElement('style');
     st.setAttribute('data-ch-app', '');
     st.textContent = '#ch-zoom{position:fixed;bottom:14px;right:14px;z-index:2147483646;display:flex;align-items:center;gap:4px;padding:4px;' +
-      'border-radius:10px;background:rgba(255,255,255,.95);border:1px solid #cbd8cc;box-shadow:0 2px 8px rgba(0,0,0,.2);zoom:1!important}' +
-      '#ch-zoom button{width:36px;height:36px;border:1px solid #cbd8cc;border-radius:8px;background:#fff;color:#234c3d;font:700 20px/1 sans-serif}' +
-      '#ch-zoom span{min-width:44px;text-align:center;font:12px sans-serif;color:#234c3d}' +
+      'border-radius:10px;background:rgba(255,255,255,.95);border:1px solid #dae1ed;box-shadow:0 2px 8px rgba(0,0,0,.2);zoom:1!important}' +
+      '#ch-zoom button{width:36px;height:36px;border:1px solid #dae1ed;border-radius:8px;background:#fff;color:#0056d2;font:700 20px/1 sans-serif}' +
+      '#ch-zoom span{min-width:44px;text-align:center;font:12px sans-serif;color:#0056d2}' +
       '@media print{#ch-zoom{display:none!important}}';
     document.head.appendChild(st);
     var label = bar.querySelector('span'), btns = bar.querySelectorAll('button');
@@ -148,8 +148,8 @@
     tag.setAttribute('data-ch-app', ''); tag.id = 'ch-student';
     var css = document.createElement('style'); css.setAttribute('data-ch-app', '');
     css.textContent = '#ch-student{position:fixed;left:14px;bottom:14px;z-index:2147483646;display:flex;align-items:center;gap:8px;padding:6px 8px 6px 14px;' +
-      'border-radius:999px;background:rgba(255,255,255,.96);border:1px solid #cbd8cc;box-shadow:0 2px 8px rgba(0,0,0,.18);font:600 15px/1.2 sans-serif;color:#234c3d}' +
-      '#ch-student button,#ch-student a{border:0;border-radius:999px;background:#234c3d;color:#fff;font:700 13px sans-serif;padding:7px 12px;text-decoration:none;cursor:pointer}' +
+      'border-radius:999px;background:rgba(255,255,255,.96);border:1px solid #dae1ed;box-shadow:0 2px 8px rgba(0,0,0,.18);font:600 15px/1.2 sans-serif;color:#0056d2}' +
+      '#ch-student button,#ch-student a{border:0;border-radius:999px;background:#0056d2;color:#fff;font:700 13px sans-serif;padding:7px 12px;text-decoration:none;cursor:pointer}' +
       '#ch-student .st{font-size:12px;font-weight:500;color:#6b7a72}@media print{#ch-student{display:none!important}}';
     document.head.appendChild(css);
     var sess = CHRecord.session();
@@ -190,8 +190,8 @@
       function count(m) { return Object.keys(m).filter(function (k) { return m[k] > 0; }).length; }
       var cssDone = document.createElement('style'); cssDone.setAttribute('data-ch-app', '');
       cssDone.textContent = '.ch-done-item{opacity:.5;filter:grayscale(.35);position:relative}.ch-done-item::after{content:"✔ 완료";position:absolute;top:8px;right:10px;padding:3px 10px;border-radius:999px;' +
-        'background:#234c3d;color:#fff;font:700 13px sans-serif;z-index:2}' +
-        '#ch-done-wrap{margin:36px auto 96px;text-align:center}#ch-done-btn{font:800 22px sans-serif;padding:16px 64px;border:0;border-radius:999px;background:#234c3d;color:#fff;cursor:pointer}' +
+        'background:#0056d2;color:#fff;font:700 13px sans-serif;z-index:2}' +
+        '#ch-done-wrap{margin:36px auto 96px;text-align:center}#ch-done-btn{font:800 22px sans-serif;padding:16px 64px;border:0;border-radius:999px;background:#0056d2;color:#fff;cursor:pointer}' +
         '#ch-done-btn.on{background:#6b7a72}#ch-done-undo{display:block;margin:10px auto 0;border:0;background:none;color:#6b7a72;font:600 14px sans-serif;text-decoration:underline;cursor:pointer}@media print{#ch-done-wrap{display:none!important}}';
       document.head.appendChild(cssDone);
 
