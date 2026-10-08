@@ -117,3 +117,5 @@ curl -s https://patrickdfg.github.io/codingharu-app/version.json
 - 2026-10-08 Claude: 학생 가입을 승인제로 바꿈. 가입하면 학생 탭 F열 `상태`='대기', 승인 전에는 로그인·저장 불가. 관리자 메뉴 맨 위 "가입 승인 대기"에서 승인/거절(server `approve` 액션). 상태가 비어 있는 옛 행은 승인된 것으로 본다. **record.gs 새 버전 재배포 필요.** 문법 검사만 했고 실제 동작은 아직 확인하지 못했다.
 
 - 2026-10-08 Claude: **규칙 — Apps Script(server/record.gs)는 가능하면 더 고치지 않는다.** 고치면 사람이 붙여넣고 새 버전 배포를 해야 한다(자동 배포는 하지 않기로 했다). 새 기능은 화면(index.html·inject.js·record.js)과 시트 구성으로 풀고, 서버를 바꿔야 하면 한 번에 모아서 바꾼다.
+
+- 2026-10-08 Claude: class 저장소 `scratch/junior/`에 스크래치 주니어 수업 틀(5개월 20회차 목록)과 1개월차 1회차(`m1-1/`, 교재 사진에서 오린 그림 포함, 체크리스트 6개를 `window.CodingHaruWorkbook`으로 저장)를 만들었다. 블록 아이콘은 LLK/scratchjr(BSD) 것이고 `scratch/junior/img/`에 라이선스를 두었다. **나중에 할 일**은 1개월차 2~4회차와 2~5개월차이며, 배경·캐릭터 그림은 앱에 내장돼 있어 교재 사진이나 태블릿 화면 캡처가 있어야 넣을 수 있다. 앱에서 직접 해본 확인은 못 했다.
