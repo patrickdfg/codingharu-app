@@ -137,3 +137,4 @@ curl -s https://patrickdfg.github.io/codingharu-app/version.json
 - 2026-10-08 Claude: 엔트리 워크북 힌트 2(쓸 수 있는 블록)에 **실제 엔트리 블록 그림**을 넣었다(257개 중 244개). 엔트리 공식 패키지 @entrylabs/entry 4.0.23(Apache-2.0)으로 블록을 그려 `class/assets/entry-blocks/<블록종류>.png` 로 저장한다. 도구는 class 저장소 `work/entry_render/`(setup.sh → /tmp/entryrender, 로컬 서버 8790, render_blocks.mjs)와 `work/entry_hint_blocks.py`(힌트 글의 블록 이름 → 블록 종류 규칙표 RULES). 새 워크북을 만들면 `entry_hint_blocks.py` 를 다시 돌린다. 그림이 안 붙은 13개는 글에 블록 이름이 없는 힌트다.
 
 - 2026-10-08 Claude: 힌트 3에도 실제 엔트리 블록 그림을 붙였다(오브젝트 카드는 카드마다 "이 카드에 쓰는 블록", 기존 산문 힌트는 블록 이름이 3개 이상 잡힐 때만 "이 예시에 나오는 블록"). 힌트 글→블록 짝짓기 규칙은 class `work/entry_hint_blocks.py` 의 RULES. 산문 힌트는 글 표현이 달라 빠지는 블록이 있을 수 있어 일부만 보일 수 있다.
+- 2026-10-08 Claude: 산문 힌트 3(209개)은 자동 짝짓기가 부정확해 class `work/entry_hint3_blocks_map.py` 에 쪽별·순번별 블록 종류를 직접 적었다(키 `슬러그#순번`). 새 쪽을 만들면 여기에 줄을 추가하고 `entry_hint_blocks.py` 를 다시 돌린다. 줄이 없으면 자동 규칙으로 돌아간다. 매핑은 글을 읽고 정한 것이라 일부 틀릴 수 있다.
