@@ -115,3 +115,5 @@ curl -s https://patrickdfg.github.io/codingharu-app/version.json
   record.gs 가 바뀌어 **Apps Script 에서 새 버전 배포가 필요**하다. 가짜 구글·가짜 서버 Playwright 시험 29개 통과(저장소에는 없음). 실제 구글 로그인·시트·새 서버 코드는 아직 확인하지 못했다.
 
 - 2026-10-08 Claude: 학생 가입을 승인제로 바꿈. 가입하면 학생 탭 F열 `상태`='대기', 승인 전에는 로그인·저장 불가. 관리자 메뉴 맨 위 "가입 승인 대기"에서 승인/거절(server `approve` 액션). 상태가 비어 있는 옛 행은 승인된 것으로 본다. **record.gs 새 버전 재배포 필요.** 문법 검사만 했고 실제 동작은 아직 확인하지 못했다.
+
+- 2026-10-08 Claude: **규칙 — Apps Script(server/record.gs)는 가능하면 더 고치지 않는다.** 고치면 사람이 붙여넣고 새 버전 배포를 해야 한다(자동 배포는 하지 않기로 했다). 새 기능은 화면(index.html·inject.js·record.js)과 시트 구성으로 풀고, 서버를 바꿔야 하면 한 번에 모아서 바꾼다.
