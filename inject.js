@@ -179,10 +179,70 @@
       status('인터넷이 끊겨 이 기기에만 저장했어요. 연결되면 다시 보낼게요.');
     }
 
-    // 수업 기록: 목록 페이지가 아닌 교안을 열면 남긴다
-    if (page !== 'index.html' && !document.querySelector('[data-lessons]')) {
-      CHRecord.api('visit', { studentId: stu.id, page: page, title: document.title }).catch(function () {});
-    }
+    // 완료 표시: 교안을 열었다고 기록하지 않는다. 맨 아래 '완료' 단추를 눌렀을 때만 남기고, 목록에서는 완료한 수업을 흐리게 보여 준다.
+    (function () {
+      var DKEY = 'codingharu-done-s' + stu.id, IDX = 'done-index';
+      var key = page.replace(/index\.html$/, '');
+      function dget() { try { return JSON.parse(localStorage.getItem(DKEY) || '{}') || {}; } catch (e) { return {}; } }
+      function dput(m) { try { localStorage.setItem(DKEY, JSON.stringify(m)); } catch (e) {} }
+      function isDone(m, k) { return (m[k] || 0) > 0; }
+      function merge(a, b) { var o = {}; [a, b].forEach(function (m) { Object.keys(m || {}).forEach(function (k) { if (!(k in o) || Math.abs(m[k]) > Math.abs(o[k])) o[k] = m[k]; }); }); return o; }
+      function count(m) { return Object.keys(m).filter(function (k) { return m[k] > 0; }).length; }
+      var cssDone = document.createElement('style'); cssDone.setAttribute('data-ch-app', '');
+      cssDone.textContent = '.ch-done-item{opacity:.5;filter:grayscale(.35);position:relative}.ch-done-item::after{content:"✔ 완료";position:absolute;top:8px;right:10px;padding:3px 10px;border-radius:999px;' +
+        'background:#234c3d;color:#fff;font:700 13px sans-serif;z-index:2}' +
+        '#ch-done-wrap{margin:36px auto 96px;text-align:center}#ch-done-btn{font:800 22px sans-serif;padding:16px 64px;border:0;border-radius:999px;background:#234c3d;color:#fff;cursor:pointer}' +
+        '#ch-done-btn.on{background:#6b7a72}#ch-done-undo{display:block;margin:10px auto 0;border:0;background:none;color:#6b7a72;font:600 14px sans-serif;text-decoration:underline;cursor:pointer}@media print{#ch-done-wrap{display:none!important}}';
+      document.head.appendChild(cssDone);
+
+      // 서버에 맞추기: 쌓아 둔 변경이 있으면 보내고, 서버 목록과 합친다
+      var busy = false, again = false;
+      function sync(then) {
+        if (busy) { again = true; return; } busy = true;
+        CHRecord.api('load', { studentId: stu.id, workbook: IDX }).then(function (out) {
+          var local = dget(), remote = (out.state && out.state.pages) || {}, all = merge(local, remote);
+          dput(all); paint(all);
+          var changed = Object.keys(all).some(function (k) { return remote[k] !== all[k]; });
+          if (!changed) return;
+          var titles = {}; try { titles = JSON.parse(localStorage.getItem(DKEY + '-t') || '{}') || {}; } catch (e) {}
+          var lag = Object.keys(all).filter(function (k) { return remote[k] !== all[k]; });
+          return CHRecord.api('save', { studentId: stu.id, workbook: IDX, title: '완료한 수업', page: '', state: { pages: all }, progress: { done: count(all), total: Math.max(1, Object.keys(all).length) } }).then(function () {
+            return lag.reduce(function (p, k) { return p.then(function () {   // 선생님 화면에 수업별로 보이도록 수업마다 한 줄씩도 남긴다
+              return CHRecord.api('save', { studentId: stu.id, workbook: 'done:' + k, title: titles[k] || '완료 · ' + k, page: k, state: { done: all[k] > 0, at: Math.abs(all[k]) }, progress: { done: all[k] > 0 ? 1 : 0, total: 1 } }); }); }, Promise.resolve());
+          });
+        }).then(function () { busy = false; if (then) then(); if (again) { again = false; sync(); } }, function (e) { busy = false; again = false; paint(dget()); fail(e); });
+      }
+      function target(a) {
+        var h = a.getAttribute('href'); if (!h || h.charAt(0) === '#' || /^[a-z]+:/i.test(h)) return null;
+        var u = new URL(h, location.href), i = u.pathname.indexOf('/v/'); if (i < 0) return null;
+        return decodeURIComponent(u.pathname.slice(i + 3)).replace(/index\.html$/, '');
+      }
+      function paint(m) {
+        var main = document.querySelector('main') || document.body;
+        [].forEach.call(main.querySelectorAll('a[href]'), function (a) {
+          if (a.closest('.breadcrumb, .toc, nav, header')) return;
+          var t = target(a); a.classList.toggle('ch-done-item', !!t && isDone(m, t));
+        });
+        var btn = document.getElementById('ch-done-btn'), un = document.getElementById('ch-done-undo');
+        if (btn) { var on = isDone(m, key); btn.className = on ? 'on' : ''; btn.textContent = on ? '✔ 완료했어요' : '완료'; un.hidden = !on; }
+      }
+      var isList = !!document.querySelector('[data-lessons], a.category, a.row') || key === '';
+      if (!isList) {
+        var wrap = document.createElement('div'); wrap.id = 'ch-done-wrap'; wrap.setAttribute('data-ch-app', '');
+        wrap.innerHTML = '<button type="button" id="ch-done-btn">완료</button><button type="button" id="ch-done-undo" hidden>완료 취소</button>';
+        document.body.appendChild(wrap);
+        function mark(on) {
+          var m = dget(), ts = Date.now(); m[key] = on ? ts : -ts; dput(m); paint(m);
+          var title = '완료 · ' + document.title.replace(/\s*·\s*코딩하루\s*$/, '');
+          try { var tt = JSON.parse(localStorage.getItem(DKEY + '-t') || '{}') || {}; tt[key] = title; localStorage.setItem(DKEY + '-t', JSON.stringify(tt)); } catch (e) {}
+          sync();
+        }
+        document.getElementById('ch-done-btn').onclick = function () { if (!isDone(dget(), key)) { mark(true); status('완료로 표시했어요'); } };
+        document.getElementById('ch-done-undo').onclick = function () { if (confirm('완료 표시를 취소할까요?')) mark(false); };
+      }
+      paint(dget()); sync();
+      addEventListener('online', function () { sync(); });
+    })();
 
     var wb = window.CodingHaruWorkbook;
     if (!wb) return;

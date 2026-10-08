@@ -324,6 +324,7 @@
     try { renderStatus(box, await CHRecord.api('admin', { auth: a })); }
     catch (err) { box.textContent = ''; if (/로그인|만료|선생님 목록/.test(err.message)) logout(err.message); else say(err.message); }
   }
+  function isDoneRow(w) { return String(w.workbook).indexOf('done:') === 0; }
   function renderStatus(box, d) {
     box.textContent = '';
     var byId = {}; d.students.forEach(function (s) { byId[s.id] = s; });
@@ -363,23 +364,26 @@
 
       body.appendChild(el('h3', '학생별 요약', 'sec'));
       var rows = students.map(function (s) {
-        var last = 0, opened = 0;
-        d.workbooks.forEach(function (w) { if (w.studentId === s.id && w.updatedAt > last) last = w.updatedAt; });
-        d.visits.forEach(function (v) { if (v.studentId === s.id) { if (v.last > last) last = v.last; if (v.day === ymd) opened++; } });
-        return { cells: [s.name, s.group || '-', fmt(last), opened + '개'], last: last };
+        var last = 0, finished = 0;
+        d.workbooks.forEach(function (w) {
+          if (w.studentId !== s.id) return;
+          if (w.updatedAt > last) last = w.updatedAt;
+          if (isDoneRow(w) && w.done > 0) finished++;
+        });
+        return { cells: [s.name, s.group || '-', fmt(last), finished + '개'], last: last };
       }).sort(function (a, b) { return b.last - a.last; });
-      body.appendChild(table(['학생', '반', '마지막 활동', '오늘 연 교안'], rows.map(function (r) { return r.cells; })));
+      body.appendChild(table(['학생', '반', '마지막 활동', '완료한 수업'], rows.map(function (r) { return r.cells; })));
 
       body.appendChild(el('h3', '워크북 진행', 'sec'));
-      var wr = d.workbooks.filter(function (w) { return ids[w.studentId]; }).sort(function (a, b) { return b.updatedAt - a.updatedAt; }).slice(0, 200);
+      var wr = d.workbooks.filter(function (w) { return ids[w.studentId] && !isDoneRow(w) && w.workbook !== 'done-index'; }).sort(function (a, b) { return b.updatedAt - a.updatedAt; }).slice(0, 200);
       body.appendChild(table(['학생', '워크북', '진행', '마지막 저장'], wr.map(function (w) {
         return [(byId[w.studentId] || {}).name || w.studentId, w.title || w.workbook, meter(w.done, w.total), fmt(w.updatedAt)];
       })));
 
-      body.appendChild(el('h3', '최근 수업 기록', 'sec'));
-      var vr = d.visits.filter(function (v) { return ids[v.studentId]; }).sort(function (a, b) { return b.last - a.last; }).slice(0, 100);
-      body.appendChild(table(['날짜', '학생', '연 교안', '횟수', '마지막'], vr.map(function (v) {
-        return [v.day, (byId[v.studentId] || {}).name || v.studentId, v.title || v.page, v.count + '번', fmt(v.last)];
+      body.appendChild(el('h3', '최근 완료한 수업', 'sec'));
+      var dr = d.workbooks.filter(function (w) { return ids[w.studentId] && isDoneRow(w) && w.done > 0; }).sort(function (a, b) { return b.updatedAt - a.updatedAt; }).slice(0, 100);
+      body.appendChild(table(['학생', '수업', '완료 시각'], dr.map(function (w) {
+        return [(byId[w.studentId] || {}).name || w.studentId, (w.title || w.workbook).replace(/^완료 · /, ''), fmt(w.updatedAt)];
       })));
     }
     if (filter) filter.onchange = draw;
