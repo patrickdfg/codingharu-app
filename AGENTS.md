@@ -119,3 +119,5 @@ curl -s https://patrickdfg.github.io/codingharu-app/version.json
 - 2026-10-08 Claude: **규칙 — Apps Script(server/record.gs)는 가능하면 더 고치지 않는다.** 고치면 사람이 붙여넣고 새 버전 배포를 해야 한다(자동 배포는 하지 않기로 했다). 새 기능은 화면(index.html·inject.js·record.js)과 시트 구성으로 풀고, 서버를 바꿔야 하면 한 번에 모아서 바꾼다.
 
 - 2026-10-08 Claude: class 저장소 `scratch/junior/`에 스크래치 주니어 수업 틀(5개월 20회차 목록)과 1개월차 1회차(`m1-1/`, 교재 사진에서 오린 그림 포함, 체크리스트 6개를 `window.CodingHaruWorkbook`으로 저장)를 만들었다. 블록 아이콘은 LLK/scratchjr(BSD) 것이고 `scratch/junior/img/`에 라이선스를 두었다. **나중에 할 일**은 1개월차 2~4회차와 2~5개월차이며, 배경·캐릭터 그림은 앱에 내장돼 있어 교재 사진이나 태블릿 화면 캡처가 있어야 넣을 수 있다. 앱에서 직접 해본 확인은 못 했다.
+
+- 2026-10-08 Claude: class 저장소에 엔트리 프로젝트 2권 1~4차시(차시당 작품 2개, 총 8개)를 가볍게 등록했다. 완성(original)·시작(starter) 파일, 저장된 첫 장면 미리보기, `entry/project2-lessonN/` 페이지, 엔트리 목록 카드 4개(전체 82개). 미션·힌트·교사용 발문이 있는 워크북은 아직 없다. 5~8차시는 파일이 오면 `class/work/entry_project2.py` 의 LESSONS 에 추가해 다시 돌린다.
