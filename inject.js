@@ -139,7 +139,9 @@
     if (!cfg.on) return;
     var dev = CHRecord.device(), stu = CHRecord.student();
     var page = decodeURIComponent(location.pathname.split('/v/')[1] || 'index.html');
-    var login = CHRecord.base + 'login.html?next=' + encodeURIComponent('v/' + page);
+    var login = CHRecord.base + 'index.html?next=' + encodeURIComponent('v/' + page);
+    // 들어갈 때마다 로그인: 이번에 로그인하지 않았으면 처음 화면으로 보낸다
+    if (!CHRecord.sessionOk()) { location.replace(login); return; }
 
     // 왼쪽 아래 학생 표시
     var tag = document.createElement('div');
@@ -150,16 +152,21 @@
       '#ch-student button,#ch-student a{border:0;border-radius:999px;background:#234c3d;color:#fff;font:700 13px sans-serif;padding:7px 12px;text-decoration:none;cursor:pointer}' +
       '#ch-student .st{font-size:12px;font-weight:500;color:#6b7a72}@media print{#ch-student{display:none!important}}';
     document.head.appendChild(css);
-    if (dev && stu) {
-      tag.innerHTML = '<span></span><span class="st"></span><button type="button">학생 바꾸기</button>';
+    var sess = CHRecord.session();
+    if (sess && sess.role === 'teacher') {
+      tag.innerHTML = '<span></span><span class="st"></span><a>관리자 메뉴</a>';
+      tag.firstChild.textContent = '선생님';
+      tag.querySelector('a').href = CHRecord.base + 'index.html';
+    } else if (dev && stu) {
+      tag.innerHTML = '<span></span><span class="st"></span><button type="button">로그아웃</button>';
       tag.firstChild.textContent = stu.name;
       tag.querySelector('button').onclick = function () {
-        if (!confirm(stu.name + ' 학생 기록을 마치고 다른 학생으로 바꿀까요?')) return;
-        flush(); CHRecord.setStudent(null); location.href = login;
+        if (!confirm(stu.name + ' 학생 기록을 마치고 로그아웃할까요?')) return;
+        flush(); CHRecord.endSession(); location.href = CHRecord.base + 'index.html';
       };
     } else {
-      tag.innerHTML = '<span>기록이 이 기기에만 남아요</span><a>학생 로그인</a>';
-      tag.querySelector('a').href = login;
+      tag.innerHTML = '<span>기록이 이 기기에만 남아요</span><a>로그인</a>';
+      tag.querySelector('a').href = CHRecord.base + 'index.html';
     }
     document.documentElement.appendChild(tag);
     var stEl = tag.querySelector('.st');

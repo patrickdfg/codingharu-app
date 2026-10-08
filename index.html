@@ -1,4 +1,5 @@
 <!doctype html>
+<!-- 코딩하루 처음 화면: 로그인·가입하기 두 탭. 학생은 이름과 4자리 번호로 가입·로그인하고, 선생님은 구글 계정으로 로그인한다. 수업 기록이 꺼져 있으면 예전처럼 수업 비밀번호만 묻는다. -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -10,35 +11,105 @@
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
 <style>
-  :root { --green:#234c3d; --bg:#f8f9f4; --ink:#1d2b25; --warn:#b3261e; }
+  :root { --green:#234c3d; --bg:#f8f9f4; --ink:#1d2b25; --line:#cfd8d2; --warn:#b3261e; --mute:#6b7a72; }
   * { box-sizing:border-box; }
-  body { margin:0; min-height:100vh; display:grid; place-items:center; background:var(--bg); color:var(--ink);
-         font:18px/1.6 system-ui,"Noto Sans KR",sans-serif; }
-  main { width:min(420px,92vw); text-align:center; padding:32px 0; }
-  img { width:96px; height:96px; border-radius:22px; }
-  h1 { margin:12px 0 4px; font-size:30px; color:var(--green); }
-  p { margin:0 0 20px; color:#4b5b54; }
+  body { margin:0; min-height:100vh; background:var(--bg); color:var(--ink); font:18px/1.6 system-ui,"Noto Sans KR",sans-serif; }
+  main { width:min(460px,92vw); margin:0 auto; padding:30px 0 60px; text-align:center; }
+  main.wide { width:min(980px,94vw); }
+  img.logo { width:84px; height:84px; border-radius:20px; }
+  h1 { margin:10px 0 4px; font-size:30px; color:var(--green); }
+  p { margin:0 0 18px; color:#4b5b54; }
+  h2 { margin:0 0 6px; font-size:20px; color:var(--green); }
   form { display:grid; gap:12px; }
-  input { font:inherit; padding:16px; border:2px solid #cfd8d2; border-radius:14px; text-align:center; background:#fff; }
-  input:focus { outline:none; border-color:var(--green); }
-  button { font:700 18px system-ui,sans-serif; padding:16px; border:0; border-radius:14px; background:var(--green); color:#fff; }
-  button:disabled { opacity:.6; }
+  input, select { font:inherit; padding:15px; border:2px solid var(--line); border-radius:14px; text-align:center; background:#fff; width:100%; }
+  input:focus, select:focus { outline:none; border-color:var(--green); }
+  button { font:700 18px system-ui,sans-serif; padding:15px; border:0; border-radius:14px; background:var(--green); color:#fff; cursor:pointer; }
+  button:disabled { opacity:.6; cursor:wait; }
+  button.ghost { background:#fff; color:var(--ink); border:2px solid var(--line); }
   button.link { background:none; color:var(--green); font-weight:600; text-decoration:underline; padding:8px; }
-  #msg { min-height:1.6em; margin:12px 0 0; color:var(--warn); font-weight:600; }
+  .tabs { display:grid; grid-template-columns:1fr 1fr; background:#e4ece1; border-radius:14px; padding:4px; margin:0 0 20px; }
+  .tabs button { background:none; color:var(--green); padding:12px; font-size:17px; }
+  .tabs button[aria-selected="true"] { background:var(--green); color:#fff; }
+  .card { background:#fff; border:1px solid var(--line); border-radius:18px; padding:20px 18px; text-align:center; }
+  .stack { display:grid; gap:10px; justify-items:center; margin:6px 0; }
+  .or { display:flex; align-items:center; gap:12px; color:var(--mute); font-size:15px; margin:16px 0; }
+  .or::before, .or::after { content:""; flex:1; border-top:1px solid var(--line); }
+  #msg { min-height:1.6em; margin:14px 0 0; color:var(--warn); font-weight:600; }
   #msg.ok { color:var(--green); }
+  .note { font-size:14px; color:var(--mute); margin:14px 0 0; }
   [hidden] { display:none !important; }
+  /* 관리자 */
+  .bar { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin:14px 0 20px; }
+  .bar button { padding:11px 16px; font-size:16px; }
+  .tablewrap { overflow-x:auto; text-align:left; margin:0 0 22px; background:#fff; border:1px solid var(--line); border-radius:14px; }
+  table { border-collapse:collapse; width:100%; font-size:15px; }
+  th, td { padding:9px 12px; border-bottom:1px solid #e6ece8; white-space:nowrap; }
+  th { background:#e4ece1; color:var(--green); font-size:14px; text-align:left; }
+  tr:last-child td { border-bottom:0; }
+  .meter { display:inline-block; width:90px; height:10px; background:#e4ece1; border-radius:6px; vertical-align:middle; margin-right:8px; overflow:hidden; }
+  .meter i { display:block; height:100%; background:var(--green); }
+  h3.sec { text-align:left; margin:22px 0 8px; font-size:17px; color:var(--green); }
+  .filter { text-align:left; margin:0 0 10px; } .filter select { width:auto; text-align:left; padding:8px 12px; font-size:15px; }
 </style>
 </head>
 <body>
-<main>
-  <img src="icons/icon-192.png" alt="" width="96" height="96">
+<main id="main">
+  <img class="logo" src="icons/icon-192.png" alt="" width="84" height="84">
   <h1>코딩하루</h1>
-  <p id="lead">수업 비밀번호를 입력해 주세요.<br>이 태블릿에서는 처음 한 번만 입력하면 돼요.</p>
+  <p id="lead"></p>
 
+  <!-- 수업 비밀번호: 기록이 꺼져 있을 때, 또는 선생님이 새 태블릿을 처음 등록할 때 한 번 -->
   <form id="form" autocomplete="off" hidden>
-    <input id="pass" type="password" placeholder="비밀번호" autocapitalize="off" autocorrect="off" spellcheck="false" required>
+    <input id="pass" type="password" placeholder="수업 비밀번호" autocapitalize="off" autocorrect="off" spellcheck="false" required>
     <button id="go" type="submit">들어가기</button>
   </form>
+
+  <!-- 가입하기 · 로그인 -->
+  <section id="auth" hidden>
+    <div class="tabs" role="tablist">
+      <button id="tabLogin" type="button" role="tab" aria-selected="true">로그인</button>
+      <button id="tabJoin" type="button" role="tab" aria-selected="false">가입하기</button>
+    </div>
+
+    <div id="paneLogin">
+      <div class="stack">
+        <div id="gbtnLogin"></div>
+      </div>
+      <p class="note" style="margin:6px 0 0">선생님은 구글 계정으로 로그인해요.</p>
+      <div class="or">또는 학생</div>
+      <form id="stuLogin" autocomplete="off">
+        <input id="lName" type="text" placeholder="이름" maxlength="20" autocomplete="off" required>
+        <input id="lPin" type="password" inputmode="numeric" pattern="\d{4}" maxlength="4" placeholder="번호 4자리" autocomplete="off" required>
+        <button type="submit" id="lGo">로그인</button>
+      </form>
+    </div>
+
+    <div id="paneJoin" hidden>
+      <form id="stuJoin" autocomplete="off">
+        <h2>학생 가입</h2>
+        <input id="jName" type="text" placeholder="내 이름" maxlength="20" autocomplete="off" required>
+        <input id="jPin" type="password" inputmode="numeric" pattern="\d{4}" maxlength="4" placeholder="번호 4자리 (숫자)" autocomplete="off" required>
+        <input id="jPin2" type="password" inputmode="numeric" pattern="\d{4}" maxlength="4" placeholder="번호 한 번 더" autocomplete="off" required>
+        <button type="submit" id="jGo">가입하기</button>
+        <p class="note">번호는 잊어버리지 않게 기억해 두세요. 로그인할 때마다 이름과 번호가 필요해요.</p>
+      </form>
+    </div>
+    <p class="note" id="deviceNote" hidden></p>
+    <button id="offline" class="link" type="button" hidden>기록 없이 이 태블릿에서만 쓰기</button>
+  </section>
+
+  <!-- 선생님 관리자 메뉴 -->
+  <section id="admin" hidden>
+    <h2 id="adminWho"></h2>
+    <div class="bar">
+      <button type="button" id="aLessons">교안 열기</button>
+      <button type="button" id="aReload" class="ghost">현황 새로고침</button>
+      <button type="button" id="aUnpair" class="ghost">이 기기 등록 해제</button>
+      <button type="button" id="aLogout" class="ghost">로그아웃</button>
+    </div>
+    <div id="status"></div>
+  </section>
+
   <button id="install" class="link" type="button" hidden>이 태블릿에 앱으로 설치</button>
   <p id="msg" role="status" aria-live="polite"></p>
 </main>
@@ -48,54 +119,47 @@
 <script>
 (function () {
   var BASE = new URL('./', location.href).href;
-  var form = document.getElementById('form'), pass = document.getElementById('pass'),
-      go = document.getElementById('go'), msg = document.getElementById('msg'),
-      installBtn = document.getElementById('install');
+  var $ = function (id) { return document.getElementById(id); };
+  var msg = $('msg'), lead = $('lead'), form = $('form'), pass = $('pass'), go = $('go');
+  var next = new URLSearchParams(location.search).get('next');
+  var cfg = null, keyOk = false, passMode = 'legacy', me = null;
 
   function say(t, ok) { msg.textContent = t || ''; msg.className = ok ? 'ok' : ''; }
-
-  // 로그인 시도 제한 (이 기기 안에서만 적용되는 안내용 지연이다)
-  function lockLeft() {
-    try { var u = +localStorage.getItem('chLockUntil') || 0; return Math.max(0, u - Date.now()); } catch (e) { return 0; }
+  function goLessons() { location.replace(next && /^v\//.test(next) ? next : 'v/index.html'); }
+  function show(which) {
+    ['form', 'auth', 'admin'].forEach(function (id) { $(id).hidden = id !== which; });
+    $('main').className = which === 'admin' ? 'wide' : '';
   }
-  function fail() {
-    try {
-      var n = (+localStorage.getItem('chFails') || 0) + 1;
-      localStorage.setItem('chFails', n);
-      if (n >= 5) { localStorage.setItem('chLockUntil', Date.now() + Math.min(300000, 15000 * Math.pow(2, n - 5))); }
-    } catch (e) {}
-  }
-  function clearFails() { try { localStorage.removeItem('chFails'); localStorage.removeItem('chLockUntil'); } catch (e) {} }
 
+  // ---- 설치 단추 / 서비스워커 ----
   var deferred = null;
-  addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); deferred = e; installBtn.hidden = false; });
-  installBtn.onclick = function () { if (deferred) { deferred.prompt(); deferred = null; installBtn.hidden = true; } };
-
+  addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); deferred = e; $('install').hidden = false; });
+  $('install').onclick = function () { if (deferred) { deferred.prompt(); deferred = null; $('install').hidden = true; } };
   var swReady = null;
   if ('serviceWorker' in navigator) {
     swReady = navigator.serviceWorker.register('sw.js', { scope: './', updateViaCache: 'none' })
       .then(function () { return navigator.serviceWorker.ready; });
   }
 
-  function enter() {
-    // 수업 기록이 켜져 있고 이 기기에 선생님 등록·학생 선택이 안 됐으면 로그인 화면으로
-    CHRecord.needsLogin().then(function (n) { location.replace(n ? 'login.html' : 'v/index.html'); }, function () { location.replace('v/index.html'); });
+  // ---- 수업 비밀번호(교안 열쇠) ----
+  function lockLeft() { try { var u = +localStorage.getItem('chLockUntil') || 0; return Math.max(0, u - Date.now()); } catch (e) { return 0; } }
+  function fail() {
+    try {
+      var n = (+localStorage.getItem('chFails') || 0) + 1; localStorage.setItem('chFails', n);
+      if (n >= 5) localStorage.setItem('chLockUntil', Date.now() + Math.min(300000, 15000 * Math.pow(2, n - 5)));
+    } catch (e) {}
   }
+  function clearFails() { try { localStorage.removeItem('chFails'); localStorage.removeItem('chLockUntil'); } catch (e) {} }
 
-  async function boot() {
-    if (!('serviceWorker' in navigator) || !window.isSecureContext) {
-      say('이 브라우저에서는 앱을 열 수 없어요. 크롬으로 열어 주세요.'); return;
-    }
-    if (/[?&]expired=1/.test(location.search)) say('비밀번호가 바뀌었어요. 새 비밀번호를 입력해 주세요.');
+  // 이 기기의 열쇠가 지금 교안을 풀 수 있는가
+  async function checkKey() {
     var key = null;
     try {
       key = await CHCore.loadKey();
-      if (key && await CHCore.keyWorks(BASE, key)) { await swReady; return enter(); }
-      if (key) { await CHCore.forgetKey(); say('비밀번호가 바뀌었어요. 새 비밀번호를 입력해 주세요.'); }
-    } catch (e) {
-      if (key) { say('인터넷에 연결되어 있지 않아요. 교안은 인터넷이 있어야 열 수 있어요.'); return; }
-    }
-    form.hidden = false; pass.focus();
+      if (key && await CHCore.keyWorks(BASE, key)) return true;
+      if (key) { await CHCore.forgetKey(); if (cfg && cfg.on) say('수업 비밀번호가 바뀌었어요. 선생님이 다시 로그인해 비밀번호를 입력해 주세요.'); else say('비밀번호가 바뀌었어요. 새 비밀번호를 입력해 주세요.'); }
+      return false;
+    } catch (e) { return !!key; }   // 인터넷이 없으면 열쇠가 있다고 보고 진행(교안은 인터넷이 있어야 열린다)
   }
 
   form.addEventListener('submit', async function (e) {
@@ -107,16 +171,228 @@
       var meta = await CHCore.getJSON(BASE, 'crypt.json');
       var key = await CHCore.deriveKey(pass.value, meta);
       if (!(await CHCore.keyWorks(BASE, key))) { fail(); say('비밀번호가 맞지 않아요.'); go.disabled = false; pass.select(); return; }
-      await CHCore.saveKey(key);
-      clearFails();
-      pass.value = '';
+      await CHCore.saveKey(key); clearFails(); pass.value = ''; keyOk = true;
       await swReady;
-      enter();
-    } catch (err) {
-      say('교안 서버에 연결하지 못했어요. 인터넷을 확인해 주세요.'); go.disabled = false;
-    }
+      go.disabled = false;
+      if (passMode === 'teacher') { say(''); startTeacher(); } else goLessons();
+    } catch (err) { say('교안 서버에 연결하지 못했어요. 인터넷을 확인해 주세요.'); go.disabled = false; }
   });
 
+  // ---- 가입하기 · 로그인 탭 ----
+  function tab(which) {
+    $('tabLogin').setAttribute('aria-selected', String(which === 'login'));
+    $('tabJoin').setAttribute('aria-selected', String(which === 'join'));
+    $('paneLogin').hidden = which !== 'login'; $('paneJoin').hidden = which !== 'join';
+    say('');
+  }
+  $('tabLogin').onclick = function () { tab('login'); };
+  $('tabJoin').onclick = function () { tab('join'); };
+
+  function needDevice() {
+    if (!CHRecord.device()) { say('이 태블릿은 아직 등록되지 않았어요. 선생님이 먼저 로그인해 주세요.'); return true; }
+    if (!keyOk) { say('수업 비밀번호를 선생님이 다시 입력해야 해요. 선생님이 먼저 로그인해 주세요.'); return true; }
+    return false;
+  }
+  function netFail(err) {
+    if (err.unpaired) { CHRecord.forgetDevice(); say('이 태블릿의 등록이 풀렸어요. 선생님이 다시 로그인해 주세요.'); return; }
+    say(err.message);
+    if (/연결하지 못|Failed to fetch|NetworkError/i.test(err.message)) $('offline').hidden = false;
+  }
+  async function studentIn(out) {
+    CHRecord.setStudent(out.student); CHRecord.setSession('student');
+    say(out.student.name + ' 학생, 반가워요!', true);
+    await swReady; setTimeout(goLessons, 350);
+  }
+
+  $('stuLogin').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    if (needDevice()) return;
+    var b = $('lGo'); b.disabled = true; say('확인하는 중…', true);
+    try {
+      var out = await CHRecord.api('studentLogin', { name: $('lName').value, pin: $('lPin').value });
+      await studentIn(out);
+    } catch (err) { netFail(err); $('lPin').value = ''; }
+    b.disabled = false;
+  });
+
+  $('stuJoin').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    if (needDevice()) return;
+    var name = $('jName').value.trim(), p1 = $('jPin').value, p2 = $('jPin2').value;
+    if (!name) { say('이름을 써 주세요.'); return; }
+    if (!/^\d{4}$/.test(p1)) { say('번호는 숫자 4자리여야 해요.'); return; }
+    if (p1 !== p2) { say('번호가 서로 달라요. 다시 확인해 주세요.'); return; }
+    var b = $('jGo'); b.disabled = true; say('가입하는 중…', true);
+    try {
+      var out = await CHRecord.api('studentSignup', { name: name, pin: p1 });
+      await studentIn(out);
+    } catch (err) { netFail(err); }
+    b.disabled = false;
+  });
+
+  $('offline').onclick = async function () {
+    CHRecord.setStudent(null); CHRecord.setSession('offline'); await swReady; goLessons();
+  };
+
+  // ---- 선생님: 구글 · 마이크로소프트 ----
+  function loadGoogle() {
+    if (window.google && google.accounts) return Promise.resolve();
+    return new Promise(function (res, rej) {
+      var s = document.createElement('script');
+      s.src = 'https://accounts.google.com/gsi/client'; s.async = true; s.onload = res; s.onerror = rej;
+      document.head.appendChild(s);
+    });
+  }
+  async function initGoogle() {
+    try {
+      await loadGoogle();
+      google.accounts.id.initialize({ client_id: cfg.clientId, callback: function (r) { teacherAuth({ p: 'google', t: r.credential }); }, ux_mode: 'popup', auto_select: false });
+      google.accounts.id.renderButton($('gbtnLogin'), { theme: 'outline', size: 'large', text: 'signin_with', shape: 'pill', locale: 'ko', width: 280 });
+    } catch (e) { say('구글 로그인을 불러오지 못했어요. 인터넷을 확인해 주세요.'); }
+  }
+
+  async function teacherAuth(auth) {
+    say('선생님 계정을 확인하는 중…', true);
+    try {
+      var dev = CHRecord.device(), out;
+      if (dev) {
+        out = await CHRecord.api('teacher', { auth: auth });
+        if (!out.deviceOk) { CHRecord.setDevice(null); dev = null; }
+      }
+      if (!dev) {
+        out = await CHRecord.api('pair', { auth: auth, device: navigator.userAgent });
+        CHRecord.setDevice({ token: out.token, teacher: out.teacher });
+      }
+      CHRecord.setAuth(auth);
+      me = { email: out.teacher };
+      if (!keyOk) { askSitePass(); return; }
+      startTeacher();
+    } catch (err) { say(err.message); }
+  }
+
+  function askSitePass() {
+    passMode = 'teacher'; show('form');
+    lead.innerHTML = '이 태블릿을 처음 쓰는 거라 <b>수업 비밀번호</b>를 한 번만 입력해 주세요.<br>그다음부터는 학생이 이름과 번호로 들어와요.';
+    say(''); pass.focus();
+  }
+
+  // ---- 선생님 관리자 메뉴 ----
+  function startTeacher() {
+    CHRecord.setStudent(null);
+    CHRecord.setSession('teacher', { email: me.email });
+    showAdmin();
+  }
+  function el(tag, text, cls) { var e = document.createElement(tag); if (text != null) e.textContent = text; if (cls) e.className = cls; return e; }
+  function fmt(ms) { if (!ms) return '-'; return new Date(ms).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: 'numeric', minute: '2-digit' }); }
+  function table(head, rows) {
+    var wrap = el('div', null, 'tablewrap'), t = el('table'), th = el('tr');
+    head.forEach(function (h) { th.appendChild(el('th', h)); }); t.appendChild(th);
+    if (!rows.length) { var tr0 = el('tr'), td0 = el('td', '기록이 아직 없어요.'); td0.colSpan = head.length; tr0.appendChild(td0); t.appendChild(tr0); }
+    rows.forEach(function (r) { var tr = el('tr'); r.forEach(function (c) { var td = el('td'); if (c instanceof Node) td.appendChild(c); else td.textContent = c; tr.appendChild(td); }); t.appendChild(tr); });
+    wrap.appendChild(t); return wrap;
+  }
+  function meter(done, total) {
+    var w = el('span'), m = el('span', null, 'meter'), i = el('i');
+    i.style.width = (total ? Math.round(done * 100 / total) : 0) + '%'; m.appendChild(i);
+    w.appendChild(m); w.appendChild(document.createTextNode(done + ' / ' + total)); return w;
+  }
+
+  function showAdmin() {
+    show('admin'); lead.textContent = '';
+    $('adminWho').textContent = (me ? me.email : '') + ' · 선생님';
+    say(''); loadStatus();
+  }
+  async function loadStatus() {
+    var box = $('status'); box.textContent = '학생 현황을 불러오는 중…';
+    var a = CHRecord.auth();
+    if (!a) { logout('로그인 시간이 지났어요. 다시 로그인해 주세요.'); return; }
+    try { renderStatus(box, await CHRecord.api('admin', { auth: a })); }
+    catch (err) { box.textContent = ''; if (/로그인|만료|선생님 목록/.test(err.message)) logout(err.message); else say(err.message); }
+  }
+  function renderStatus(box, d) {
+    box.textContent = '';
+    var byId = {}; d.students.forEach(function (s) { byId[s.id] = s; });
+    var today = new Date(d.now), ymd = today.getFullYear() + '-' + ('0' + (today.getMonth() + 1)).slice(-2) + '-' + ('0' + today.getDate()).slice(-2);
+
+    var groups = {}; d.students.forEach(function (s) { groups[s.group || ''] = 1; });
+    var gnames = Object.keys(groups).sort(), filter = null;
+    if (gnames.length > 1) {
+      var fw = el('div', null, 'filter'); filter = el('select');
+      var o0 = el('option', '전체 반'); o0.value = '__all'; filter.appendChild(o0);
+      gnames.forEach(function (g) { var o = el('option', g || '(반 없음)'); o.value = g; filter.appendChild(o); });
+      fw.appendChild(el('span', '반 ')); fw.appendChild(filter); box.appendChild(fw);
+    }
+    var body = el('div'); box.appendChild(body);
+
+    function draw() {
+      body.textContent = '';
+      var g = filter ? filter.value : '__all', ok = function (s) { return g === '__all' || (s.group || '') === g; };
+      var students = d.students.filter(ok), ids = {}; students.forEach(function (s) { ids[s.id] = 1; });
+
+      body.appendChild(el('h3', '학생별 요약', 'sec'));
+      var rows = students.map(function (s) {
+        var last = 0, opened = 0;
+        d.workbooks.forEach(function (w) { if (w.studentId === s.id && w.updatedAt > last) last = w.updatedAt; });
+        d.visits.forEach(function (v) { if (v.studentId === s.id) { if (v.last > last) last = v.last; if (v.day === ymd) opened++; } });
+        return { cells: [s.name, s.group || '-', fmt(last), opened + '개'], last: last };
+      }).sort(function (a, b) { return b.last - a.last; });
+      body.appendChild(table(['학생', '반', '마지막 활동', '오늘 연 교안'], rows.map(function (r) { return r.cells; })));
+
+      body.appendChild(el('h3', '워크북 진행', 'sec'));
+      var wr = d.workbooks.filter(function (w) { return ids[w.studentId]; }).sort(function (a, b) { return b.updatedAt - a.updatedAt; }).slice(0, 200);
+      body.appendChild(table(['학생', '워크북', '진행', '마지막 저장'], wr.map(function (w) {
+        return [(byId[w.studentId] || {}).name || w.studentId, w.title || w.workbook, meter(w.done, w.total), fmt(w.updatedAt)];
+      })));
+
+      body.appendChild(el('h3', '최근 수업 기록', 'sec'));
+      var vr = d.visits.filter(function (v) { return ids[v.studentId]; }).sort(function (a, b) { return b.last - a.last; }).slice(0, 100);
+      body.appendChild(table(['날짜', '학생', '연 교안', '횟수', '마지막'], vr.map(function (v) {
+        return [v.day, (byId[v.studentId] || {}).name || v.studentId, v.title || v.page, v.count + '번', fmt(v.last)];
+      })));
+    }
+    if (filter) filter.onchange = draw;
+    draw();
+  }
+  function logout(m) {
+    CHRecord.endSession(); me = null; showAuth(); say(m || '');
+  }
+  $('aLessons').onclick = function () { goLessons(); };
+  $('aReload').onclick = loadStatus;
+  $('aLogout').onclick = function () { logout(''); };
+  $('aUnpair').onclick = function () {
+    if (!confirm('이 태블릿의 등록을 풀까요? 학생이 이 태블릿에서 로그인하려면 선생님이 다시 로그인해야 해요.')) return;
+    CHRecord.forgetDevice(); logout('이 태블릿의 등록을 풀었어요.');
+  };
+
+  // ---- 처음 화면 ----
+  function showAuth() {
+    show('auth'); passMode = 'legacy'; tab('login');
+    lead.textContent = '이름과 번호로 로그인하세요.';
+    var d = CHRecord.device();
+    var n = $('deviceNote');
+    n.hidden = !!d && keyOk;
+    n.textContent = !d ? '이 태블릿은 아직 등록되지 않았어요. 선생님이 먼저 로그인하면 학생이 쓸 수 있어요.' : (!keyOk ? '선생님이 로그인해 수업 비밀번호를 다시 입력해야 해요.' : '');
+    initGoogle();
+  }
+
+  async function boot() {
+    if (!('serviceWorker' in navigator) || !window.isSecureContext) { say('이 브라우저에서는 앱을 열 수 없어요. 크롬으로 열어 주세요.'); return; }
+    if (/[?&]expired=1/.test(location.search)) say('수업 비밀번호가 바뀌었어요.');
+    cfg = await CHRecord.config();
+    if (!cfg.on) {                                    // 수업 기록이 꺼져 있다: 예전 방식
+      lead.innerHTML = '수업 비밀번호를 입력해 주세요.<br>이 태블릿에서는 처음 한 번만 입력하면 돼요.';
+      keyOk = await checkKey();
+      if (keyOk) { await swReady; return goLessons(); }
+      show('form'); pass.focus(); return;
+    }
+    keyOk = await checkKey();
+    var s = CHRecord.session();
+    if (s && CHRecord.sessionOk()) {
+      if (s.role === 'teacher') { me = { email: s.email }; return showAdmin(); }
+      if (keyOk) { await swReady; return goLessons(); }
+    }
+    showAuth();
+  }
   boot();
 })();
 </script>

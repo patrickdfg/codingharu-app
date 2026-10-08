@@ -4,6 +4,7 @@
 //   1) 함수 목록에서 setup 을 한 번 실행해 시트 탭을 만든다(권한 허용).
 //   2) 프로젝트 설정 → 스크립트 속성에 CLIENT_ID(구글 로그인 클라이언트 ID)를 넣는다.
 //   3) 배포 → 새 배포 → 웹 앱, 실행 사용자: 나, 액세스 권한: 모든 사용자.
+//   (코드를 고친 뒤에는 배포 관리 → 기존 배포 수정 → 새 버전. 주소는 그대로다.)
 // 자세한 순서는 저장소의 SETUP.md '수업 기록' 절.
 
 const TABS_ = {
@@ -55,24 +56,65 @@ function doPost(e) {
 const ACTIONS_ = {
   // 선생님 구글 로그인(ID 토큰) → 확인 후 이 기기 전용 열쇠 발급
   pair(req) {
-    const info = verifyIdToken_(req.idToken);
-    const teachers = rows_('teachers').map(r => String(r[0]).trim().toLowerCase()).filter(Boolean);
-    if (!teachers.includes(info.email)) throw new Error(info.email + ' 계정은 선생님 목록에 없습니다. 시트의 선생님 탭에 추가해 주세요.');
+    const info = teacher_(req.auth || req.idToken);
     const token = Utilities.getUuid().replace(/-/g, '') + Utilities.getUuid().replace(/-/g, '');
     withLock_(() => sheet_('devices').appendRow([hash_(token), info.email, new Date(), new Date(), String(req.device || '').slice(0, 200)]));
     return { token: token, teacher: info.email, name: info.name || '' };
   },
-  // 학생 이름 목록(PIN은 보내지 않음)
-  students(req) {
-    device_(req.token);
-    return { students: rows_('students').filter(r => r[0] !== '' && r[1] !== '').map(r => ({ id: String(r[0]), name: String(r[1]), group: String(r[3] || '') })) };
+  // 선생님 확인(이미 등록된 기기에서 로그인): 이 기기의 등록이 아직 살아 있는지도 알려 준다
+  teacher(req) {
+    const info = teacher_(req.auth);
+    let deviceOk = false;
+    try { device_(req.token); deviceOk = true; } catch (e) {}
+    return { teacher: info.email, name: info.name || '', deviceOk: deviceOk };
   },
-  // 학생 고르기: PIN 확인
-  pick(req) {
+  // 관리자 화면: 학생별 진행과 최근 수업 기록. 기록 내용(JSON)·PIN 은 보내지 않는다. 로그인을 매번 확인한다.
+  admin(req) {
+    teacher_(req.auth);
+    const tz = Session.getScriptTimeZone();
+    const ms = d => (d instanceof Date ? d.getTime() : 0);
+    const students = rows_('students').filter(r => r[0] !== '' && r[1] !== '')
+      .map(r => ({ id: String(r[0]), name: String(r[1]), group: String(r[3] || '') }));
+    const workbooks = rows_('workbooks').map(r => ({
+      studentId: String(r[0]), workbook: String(r[2]), title: String(r[3]), page: String(r[4]),
+      done: Number(r[5]) || 0, total: Number(r[6]) || 0, updatedAt: ms(r[8])
+    }));
+    const vr = rows_('visits');
+    const visits = vr.slice(Math.max(0, vr.length - 600)).map(r => ({
+      day: r[0] instanceof Date ? Utilities.formatDate(r[0], tz, 'yyyy-MM-dd') : String(r[0]),
+      studentId: String(r[1]), page: String(r[3]), title: String(r[4]), last: ms(r[6]), count: Number(r[7]) || 0
+    }));
+    return { students: students, workbooks: workbooks, visits: visits, now: Date.now() };
+  },
+  // 학생 가입: 이름과 4자리 숫자 번호. 등록된 기기에서만 할 수 있다.
+  studentSignup(req) {
     device_(req.token);
-    const s = student_(req.studentId);
-    if (String(s[2]).trim() !== String(req.pin || '').trim()) throw new Error('번호가 맞지 않아요.');
-    return { student: { id: String(s[0]), name: String(s[1]) } };
+    const name = String(req.name || '').replace(/\s+/g, ' ').trim();
+    const pin = String(req.pin || '').trim();
+    if (name.length < 1 || name.length > 20) throw new Error('이름은 1~20자로 써 주세요.');
+    if (!/^\d{4}$/.test(pin)) throw new Error('번호는 숫자 4자리여야 해요.');
+    let student;
+    withLock_(() => {
+      const list = rows_('students').filter(r => r[0] !== '' && r[1] !== '');
+      if (list.some(r => sameName_(r[1], name) && pinOf_(r[2]) === pin)) throw new Error('같은 이름과 번호가 이미 있어요. 다른 번호를 골라 주세요.');
+      const id = list.reduce((m, r) => Math.max(m, Number(r[0]) || 0), 0) + 1;
+      sheet_('students').appendRow([id, name, pin, '', '가입 ' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd')]);
+      student = { id: String(id), name: name };
+    });
+    return { student: student };
+  },
+  // 학생 로그인: 이름과 4자리 번호. 같은 이름으로 5번 틀리면 10분 쉰다.
+  studentLogin(req) {
+    device_(req.token);
+    const name = String(req.name || '').replace(/\s+/g, ' ').trim();
+    const pin = String(req.pin || '').trim();
+    const cache = CacheService.getScriptCache();
+    const fk = 'fail:' + hash_(name.toLowerCase()).slice(0, 24);
+    if (Number(cache.get(fk) || 0) >= 5) throw new Error('여러 번 틀렸어요. 10분 뒤에 다시 해 주세요.');
+    const r = rows_('students').find(x => x[0] !== '' && sameName_(x[1], name) && pinOf_(x[2]) === pin);
+    if (!r) { cache.put(fk, String(Number(cache.get(fk) || 0) + 1), 600); throw new Error('이름이나 번호가 맞지 않아요.'); }
+    cache.remove(fk);
+    return { student: { id: String(r[0]), name: String(r[1]) } };
   },
   // 워크북 기록 불러오기
   load(req) {
@@ -124,6 +166,18 @@ const ACTIONS_ = {
     return {};
   }
 };
+
+const pinOf_ = v => String(v == null ? '' : v).trim().replace(/^'/, '');
+const sameName_ = (a, b) => String(a).replace(/\s+/g, ' ').trim().toLowerCase() === String(b).replace(/\s+/g, ' ').trim().toLowerCase();
+
+// 구글 로그인(ID 토큰)이 유효하고 시트 '선생님' 탭에 있는 계정인지 확인
+function teacher_(auth) {
+  const idToken = auth && auth.t ? auth.t : auth;
+  const info = verifyIdToken_(idToken);
+  const ok = rows_('teachers').some(r => String(r[0]).trim().toLowerCase() === info.email);
+  if (!ok) throw new Error(info.email + ' 계정은 선생님 목록에 없습니다. 시트의 선생님 탭에 추가해 주세요.');
+  return info;
+}
 
 function verifyIdToken_(idToken) {
   if (!idToken) throw new Error('구글 로그인 정보가 없습니다.');

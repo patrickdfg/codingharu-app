@@ -31,7 +31,7 @@ Codex(ChatGPT)는 `AGENTS.md`, Claude Code 는 `CLAUDE.md` 를 자동으로 읽�
 
 | 파일 | 역할 |
 | --- | --- |
-| `index.html` | 로그인 화면. 비밀번호 확인 → 열쇠를 기기에 저장 → `v/index.html` 로 이동 |
+| `index.html` | 처음 화면. 수업 기록이 꺼져 있으면 비밀번호 확인 → 열쇠 저장 → `v/index.html`. 켜져 있으면 로그인/가입하기 탭(학생 이름+4자리, 선생님 구글)·관리자 메뉴(학생 현황) |
 | `core.js` | 열쇠 만들기·풀기·IndexedDB 보관. 화면·서비스워커·시험이 같이 쓴다 |
 | `sw.js` | `/v/` 아래 주소를 잠긴 파일에서 풀어 돌려준다. 교안은 저장하지 않는다 |
 | `inject.js` | 교안 화면마다 끼워 넣는 스크립트: 새 교안 알림, 글자 −/+ 막대, 파일 내려받기, 설치 단추 |
@@ -39,7 +39,7 @@ Codex(ChatGPT)는 `AGENTS.md`, Claude Code 는 `CLAUDE.md` 를 자동으로 읽�
 | `.github/workflows/sync.yml` | 받기 → 잠그기 → 바뀐 것만 커밋 |
 | `test/interop.test.mjs` | 잠금·풀기 호환 시험 (`node test/interop.test.mjs`) |
 | `SETUP.md` | 처음 설정 순서(비밀값 넣는 법 등) |
-| `record.js` · `login.html` · `record-config.json` | 수업 기록: 기기 등록 열쇠·학생 선택 보관, 기록 서버 호출, 선생님 구글 로그인·학생 이름/PIN 화면 |
+| `record.js` · `login.html` · `record-config.json` | 수업 기록: 기기 등록 열쇠·로그인 상태 보관, 기록 서버 호출. 로그인·가입·관리자 메뉴는 `index.html` 에 있고 `login.html` 은 옛 주소를 index 로 넘기는 껍데기 |
 | `server/record.gs` | 수업 기록 서버(구글 시트에 붙인 Apps Script). 이 저장소에서는 배포되지 않는다 — 시트의 Apps Script 에 붙여 넣는다 |
 
 `content/`·`crypt.json`·`check.enc`·`version.json` 은 **봇이 만드는 파일**이다. 손으로 고치지 않는다.
@@ -110,3 +110,6 @@ curl -s https://patrickdfg.github.io/codingharu-app/version.json
   가짜 로그인·가짜 서버로 두 태블릿 이어쓰기·학생 분리·PIN 오류를 시험함. 실제 구글 로그인·Apps Script 배포는 사람이 설정 후 확인해야 한다(SETUP.md 수업 기록). record-config.json 비어 있으면 꺼짐.
 - 2026-10-08 Claude: class `python/basic/unit1~17`(파이썬 기초 학습, 정올 문제 실습)에 `window.CodingHaruWorkbook`(id `python-basic-uN`, 코드·정답 체크를 학생별 키로 저장)을 달았다. 생성 스크립트는 class 저장소에 없고 작업 세션 임시 폴더에 있었으므로, 단원 내용을 고칠 때는 class 의 HTML 을 부분 수정한다.
   로블록스 보물섬은 저장하지 않기로 했다(연 기록만). 구글 설정(record-config.json)은 아직 비어 있어 기능이 꺼져 있다. 실제 구글 로그인·시트 연동과 앱 안에서의 파이썬 단원 동작은 확인하지 못했다(로컬에서 연결 고리 계약만 시험).
+
+- 2026-10-08 Claude: 처음 화면을 로그인/가입하기 탭으로 바꿈. 학생은 이름+4자리로 직접 가입·로그인(선생님이 등록한 기기에서만), 선생님은 구글 로그인만(시트 선생님 탭 계정), 들어갈 때마다 로그인(sessionStorage, 교안 화면 inject.js 가 확인), 선생님 관리자 메뉴에 학생 현황(server `admin` 액션). 선생님 가입·마이크로소프트 로그인은 하지 않기로 했다.
+  record.gs 가 바뀌어 **Apps Script 에서 새 버전 배포가 필요**하다. 가짜 구글·가짜 서버 Playwright 시험 29개 통과(저장소에는 없음). 실제 구글 로그인·시트·새 서버 코드는 아직 확인하지 못했다.

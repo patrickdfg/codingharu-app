@@ -4,10 +4,13 @@
  */
 (function (g) {
   var BASE = new URL('./', document.currentScript ? document.currentScript.src : location.href).href;
-  var K_TOKEN = 'codingharu-device', K_STUDENT = 'codingharu-student', K_QUEUE = 'codingharu-sync-queue';
+  var K_TOKEN = 'codingharu-device', K_STUDENT = 'codingharu-student', K_QUEUE = 'codingharu-sync-queue', K_SESSION = 'codingharu-session', K_AUTH = 'codingharu-auth';
   var cfgPromise = null;
 
   function get(k) { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) { return null; } }
+  // 로그인 상태는 탭·앱을 닫으면 사라진다(들어갈 때마다 로그인). 기기 등록 열쇠만 오래 남는다.
+  function sget(k) { try { return JSON.parse(sessionStorage.getItem(k) || 'null'); } catch (e) { return null; } }
+  function sput(k, v) { try { if (v == null) sessionStorage.removeItem(k); else sessionStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
   function put(k, v) { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
 
   function config() {
@@ -40,15 +43,26 @@
     setDevice: function (d) { put(K_TOKEN, d); },
     student: function () { return get(K_STUDENT); },
     setStudent: function (s) { put(K_STUDENT, s); },
-    forgetDevice: function () { put(K_TOKEN, null); put(K_STUDENT, null); },
+    forgetDevice: function () { put(K_TOKEN, null); put(K_STUDENT, null); sput(K_SESSION, null); sput(K_AUTH, null); },
+    // 로그인 상태: role 은 student(이름+번호) · teacher(구글/마이크로소프트) · offline(기록 서버에 못 닿을 때 기록 없이)
+    session: function () { return sget(K_SESSION); },
+    setSession: function (role, extra) { sput(K_SESSION, Object.assign({ role: role, at: Date.now() }, extra || {})); },
+    endSession: function () { sput(K_SESSION, null); sput(K_AUTH, null); put(K_STUDENT, null); },
+    sessionOk: function () {
+      var s = sget(K_SESSION); if (!s) return false;
+      if (s.role === 'teacher' || s.role === 'offline') return true;
+      return s.role === 'student' && !!get(K_TOKEN) && !!get(K_STUDENT);
+    },
+    // 선생님이 방금 한 로그인(구글/마이크로소프트) 정보: 관리자 화면 요청에 쓴다. 탭을 닫으면 사라진다.
+    auth: function () { return sget(K_AUTH); },
+    setAuth: function (a) { sput(K_AUTH, a); },
     queue: function () { return get(K_QUEUE) || {}; },
     setQueue: function (q) { put(K_QUEUE, q); },
-    // 로그인 화면을 거쳐야 하는가: 기록이 켜져 있고, 기기 등록이나 학생 선택이 안 됐을 때
+    // 로그인 화면을 거쳐야 하는가: 기록이 켜져 있고, 이번에 로그인하지 않았을 때
     needsLogin: async function () {
       var c = await config();
       if (!c.on) return false;
-      if (get('codingharu-record-skip')) return false;
-      return !get(K_TOKEN) || !get(K_STUDENT);
+      return !CHRecord.sessionOk();
     },
     base: BASE
   };
