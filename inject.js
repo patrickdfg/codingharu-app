@@ -157,7 +157,7 @@
       tag.innerHTML = '<span></span><span class="st"></span><a>관리자 메뉴</a>';
       tag.firstChild.textContent = '선생님';
       tag.querySelector('a').href = CHRecord.base + 'index.html';
-    } else if (dev && stu) {
+    } else if (stu && sess && sess.role === 'student') {
       tag.innerHTML = '<span></span><span class="st"></span><button type="button">로그아웃</button>';
       tag.firstChild.textContent = stu.name;
       tag.querySelector('button').onclick = function () {
@@ -171,10 +171,11 @@
     document.documentElement.appendChild(tag);
     var stEl = tag.querySelector('.st');
     function status(m) { if (stEl) stEl.textContent = m; var wb = window.CodingHaruWorkbook; if (wb && m) wb.setStatus(m); }
-    if (!dev || !stu) return;
+    if (!stu || !sess || sess.role !== 'student') return;
 
     function fail(err) {
       if (err && err.unpaired) { CHRecord.forgetDevice(); status('기기 등록이 풀렸어요'); return; }
+      if (err && /로그인이 풀렸/.test(err.message || '')) { status('로그인이 풀렸어요. 다시 로그인해 주세요.'); return; }
       status('인터넷이 끊겨 이 기기에만 저장했어요. 연결되면 다시 보낼게요.');
     }
 
@@ -202,7 +203,7 @@
     function flush() {
       if (!meta().dirty) return;
       CHRecord.config().then(function (c) {
-        var data = Object.assign({ action: 'save', token: dev.token }, body());
+        var data = Object.assign({ action: 'save', token: dev && dev.token, sid: sess && sess.sid }, body());
         try { navigator.sendBeacon(c.apiUrl, new Blob([JSON.stringify(data)], { type: 'text/plain;charset=utf-8' })); } catch (e) {}
       });
     }

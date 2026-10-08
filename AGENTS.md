@@ -121,3 +121,5 @@ curl -s https://patrickdfg.github.io/codingharu-app/version.json
 - 2026-10-08 Claude: class 저장소 `scratch/junior/`에 스크래치 주니어 수업 틀(5개월 20회차 목록)과 1개월차 1회차(`m1-1/`, 교재 사진에서 오린 그림 포함, 체크리스트 6개를 `window.CodingHaruWorkbook`으로 저장)를 만들었다. 블록 아이콘은 LLK/scratchjr(BSD) 것이고 `scratch/junior/img/`에 라이선스를 두었다. **나중에 할 일**은 1개월차 2~4회차와 2~5개월차이며, 배경·캐릭터 그림은 앱에 내장돼 있어 교재 사진이나 태블릿 화면 캡처가 있어야 넣을 수 있다. 앱에서 직접 해본 확인은 못 했다.
 
 - 2026-10-08 Claude: class 저장소에 엔트리 프로젝트 2권 1~4차시(차시당 작품 2개, 총 8개)를 가볍게 등록했다. 완성(original)·시작(starter) 파일, 저장된 첫 장면 미리보기, `entry/project2-lessonN/` 페이지, 엔트리 목록 카드 4개(전체 82개). 미션·힌트·교사용 발문이 있는 워크북은 아직 없다. 5~8차시는 파일이 오면 `class/work/entry_project2.py` 의 LESSONS 에 추가해 다시 돌린다.
+
+- 2026-10-08 Claude: 학생은 기기 등록 없이 어느 기기에서나 가입·로그인한다. 서버가 로그인 때 HMAC 서명 확인표(sid, 14일)를 주고 load·save·visit 은 그 학생 것인지 확인한다(스크립트 속성 SESSION_SECRET 은 처음 쓸 때 자동 생성). 새 기기에서는 로그인 뒤 수업 비밀번호를 한 번 묻는다. 시간당 가입 신청 30건 제한. **record.gs 재배포 필요**(Apps Script 를 바꾸는 마지막 수정이 되도록 모아서 했다). 가짜 서버 시험과 서명 로직 시험만 했고 실제 구글 서버·시트는 아직 확인하지 못했다.

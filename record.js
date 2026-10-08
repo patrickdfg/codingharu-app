@@ -25,7 +25,8 @@
     var c = await config();
     if (!c.on) throw new Error('수업 기록이 아직 설정되지 않았어요.');
     var dev = get(K_TOKEN);
-    var payload = Object.assign({ action: action, token: dev && dev.token }, body || {});
+    var ss = sget(K_SESSION);
+    var payload = Object.assign({ action: action, token: dev && dev.token, sid: ss && ss.sid }, body || {});
     var r = await fetch(c.apiUrl, { method: 'POST', body: JSON.stringify(payload), headers: { 'Content-Type': 'text/plain;charset=utf-8' }, redirect: 'follow' });
     if (!r.ok) throw new Error('기록 서버에 연결하지 못했어요 (' + r.status + ').');
     var out = await r.json();
@@ -51,7 +52,7 @@
     sessionOk: function () {
       var s = sget(K_SESSION); if (!s) return false;
       if (s.role === 'teacher' || s.role === 'offline') return true;
-      return s.role === 'student' && !!get(K_TOKEN) && !!get(K_STUDENT);
+      return s.role === 'student' && !!get(K_STUDENT);
     },
     // 선생님이 방금 한 로그인(구글/마이크로소프트) 정보: 관리자 화면 요청에 쓴다. 탭을 닫으면 사라진다.
     auth: function () { return sget(K_AUTH); },

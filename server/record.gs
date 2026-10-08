@@ -1,4 +1,4 @@
-// 코딩하루 수업 기록 서버: 선생님 구글 로그인으로 기기를 등록하고, 학생별 워크북 기록과 수업 기록을 구글 시트에 저장한다.
+// 코딩하루 수업 기록 서버: 학생은 이름+4자리 번호로 어느 기기에서나 로그인하고(기기 등록 불필요), 선생님은 구글 로그인으로 관리자 화면을 쓴다. 학생별 워크북 기록과 수업 기록을 구글 시트에 저장한다.
 //
 // 설치: 기록용 구글 시트 → 확장 프로그램 → Apps Script 에 이 파일 내용을 붙여 넣는다.
 //   1) 함수 목록에서 setup 을 한 번 실행해 시트 탭을 만든다(권한 허용).
@@ -16,6 +16,7 @@ const TABS_ = {
 };
 const TAB_NAMES_ = { teachers: '선생님', students: '학생', devices: '기기', workbooks: '워크북 기록', visits: '수업 기록' };
 const DEVICE_DAYS_ = 365;
+const SESSION_DAYS_ = 14;
 
 function setup() {
   const ss = SpreadsheetApp.getActive();
@@ -88,7 +89,10 @@ const ACTIONS_ = {
   },
   // 학생 가입: 이름과 4자리 숫자 번호. 등록된 기기에서만 할 수 있다.
   studentSignup(req) {
-    device_(req.token);
+    const cache0 = CacheService.getScriptCache();
+    const sk = 'signup:' + Utilities.formatDate(new Date(), 'UTC', 'yyyyMMddHH');
+    if (Number(cache0.get(sk) || 0) >= 30) throw new Error('가입 신청이 너무 많아요. 잠시 뒤에 다시 해 주세요.');
+    cache0.put(sk, String(Number(cache0.get(sk) || 0) + 1), 3700);
     const name = String(req.name || '').replace(/\s+/g, ' ').trim();
     const pin = String(req.pin || '').trim();
     if (name.length < 1 || name.length > 20) throw new Error('이름은 1~20자로 써 주세요.');
@@ -125,7 +129,6 @@ const ACTIONS_ = {
   },
   // 학생 로그인: 이름과 4자리 번호. 같은 이름으로 5번 틀리면 10분 쉰다.
   studentLogin(req) {
-    device_(req.token);
     const name = String(req.name || '').replace(/\s+/g, ' ').trim();
     const pin = String(req.pin || '').trim();
     const cache = CacheService.getScriptCache();
@@ -135,11 +138,11 @@ const ACTIONS_ = {
     if (!r) { cache.put(fk, String(Number(cache.get(fk) || 0) + 1), 600); throw new Error('이름이나 번호가 맞지 않아요.'); }
     cache.remove(fk);
     if (pending_(r)) throw new Error('아직 선생님이 승인하지 않았어요. 선생님께 말씀드려 주세요.');
-    return { student: { id: String(r[0]), name: String(r[1]) } };
+    return { student: { id: String(r[0]), name: String(r[1]) }, sid: sign_(String(r[0]), Date.now() + SESSION_DAYS_ * 86400000) };
   },
   // 워크북 기록 불러오기
   load(req) {
-    device_(req.token);
+    auth_(req);
     student_(req.studentId);
     const found = findWorkbook_(req.studentId, req.workbook);
     if (!found) return { state: null, updatedAt: 0 };
@@ -150,7 +153,7 @@ const ACTIONS_ = {
   },
   // 워크북 기록 저장(학생+워크북마다 한 줄)
   save(req) {
-    const dev = device_(req.token);
+    const dev = auth_(req);
     const s = student_(req.studentId);
     const json = JSON.stringify(req.state || {});
     if (json.length > 45000) throw new Error('기록이 너무 길어 저장하지 못했어요.');
@@ -167,7 +170,7 @@ const ACTIONS_ = {
   },
   // 수업 기록: 학생이 페이지를 연 날·시각·횟수
   visit(req) {
-    device_(req.token);
+    auth_(req);
     const s = student_(req.studentId);
     const now = new Date();
     const day = Utilities.formatDate(now, Session.getScriptTimeZone(), 'yyyy-MM-dd');
@@ -213,6 +216,28 @@ function verifyIdToken_(idToken) {
   if (String(info.email_verified) !== 'true') throw new Error('이메일 확인이 안 된 계정입니다.');
   if (Number(info.exp) * 1000 < Date.now()) throw new Error('로그인이 만료되었습니다. 다시 로그인해 주세요.');
   return { email: String(info.email).toLowerCase(), name: info.name || '' };
+}
+
+// 학생 요청 확인: 로그인할 때 받은 sid(이 학생 것)이면 통과, 없으면 예전처럼 등록된 기기 열쇠를 본다.
+function auth_(req) {
+  if (req.sid) { checkSid_(req.sid, req.studentId); return { email: '학생 로그인' }; }
+  return device_(req.token);
+}
+function secret_() {
+  const pr = PropertiesService.getScriptProperties();
+  let s = pr.getProperty('SESSION_SECRET');
+  if (!s) { s = Utilities.getUuid() + Utilities.getUuid(); pr.setProperty('SESSION_SECRET', s); }
+  return s;
+}
+function sign_(id, exp) {
+  const sig = Utilities.computeHmacSha256Signature(id + '.' + exp, secret_());
+  return id + '.' + exp + '.' + sig.map(b => ('0' + (b & 255).toString(16)).slice(-2)).join('');
+}
+function checkSid_(sid, studentId) {
+  const bad = new Error('로그인이 풀렸어요. 다시 로그인해 주세요.');
+  const p = String(sid || '').split('.');
+  if (p.length !== 3 || p[0] !== String(studentId) || !(Number(p[1]) > Date.now())) throw bad;
+  if (sign_(p[0], p[1]) !== String(sid)) throw bad;
 }
 
 function device_(token) {

@@ -198,25 +198,20 @@
   $('tabLogin').onclick = function () { tab('login'); };
   $('tabJoin').onclick = function () { tab('join'); };
 
-  function needDevice() {
-    if (!CHRecord.device()) { say('이 태블릿은 아직 등록되지 않았어요. 선생님이 먼저 로그인해 주세요.'); return true; }
-    if (!keyOk) { say('수업 비밀번호를 선생님이 다시 입력해야 해요. 선생님이 먼저 로그인해 주세요.'); return true; }
-    return false;
-  }
   function netFail(err) {
     if (err.unpaired) { CHRecord.forgetDevice(); say('이 태블릿의 등록이 풀렸어요. 선생님이 다시 로그인해 주세요.'); return; }
     say(explain(err));
     if (/연결하지 못|Failed to fetch|NetworkError|Load failed/i.test(err.message)) $('offline').hidden = false;
   }
   async function studentIn(out) {
-    CHRecord.setStudent(out.student); CHRecord.setSession('student');
+    CHRecord.setStudent(out.student); CHRecord.setSession('student', { sid: out.sid });
+    if (!keyOk) { askClassPass(); return; }
     say(out.student.name + ' 학생, 반가워요!', true);
     await swReady; setTimeout(goLessons, 350);
   }
 
   $('stuLogin').addEventListener('submit', async function (e) {
     e.preventDefault();
-    if (needDevice()) return;
     var b = $('lGo'); b.disabled = true; say('확인하는 중…', true);
     try {
       var out = await CHRecord.api('studentLogin', { name: $('lName').value, pin: $('lPin').value });
@@ -227,7 +222,6 @@
 
   $('stuJoin').addEventListener('submit', async function (e) {
     e.preventDefault();
-    if (needDevice()) return;
     var name = $('jName').value.trim(), p1 = $('jPin').value, p2 = $('jPin2').value;
     if (!name) { say('이름을 써 주세요.'); return; }
     if (!/^\d{4}$/.test(p1)) { say('번호는 숫자 4자리여야 해요.'); return; }
@@ -285,6 +279,12 @@
     }
   }
 
+  // 이 기기에서 처음이라 수업 비밀번호를 한 번 입력해야 할 때(학생)
+  function askClassPass() {
+    passMode = 'student'; show('form');
+    lead.innerHTML = '이 기기에서는 처음이라 <b>수업 비밀번호</b>를 한 번만 입력해 주세요.<br>선생님께 물어보세요.';
+    say(''); pass.focus();
+  }
   function askSitePass() {
     passMode = 'teacher'; show('form');
     lead.innerHTML = '이 태블릿을 처음 쓰는 거라 <b>수업 비밀번호</b>를 한 번만 입력해 주세요.<br>그다음부터는 학생이 이름과 번호로 들어와요.';
@@ -400,10 +400,7 @@
   function showAuth() {
     show('auth'); passMode = 'legacy'; tab('login');
     lead.textContent = '이름과 번호로 로그인하세요.';
-    var d = CHRecord.device();
-    var n = $('deviceNote');
-    n.hidden = !!d && keyOk;
-    n.textContent = !d ? '이 태블릿은 아직 등록되지 않았어요. 선생님이 먼저 로그인하면 학생이 쓸 수 있어요.' : (!keyOk ? '선생님이 로그인해 수업 비밀번호를 다시 입력해야 해요.' : '');
+    $('deviceNote').hidden = true;
     initGoogle();
   }
 
@@ -422,6 +419,7 @@
     if (s && CHRecord.sessionOk()) {
       if (s.role === 'teacher') { me = { email: s.email }; return showAdmin(); }
       if (keyOk) { await swReady; return goLessons(); }
+      if (s.role === 'student') return askClassPass();
     }
     showAuth();
   }
