@@ -249,21 +249,40 @@
     var wbId = wb.id + '-v' + wb.version, metaKey = wb.key + '-meta';
     function meta() { try { return JSON.parse(localStorage.getItem(metaKey) || '{}') || {}; } catch (e) { return {}; } }
     function setMeta(m) { try { localStorage.setItem(metaKey, JSON.stringify(m)); } catch (e) {} }
-    function body() { return { studentId: stu.id, workbook: wbId, title: wb.title, page: page, state: wb.getState(), progress: wb.progress() }; }
+    // 서버의 한 줄(시트 한 칸)은 45000자까지라서, 길면 값을 줄이지 않고 여러 줄로 나누어 저장한다. 첫 줄에 __parts(몇 줄인지)를 적는다.
+    var LIMIT = 38000;
+    function split(state) {
+      if (JSON.stringify(state).length <= LIMIT) return [state];
+      var out = [{}], size = 2;
+      Object.keys(state).forEach(function (k) {
+        var n = JSON.stringify(k).length + JSON.stringify(state[k]).length + 2;
+        if (size + n > LIMIT && Object.keys(out[out.length - 1]).length) { out.push({}); size = 2; }
+        out[out.length - 1][k] = state[k]; size += n;
+      });
+      return out;
+    }
+    function bodies() {
+      var ps = split(wb.getState()), prog = wb.progress(), list = [];
+      for (var i = ps.length - 1; i >= 1; i--) list.push({ studentId: stu.id, workbook: wbId + '~' + (i + 1), title: wb.title + ' (이어서 ' + (i + 1) + ')', page: page, state: ps[i], progress: { done: 0, total: 0 } });
+      var first = ps[0]; if (ps.length > 1) first.__parts = ps.length;
+      list.push({ studentId: stu.id, workbook: wbId, title: wb.title, page: page, state: first, progress: prog });   // 첫 줄은 맨 마지막에 저장
+      return list;
+    }
     var timer = null, sending = false;
     function push() {
       clearTimeout(timer); timer = null;
       if (sending) { timer = setTimeout(push, 1500); return; }
       sending = true;
-      CHRecord.api('save', body()).then(function (out) {
+      bodies().reduce(function (p, b) { return p.then(function () { return CHRecord.api('save', b); }); }, Promise.resolve()).then(function (out) {
         setMeta({ updatedAt: out.updatedAt, dirty: false });
         status('선생님 기록에도 저장했어요');
       }, fail).then(function () { sending = false; });
     }
     function flush() {
       if (!meta().dirty) return;
+      var bs = bodies(); if (bs.length > 1) return;   // 길어서 여러 줄이면 창을 닫을 때는 보내지 않고, 다음에 열 때 보낸다
       CHRecord.config().then(function (c) {
-        var data = Object.assign({ action: 'save', token: dev && dev.token, sid: sess && sess.sid }, body());
+        var data = Object.assign({ action: 'save', token: dev && dev.token, sid: sess && sess.sid }, bs[0]);
         try { navigator.sendBeacon(c.apiUrl, new Blob([JSON.stringify(data)], { type: 'text/plain;charset=utf-8' })); } catch (e) {}
       });
     }
@@ -277,7 +296,15 @@
 
     // 처음 열 때: 서버 기록이 더 새로우면 화면에 채우고, 이 기기 것이 더 새로우면 서버로 보낸다
     status('기록을 불러오는 중…');
-    CHRecord.api('load', { studentId: stu.id, workbook: wbId }).then(function (out) {
+    function loadAll() {
+      return CHRecord.api('load', { studentId: stu.id, workbook: wbId }).then(function (out) {
+        var n = out.state && out.state.__parts;
+        if (!(n > 1)) return out;
+        var rest = []; for (var i = 2; i <= n; i++) rest.push(i);
+        return rest.reduce(function (p, i) { return p.then(function () { return CHRecord.api('load', { studentId: stu.id, workbook: wbId + '~' + i }).then(function (o2) { Object.assign(out.state, o2.state || {}); }); }); }, Promise.resolve()).then(function () { delete out.state.__parts; return out; });
+      });
+    }
+    loadAll().then(function (out) {
       var m = meta();
       if (out.state && out.updatedAt > (m.updatedAt || 0) && !m.dirty) {
         wb.applyState(out.state, { message: '선생님 기록에 있던 내용을 불러왔어요.' });

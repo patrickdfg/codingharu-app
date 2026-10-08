@@ -375,7 +375,7 @@
       body.appendChild(table(['학생', '반', '마지막 활동', '완료한 수업'], rows.map(function (r) { return r.cells; })));
 
       body.appendChild(el('h3', '워크북 진행', 'sec'));
-      var wr = d.workbooks.filter(function (w) { return ids[w.studentId] && !isDoneRow(w) && w.workbook !== 'done-index'; }).sort(function (a, b) { return b.updatedAt - a.updatedAt; }).slice(0, 200);
+      var wr = d.workbooks.filter(function (w) { return ids[w.studentId] && !isDoneRow(w) && w.workbook !== 'done-index' && String(w.workbook).indexOf('~') < 0; }).sort(function (a, b) { return b.updatedAt - a.updatedAt; }).slice(0, 200);
       body.appendChild(table(['학생', '워크북', '진행', '마지막 저장'], wr.map(function (w) {
         return [(byId[w.studentId] || {}).name || w.studentId, w.title || w.workbook, meter(w.done, w.total), fmt(w.updatedAt)];
       })));
