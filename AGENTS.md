@@ -108,3 +108,5 @@ curl -s https://patrickdfg.github.io/codingharu-app/version.json
   모바일 배치·기록 저장·검색·다운로드 링크·자료 보존 및 로컬 엔트리 20파일 열기 통과. 정맥 인식 완성본은 클릭 선택으로 보완했고 정답/오답 실행 확인. 실제 태블릿·공식 엔트리 앱 실행은 미확인; 상세는 class/work/cos2-02-verification.md.
 - 2026-10-08 Claude: 수업 기록 추가(선생님 구글 로그인 GIS → server/record.gs 가 ID 토큰 확인 후 기기 열쇠 발급, 학생 이름+PIN, 워크북 state 학생별 시트 저장·다른 기기 이어쓰기, 연 교안 기록). class app.js 는 학생별 localStorage 키와 window.CodingHaruWorkbook 을 연다.
   가짜 로그인·가짜 서버로 두 태블릿 이어쓰기·학생 분리·PIN 오류를 시험함. 실제 구글 로그인·Apps Script 배포는 사람이 설정 후 확인해야 한다(SETUP.md 수업 기록). record-config.json 비어 있으면 꺼짐.
+- 2026-10-08 Claude: class `python/basic/unit1~17`(파이썬 기초 학습, 정올 문제 실습)에 `window.CodingHaruWorkbook`(id `python-basic-uN`, 코드·정답 체크를 학생별 키로 저장)을 달았다. 생성 스크립트는 class 저장소에 없고 작업 세션 임시 폴더에 있었으므로, 단원 내용을 고칠 때는 class 의 HTML 을 부분 수정한다.
+  로블록스 보물섬은 저장하지 않기로 했다(연 기록만). 구글 설정(record-config.json)은 아직 비어 있어 기능이 꺼져 있다. 실제 구글 로그인·시트 연동과 앱 안에서의 파이썬 단원 동작은 확인하지 못했다(로컬에서 연결 고리 계약만 시험).
