@@ -76,6 +76,7 @@
         <div id="gbtnLogin"></div>
       </div>
       <p class="note" style="margin:6px 0 0">선생님은 구글 계정으로 로그인해요.</p>
+      <p class="note" id="gHelp" style="margin:4px 0 0"></p>
       <div class="or">또는 학생</div>
       <form id="stuLogin" autocomplete="off">
         <input id="lName" type="text" placeholder="이름" maxlength="20" autocomplete="off" required>
@@ -125,6 +126,15 @@
   var cfg = null, keyOk = false, passMode = 'legacy', me = null;
 
   function say(t, ok) { msg.textContent = t || ''; msg.className = ok ? 'ok' : ''; }
+  // 서버가 돌려준 오류를 선생님이 원인을 알 수 있는 말로 바꾼다
+  function explain(err) {
+    var m = (err && err.message) || String(err);
+    if (/알 수 없는 요청/.test(m)) return '기록 서버(Apps Script)가 아직 새 버전이 아니에요. 선생님이 Apps Script 에서 배포 관리 → 수정 → 새 버전으로 다시 배포해 주세요. (' + m + ')';
+    if (/연결하지 못|Failed to fetch|NetworkError|Load failed/i.test(m)) return '기록 서버에 연결하지 못했어요. 인터넷과 웹 앱 주소(record-config.json)를 확인해 주세요.';
+    if (/CLIENT_ID/.test(m)) return m + ' (Apps Script 프로젝트 설정 → 스크립트 속성에 CLIENT_ID 를 넣어 주세요.)';
+    if (/다른 앱의 로그인/.test(m)) return m + ' (Apps Script 의 CLIENT_ID 와 record-config.json 의 clientId 가 같은 값이어야 해요.)';
+    return m;
+  }
   function goLessons() { location.replace(next && /^v\//.test(next) ? next : 'v/index.html'); }
   function show(which) {
     ['form', 'auth', 'admin'].forEach(function (id) { $(id).hidden = id !== which; });
@@ -195,8 +205,8 @@
   }
   function netFail(err) {
     if (err.unpaired) { CHRecord.forgetDevice(); say('이 태블릿의 등록이 풀렸어요. 선생님이 다시 로그인해 주세요.'); return; }
-    say(err.message);
-    if (/연결하지 못|Failed to fetch|NetworkError/i.test(err.message)) $('offline').hidden = false;
+    say(explain(err));
+    if (/연결하지 못|Failed to fetch|NetworkError|Load failed/i.test(err.message)) $('offline').hidden = false;
   }
   async function studentIn(out) {
     CHRecord.setStudent(out.student); CHRecord.setSession('student');
@@ -248,7 +258,7 @@
       await loadGoogle();
       google.accounts.id.initialize({ client_id: cfg.clientId, callback: function (r) { teacherAuth({ p: 'google', t: r.credential }); }, ux_mode: 'popup', auto_select: false });
       google.accounts.id.renderButton($('gbtnLogin'), { theme: 'outline', size: 'large', text: 'signin_with', shape: 'pill', locale: 'ko', width: 280 });
-    } catch (e) { say('구글 로그인을 불러오지 못했어요. 인터넷을 확인해 주세요.'); }
+    } catch (e) { say('구글 로그인을 불러오지 못했어요. 인터넷과 광고 차단 설정을 확인해 주세요.'); }
   }
 
   async function teacherAuth(auth) {
@@ -267,7 +277,10 @@
       me = { email: out.teacher };
       if (!keyOk) { askSitePass(); return; }
       startTeacher();
-    } catch (err) { say(err.message); }
+    } catch (err) {
+      say('로그인하지 못했어요. ' + explain(err)); console.error('teacherAuth', err);
+      $('gHelp').textContent = '구글 창 자체에서 오류가 나면 클라이언트의 승인된 JavaScript 원본에 ' + location.origin + ' 가 있는지, 테스트 사용자에 이 계정이 있는지 확인하세요.';
+    }
   }
 
   function askSitePass() {
