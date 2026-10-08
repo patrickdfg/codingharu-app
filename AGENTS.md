@@ -133,3 +133,5 @@ curl -s https://patrickdfg.github.io/codingharu-app/version.json
 - 2026-10-08 Claude: 엔트리 미션 맨 위에 "이 미션에서 코딩할(나오는) 오브젝트" 이름·그림 줄을 넣었다(`class/work/entry_mission_objects.py`, 프로젝트 2·배구는 코딩하는 오브젝트를 정확히). 목표 글에 이름이 나오는 오브젝트만 보여 주므로 오브젝트 이름이 영어인 기초 2·3·4권, 기초 1권(book1) 등 34쪽은 아직 줄이 없다.
 
 - 2026-10-08 Claude: 미션 오브젝트 줄을 넓혔다. 영어 이름 작품은 `entry_hint_objects.py` 의 ALIAS(영어 이름 → 교안에 쓰인 한글 낱말)로 찾고, 코드 오브젝트가 하나뿐인 작품은 모든 미션에 보여 준다. 기존 워크북 미션 187개 중 157개에 줄이 있고 basic4-lesson5·basic4-lesson6·book1-lesson3 의 일부는 글에 오브젝트 이름이 없어 없다. 새 작품을 넣으면 ALIAS 에 이름을 더하고 `entry_mission_objects.py` 를 다시 돌린다.
+
+- 2026-10-08 Claude: 엔트리 워크북 힌트 2(쓸 수 있는 블록)에 **실제 엔트리 블록 그림**을 넣었다(257개 중 244개). 엔트리 공식 패키지 @entrylabs/entry 4.0.23(Apache-2.0)으로 블록을 그려 `class/assets/entry-blocks/<블록종류>.png` 로 저장한다. 도구는 class 저장소 `work/entry_render/`(setup.sh → /tmp/entryrender, 로컬 서버 8790, render_blocks.mjs)와 `work/entry_hint_blocks.py`(힌트 글의 블록 이름 → 블록 종류 규칙표 RULES). 새 워크북을 만들면 `entry_hint_blocks.py` 를 다시 돌린다. 그림이 안 붙은 13개는 글에 블록 이름이 없는 힌트다.
