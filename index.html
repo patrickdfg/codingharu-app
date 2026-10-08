@@ -234,8 +234,10 @@
     if (p1 !== p2) { say('번호가 서로 달라요. 다시 확인해 주세요.'); return; }
     var b = $('jGo'); b.disabled = true; say('가입하는 중…', true);
     try {
-      var out = await CHRecord.api('studentSignup', { name: name, pin: p1 });
-      await studentIn(out);
+      await CHRecord.api('studentSignup', { name: name, pin: p1 });
+      $('jName').value = ''; $('jPin').value = ''; $('jPin2').value = '';
+      tab('login'); $('lName').value = name;
+      say('가입 신청을 했어요. 선생님이 승인하면 로그인할 수 있어요.', true);
     } catch (err) { netFail(err); }
     b.disabled = false;
   });
@@ -326,6 +328,23 @@
     box.textContent = '';
     var byId = {}; d.students.forEach(function (s) { byId[s.id] = s; });
     var today = new Date(d.now), ymd = today.getFullYear() + '-' + ('0' + (today.getMonth() + 1)).slice(-2) + '-' + ('0' + today.getDate()).slice(-2);
+
+    var waiting = d.students.filter(function (s) { return s.pending; });
+    d.students = d.students.filter(function (s) { return !s.pending; });
+    if (waiting.length) {
+      box.appendChild(el('h3', '가입 승인 대기 ' + waiting.length + '명', 'sec'));
+      box.appendChild(table(['이름', ''], waiting.map(function (s) {
+        var w = el('span'), ok = el('button', '승인'), no = el('button', '거절');
+        ok.type = no.type = 'button'; no.style.marginLeft = '6px';
+        function act(yes) {
+          if (!yes && !confirm(s.name + ' 학생의 가입 신청을 거절할까요?')) return;
+          ok.disabled = no.disabled = true;
+          CHRecord.api('approve', { auth: CHRecord.auth(), id: s.id, ok: yes }).then(loadStatus, function (e) { say(e.message); ok.disabled = no.disabled = false; });
+        }
+        ok.onclick = function () { act(true); }; no.onclick = function () { act(false); };
+        w.appendChild(ok); w.appendChild(no); return [s.name, w];
+      })));
+    }
 
     var groups = {}; d.students.forEach(function (s) { groups[s.group || ''] = 1; });
     var gnames = Object.keys(groups).sort(), filter = null;

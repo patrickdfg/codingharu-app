@@ -9,7 +9,7 @@
 
 const TABS_ = {
   teachers: ['선생님 이메일', '이름', '메모'],
-  students: ['번호', '이름', 'PIN(4자리)', '반', '메모'],
+  students: ['번호', '이름', 'PIN(4자리)', '반', '메모', '상태'],
   devices: ['기기 열쇠(암호화)', '선생님 이메일', '등록 시각', '마지막 사용', '기기 정보'],
   workbooks: ['학생 번호', '학생 이름', '워크북 ID', '제목', '페이지', '완료', '전체', '처음 저장', '마지막 저장', '선생님', '기록(JSON)'],
   visits: ['날짜', '학생 번호', '학생 이름', '페이지', '제목', '처음 연 시각', '마지막 연 시각', '연 횟수']
@@ -74,7 +74,7 @@ const ACTIONS_ = {
     const tz = Session.getScriptTimeZone();
     const ms = d => (d instanceof Date ? d.getTime() : 0);
     const students = rows_('students').filter(r => r[0] !== '' && r[1] !== '')
-      .map(r => ({ id: String(r[0]), name: String(r[1]), group: String(r[3] || '') }));
+      .map(r => ({ id: String(r[0]), name: String(r[1]), group: String(r[3] || ''), pending: pending_(r) }));
     const workbooks = rows_('workbooks').map(r => ({
       studentId: String(r[0]), workbook: String(r[2]), title: String(r[3]), page: String(r[4]),
       done: Number(r[5]) || 0, total: Number(r[6]) || 0, updatedAt: ms(r[8])
@@ -98,10 +98,30 @@ const ACTIONS_ = {
       const list = rows_('students').filter(r => r[0] !== '' && r[1] !== '');
       if (list.some(r => sameName_(r[1], name) && pinOf_(r[2]) === pin)) throw new Error('같은 이름과 번호가 이미 있어요. 다른 번호를 골라 주세요.');
       const id = list.reduce((m, r) => Math.max(m, Number(r[0]) || 0), 0) + 1;
-      sheet_('students').appendRow([id, name, pin, '', '가입 ' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd')]);
+      const sh = sheet_('students');
+      if (!String(sh.getRange(1, 6).getValue())) sh.getRange(1, 6).setValue('상태');
+      sh.appendRow([id, name, pin, '', '가입 ' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd'), '대기']);
       student = { id: String(id), name: name };
     });
-    return { student: student };
+    return { pending: true, student: student };
+  },
+  // 선생님이 가입 신청을 승인하거나 거절(거절하면 행을 지운다)
+  approve(req) {
+    teacher_(req.auth);
+    const id = String(req.id || '');
+    withLock_(() => {
+      const sh = sheet_('students');
+      const n = sh.getLastRow() - 1;
+      if (n < 1) return;
+      const data = sh.getRange(2, 1, n, 6).getValues();
+      for (let i = 0; i < data.length; i++) {
+        if (String(data[i][0]) !== id || !pending_(data[i])) continue;
+        if (req.ok) sh.getRange(i + 2, 6).setValue('승인');
+        else sh.deleteRow(i + 2);
+        return;
+      }
+    });
+    return {};
   },
   // 학생 로그인: 이름과 4자리 번호. 같은 이름으로 5번 틀리면 10분 쉰다.
   studentLogin(req) {
@@ -114,6 +134,7 @@ const ACTIONS_ = {
     const r = rows_('students').find(x => x[0] !== '' && sameName_(x[1], name) && pinOf_(x[2]) === pin);
     if (!r) { cache.put(fk, String(Number(cache.get(fk) || 0) + 1), 600); throw new Error('이름이나 번호가 맞지 않아요.'); }
     cache.remove(fk);
+    if (pending_(r)) throw new Error('아직 선생님이 승인하지 않았어요. 선생님께 말씀드려 주세요.');
     return { student: { id: String(r[0]), name: String(r[1]) } };
   },
   // 워크북 기록 불러오기
@@ -167,6 +188,7 @@ const ACTIONS_ = {
   }
 };
 
+const pending_ = r => String(r[5] || '').trim() === '대기';
 const pinOf_ = v => String(v == null ? '' : v).trim().replace(/^'/, '');
 const sameName_ = (a, b) => String(a).replace(/\s+/g, ' ').trim().toLowerCase() === String(b).replace(/\s+/g, ' ').trim().toLowerCase();
 
@@ -213,6 +235,7 @@ function device_(token) {
 function student_(id) {
   const r = rows_('students').find(x => String(x[0]) === String(id) && x[1] !== '');
   if (!r) throw new Error('학생 목록에 없는 학생입니다.');
+  if (pending_(r)) throw new Error('아직 선생님이 승인하지 않았어요.');
   return r;
 }
 
