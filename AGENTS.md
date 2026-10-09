@@ -149,3 +149,6 @@ curl -s https://patrickdfg.github.io/codingharu-app/version.json
 - 2026-10-08 Claude: 학원 이름을 **코드마루**(부제 "코딩·AI 탐구학원")로 바꿨다. 화면에 보이는 "코딩하루" 글자를 class 저장소 전체(html·manifest·js·생성 스크립트)와 이 저장소(index·login·manifest)에서 "코드마루"로 치환했고, 로그인 화면 이름 밑에 부제를 넣었다. **바꾸지 않은 것** — 저장소 이름·주소(codingharu-app), Apps Script(server/record.gs, 규칙상 안 건드림, 안의 "코딩하루" 글자는 서버 응답 문구와 주석뿐), `inject.js` 제목 정리 정규식은 두 이름 모두 처리. 예전 이름으로 되돌리려면 반대로 치환하면 된다.
 - 2026-10-08 Claude: 변수 역할 표. 알고리즘 10개 쪽은 `work/algorithm_entry/varroles.py` → `pages.py`(시작 파일 구역 표 + 미션마다 '이 미션에서 쓰는 변수와 리스트'). 기존 엔트리 쪽은 `work/entry_var_roles.py`(쪽별 데이터)를 `work/entry_var_roles_apply.py` 로 `ready` 구역 끝에 넣는다(여러 번 돌려도 같음). **엔트리 쪽을 다시 생성(entry_project2.py 등)하면 apply 를 다시 돌려야 표가 남는다.** 새 쪽에 변수가 있으면 ROLES 에 한 줄 추가한다. 원본 코드를 읽고 쓴 설명이라 일부는 추정이 섞여 있다.
 - 2026-10-08 Claude: 코드마루 소개 사이트 초안은 비공개 아티팩트(claude.ai/artifact/KGb4VzKRcPyMWfFJvdo2bp)와 class `work/promo/codemaru-home.draft` 에 보관. 이름·주소·수강료는 비어 있고 상담 신청은 전송되지 않는다.
+
+- 2026-10-10 Codex: 코딩 놀이터 원본·100단계는 class/coding/에 넣고 홈·전체 수업·알고리즘·공통 메뉴에 연결했다. 기존 교안 동기화가 /v/coding/로 잠가 배포한다. 평문 교안과 서비스워커 접근 검사를 변경하지 않았다.
+  브라우저에서 임시 암호를 쓴 앱의 잠긴 자산·번들·Blockly·첫 미션을 확인했고 100단계 판정·앱 암호화 호환 시험을 통과했다. 학생별 저장 키와 CodingHaruWorkbook을 연결했지만 실제 학생 기록 서버·실물 태블릿 시험은 미확인이다. 상세는 class/work/coding-playground/verification.md.
