@@ -167,3 +167,6 @@ curl -s https://patrickdfg.github.io/codingharu-app/version.json
 
 - 2026-10-10 Codex: class main aad9329에 엔트리 워크북 86쪽·힌트 3 257개의 완성 예시 블록 그림 영역을 통일했다. 설명 뒤/오브젝트별 카드 아래에 실제 Entry PNG를 배치하고 값 바꾸기 안내, 시험 미션 구분, 프로젝트 카드의 잘못된 시작/묻기/숨기기 그림 매칭을 보완했다. 원문·답안칸·체크·.ent는 유지했다.
   전체 HTML 보존·재실행 동일성·PNG 존재, 대표 6쪽 375/1280px 힌트 58개와 기존 알고리즘 스타일 호환 검사를 통과했다. 실제 엔트리 엔진 재실행·태블릿·기록 서버는 미확인. 재생성 도구: class/work/entry_complete_blocks.py 및 entry_hint_blocks.py, 상세: work/entry-complete-blocks-verification.md.
+
+- 2026-10-10 Codex: class의 coding/index.html을 로블록스 목록 스타일의 두 카드(블록으로 배우는 코딩 / 비버챌린지)로 바꿨다. 기존 100단계 화면은 같은 폴더의 blocks.html로 옮겨 자산 경로·진도 저장 키·워크북 id를 유지했고 옛 #lesson 링크도 넘긴다. 비버는 공식 홈페이지에서 확인한 https://trial.bebras.kr/를 새 창으로 연다.
+  390/1280px 배치·검색·진도 복원·블록 편집기·목록 복귀·옛 단계 링크를 확인했다. 실물 태블릿 및 실제 비버 응시는 미확인. 자세한 경로는 class/coding/README.md.
