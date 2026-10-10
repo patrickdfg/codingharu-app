@@ -164,3 +164,6 @@ curl -s https://patrickdfg.github.io/codingharu-app/version.json
 
 - 2026-10-10 Codex: class main 87622f8에서 알고리즘 18개 워크북의 힌트 3(54개)를 단계별 블록 조립 안내로 보완했다. 실제 완성 파일의 전체 코드 순서·중첩·변수와 블록 그림을 함께 제공하고 두 생성기에도 연결했다. 숫자 맞히기 모드 1은 크다/작다/범위 오류 뒤 2초 기다리기, 큐는 손님별 질문 합치기 표현식을 수정했다.
   390/1280px 108개 힌트 UI, 원문 보존·멱등성·완성 파일 변경 범위 검사를 통과했다. 실제 엔트리 편집기 실행·실물 태블릿은 미확인. 상세: class/work/algorithm-hint3-verification.md. 앱 반영에는 기존 교안 동기화가 필요하다.
+
+- 2026-10-10 Codex: class main aad9329에 엔트리 워크북 86쪽·힌트 3 257개의 완성 예시 블록 그림 영역을 통일했다. 설명 뒤/오브젝트별 카드 아래에 실제 Entry PNG를 배치하고 값 바꾸기 안내, 시험 미션 구분, 프로젝트 카드의 잘못된 시작/묻기/숨기기 그림 매칭을 보완했다. 원문·답안칸·체크·.ent는 유지했다.
+  전체 HTML 보존·재실행 동일성·PNG 존재, 대표 6쪽 375/1280px 힌트 58개와 기존 알고리즘 스타일 호환 검사를 통과했다. 실제 엔트리 엔진 재실행·태블릿·기록 서버는 미확인. 재생성 도구: class/work/entry_complete_blocks.py 및 entry_hint_blocks.py, 상세: work/entry-complete-blocks-verification.md.
