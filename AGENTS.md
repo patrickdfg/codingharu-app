@@ -216,3 +216,5 @@ curl -s https://patrickdfg.github.io/codingharu-app/version.json
 - 2026-10-15 Codex: 사용자 후속 지시로 엔트리 COS 문제를 COS1(인형맞히기+기존 변환02~10,10개) / COS2(cos2-02 10개)로 분류했다. 기타 엔트리는 공룡·배구·파쿠르3개. 기존 수업 내용·이미지·파일은 그대로이며 옛 scratch-other 분류 주소는 COS2로 연결한다. 모바일/PC 필터·수량·검색·난이도 검사 통과.
 
 - 2026-10-15 Codex: 현재 엔트리 구성·새 .ent 등록 기준을 class/docs/entry-project-guidelines.md에 문서화하고 class 루트/entry AGENTS.md 및 이 문서 상단에서 필수로 연결했다. 지침 파일만 추가/수정했고 수업·이미지·분류 구현·기록·다운로드는 변경하지 않았다.
+
+- 2026-10-15 Codex: 사용자 지정으로 class entry/project2-lesson4 힌트3의 맨 아래 아래쪽 벽 접촉 시 y좌표 증가량 한 곳을 5→2로 수정하고 work/entry_project2_hint3.py 재생성 문구도 동일 수정했다. 다른 조건·수업 구조·이미지·.ent는 변경하지 않았고 정확히 해당 문구만 치환했음을 검증했다. 기존 교안 동기화로 반영한다.
