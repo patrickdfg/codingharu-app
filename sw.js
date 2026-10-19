@@ -6,8 +6,9 @@
 importScripts('core.js');
 
 var BASE = new URL('./', self.location.href);
-var SHELL_CACHE = 'codingharu-shell-4';
+var SHELL_CACHE = 'codingharu-shell-5';
 var SHELL = ['./', 'index.html', 'core.js', 'inject.js', 'record.js', 'login.html', 'record-config.json', 'manifest.webmanifest',
+  'home.css', 'home.js', 'home-scene.js', 'vendor/three/three.module.min.js', 'vendor/three/three.core.min.js',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/icon-180.png'];
 
 var TYPES = {

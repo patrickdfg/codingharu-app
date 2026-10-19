@@ -107,6 +107,9 @@ curl -s https://patrickdfg.github.io/codingharu-app/version.json
 
 ## 진행 메모 (도구가 바뀔 때마다 두세 줄로 갱신)
 
+- 2026-10-20 Codex: 루트 첫 화면을 Three.js 입체 코딩 큐브·궤도와 수업/프로젝트 소개가 있는 공개 홍보 페이지로 변경. 상단 오른쪽 로그인·회원가입은 기존 인증을 native dialog로 열며 첫 방문의 자동 수업 이동은 버튼 진입으로 바꿨고 next 진입은 유지. core/record/inject/서버·교안·학생 기록은 그대로. 신규 정적 자산을 위해 SHELL_CACHE5, 로컬 Three.js0.186.1(MIT).
+  암호화 호환 시험과 실제 Chrome WebGL/320~1440px/학생 가입·로그인·수업 열쇠·선생님 관리/next/기록off/오프라인홈/reduced-motion/대체화면 검사 통과(계정 서버·Google은 모의). 실제 계정 서버·실물 태블릿은 미확인. 관리·검증: tools/home-verification.md와 tools/test-home.cjs.
+
 - 2026-10-03 Claude: 로그인·기기 기억·잠긴 교안·새 교안 알림·글자 −/+·로블록스 워크북 통합·파일 내려받기 구현·배포.
   태블릿 실기에서 로그인·설치는 확인됨. 내려받기 수정은 로컬 시험만 했다.
 

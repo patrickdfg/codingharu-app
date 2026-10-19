@@ -1,12 +1,13 @@
 <!doctype html>
-<!-- 코드마루 처음 화면: 로그인·가입하기 두 탭. 학생은 이름과 4자리 번호로 가입·로그인하고, 선생님은 구글 계정으로 로그인한다. 수업 기록이 꺼져 있으면 예전처럼 수업 비밀번호만 묻는다. -->
+<!-- 공개 홍보 첫 화면. 수업·기록은 기존 인증과 암호화 교안 경로로 연결한다. -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
-<meta name="theme-color" content="#0056d2">
-<title>코드마루</title>
+<meta name="theme-color" content="#15102c">
+<meta name="description" content="상상하던 세상을 직접 만드는 시간. 코드마루에서 블록 코딩부터 파이썬, 게임 제작, AI·데이터 프로젝트까지 탐구하고 만들어요.">
+<title>코드마루 · 상상을 만드는 코딩과 AI</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
@@ -56,28 +57,63 @@
   h3.sec { text-align:left; margin:22px 0 8px; font-size:17px; color:var(--green); }
   .filter { text-align:left; margin:0 0 10px; } .filter select { width:auto; text-align:left; padding:8px 12px; font-size:15px; }
 </style>
+<link rel="stylesheet" href="home.css?v=20261020-1">
+<script defer src="home.js?v=20261020-1"></script>
+<script type="module" src="home-scene.js?v=20261020-1"></script>
 </head>
 <body>
-<main id="main">
+<a class="home-skip" href="#landing">본문으로 바로 가기</a>
+<header class="home-header">
+  <a class="home-brand" href="./" aria-label="코드마루 첫 화면"><span class="brand-symbol" aria-hidden="true">m<span>✦</span></span><span>코드마루<small>CODING & AI LAB</small></span></a>
+  <nav class="home-nav" aria-label="사이트 안내"><a href="#courses">수업 소개</a><a href="#learning">배우는 방식</a><a href="#projects">프로젝트</a></nav>
+  <div class="home-account"><button class="nav-login" data-auth="login" type="button">로그인</button><button class="nav-join" data-auth="join" type="button">회원가입 <span aria-hidden="true">↗</span></button></div>
+</header>
+<main id="landing" class="home-main">
+  <section class="home-hero" aria-labelledby="heroTitle">
+    <div class="hero-glow" aria-hidden="true"></div>
+    <div class="hero-copy"><p class="hero-eyebrow"><span></span> HELLO, NEXT CREATORS</p><h1 id="heroTitle">상상하던 세상을,<br><em>직접 만드는</em> 시간<span class="title-star" aria-hidden="true">✳</span></h1><p class="hero-description">작은 호기심이 나만의 게임이 되고,<br>한 줄의 코드가 새로운 가능성이 되는 곳.<br>코드마루에서 나의 첫 작품을 시작해요.</p><div class="hero-actions"><a class="home-cta lime" href="#courses">어떤 걸 만들 수 있을까? <span aria-hidden="true">↗</span></a><button class="hero-class-link" data-auth="login" type="button">내 수업 들어가기 <span aria-hidden="true">→</span></button></div><div class="hero-caption"><span class="caption-line"></span> JUST IMAGINE. THEN MAKE IT.</div></div>
+    <div class="hero-playground" id="heroScene" role="img" aria-label="코딩 큐브와 별, 블록이 빛나는 궤도를 따라 움직이는 입체 창작 공간">
+      <div class="scene-fallback" aria-hidden="true"><span class="fallback-orbit one"></span><span class="fallback-orbit two"></span><div class="fallback-cube">&lt;/&gt;</div><i class="fallback-planet"></i><i class="fallback-star">✦</i></div>
+      <canvas id="heroCanvas" aria-hidden="true"></canvas>
+      <div class="scene-label label-code"><i></i> 작은 코드, 큰 가능성</div><div class="scene-label label-play"><span aria-hidden="true">✦</span> MAKE SOMETHING NEW</div><div class="scene-coordinate" aria-hidden="true">YOUR IDEA<br>IS THE START.</div>
+      <button class="scene-motion" type="button" aria-pressed="false" aria-label="3D 움직임 멈추기" hidden><span aria-hidden="true">Ⅱ</span><span data-motion-label>움직임 멈추기</span></button>
+    </div>
+    <a class="hero-scroll" href="#courses"><span aria-hidden="true">↓</span> 아래로 탐험하기</a>
+  </section>
+  <div class="home-ribbon" aria-label="블록 코딩, 파이썬, 게임, AI, 데이터"><div><span>THINK</span><b>✦</b><span>CODE</span><b>✦</b><span>CREATE</span><b>✦</b><span>PLAY</span><b>✦</b><span>THINK</span><b>✦</b><span>CODE</span><b>✦</b><span>CREATE</span><b>✦</b><span>PLAY</span><b>✦</b></div></div>
+  <section class="home-courses home-section" id="courses" aria-labelledby="coursesTitle"><div class="section-heading"><div><p class="home-eyebrow">FIND YOUR FIRST STEP</p><h2 id="coursesTitle">좋아하는 것에서 시작해,<br>만들 수 있는 것을 넓혀요.</h2></div><p>처음 만나는 코딩부터<br>나만의 프로젝트까지, 한 걸음씩.</p></div>
+    <div class="course-grid">
+      <article class="promo-course block-course"><div class="course-art block-art" aria-hidden="true"><span class="code-block block-a">시작하기</span><span class="code-block block-b">10번 반복하기 <i>↻</i></span><span class="code-block block-c">나만의 이야기 <i>✦</i></span><i class="art-spark">✳</i></div><span class="course-index">01 / FIRST CODE</span><h3>놀이처럼 만나는<br>블록 코딩</h3><p>블록을 연결하며 생각의 순서를 배우고,<br>이야기와 움직이는 작품을 만들어요.</p><div class="course-tags"><span>스크래치주니어</span><span>엔트리</span><span>스크래치</span></div><button class="course-open" type="button" data-auth="login" data-target="v/entry/">블록 코딩 수업 <span aria-hidden="true">↗</span></button></article>
+      <article class="promo-course python-course"><div class="course-art python-art" aria-hidden="true"><div class="mini-editor"><div><i></i><i></i><i></i><span>my_first_world.py</span></div><pre><span>idea</span> = "나의 상상"<br><b>def</b> <em>make_it</em>():<br>    <b>return</b> "새로운 세계"<br><span>make_it</span>()<i class="code-cursor"></i></pre></div></div><span class="course-index">02 / THINK IN CODE</span><h3>내 생각을 표현하는<br>파이썬</h3><p>문법을 이해하고, 문제를 나누어 풀며<br>스스로 코드를 쓰는 힘을 길러요.</p><div class="course-tags"><span>기초 문법</span><span>문제 해결</span><span>COS Pro</span></div><button class="course-open" type="button" data-auth="login" data-target="v/python/">파이썬 수업 <span aria-hidden="true">↗</span></button></article>
+      <article class="promo-course ai-course"><div class="course-art ai-art" aria-hidden="true"><div class="ai-network"><i></i><i></i><i></i><i></i><i></i><i></i><span>AI</span></div><span class="ai-orbit"></span><span class="ai-spark">✦</span></div><span class="course-index">03 / EXPLORE WHAT'S NEXT</span><h3>데이터로 발견하는<br>AI의 가능성</h3><p>데이터에서 질문의 답을 찾고,<br>예측하고 확인하며 AI를 이해해요.</p><div class="course-tags"><span>데이터 분석</span><span>시각화</span><span>AI 프로젝트</span></div><button class="course-open" type="button" data-auth="login" data-target="v/python/projects/">AI 프로젝트 수업 <span aria-hidden="true">↗</span></button></article>
+    </div><p class="course-access">수업 자료는 로그인 후 이용할 수 있어요.</p>
+  </section>
+  <section class="home-learning home-section" id="learning" aria-labelledby="learningTitle"><div class="learning-intro"><p class="home-eyebrow">LEARNING BY MAKING</p><h2 id="learningTitle">정답을 따라가는 대신,<br><span>내 방식으로 만들어 봐요.</span></h2><p>왜 그럴까 질문하고, 직접 바꾸어 보고,<br>실행한 결과를 설명하는 경험이 쌓입니다.</p><div class="learning-seal" aria-hidden="true"><span>TRY. MAKE. GROW.</span><b>✳</b></div></div><ol class="learning-steps"><li><span>01</span><div><h3>궁금한 것에서 출발하기</h3><p>무엇을 만들고 싶은지 생각하고,<br>필요한 규칙과 순서를 정해요.</p></div><i aria-hidden="true">↗</i></li><li><span>02</span><div><h3>직접 만들고, 바꾸어 보기</h3><p>작은 기능부터 코드를 쓰고 실행하며,<br>오류도 하나씩 해결해요.</p></div><i aria-hidden="true">↗</i></li><li><span>03</span><div><h3>나의 작품으로 설명하기</h3><p>만든 과정과 배운 것을 기록하고,<br>나만의 포트폴리오로 남겨요.</p></div><i aria-hidden="true">↗</i></li></ol></section>
+  <section class="home-projects home-section" id="projects" aria-labelledby="projectsTitle"><div class="section-heading"><div><p class="home-eyebrow">FROM A SMALL IDEA TO YOUR OWN PROJECT</p><h2 id="projectsTitle">배운 다음은,<br>내가 만드는 차례.</h2></div><p>게임 제작부터 웹서비스, AI 분석까지.<br>파이썬 프로젝트 과정에서 도전해요.</p></div><div class="project-showcase"><div class="project-visual" aria-hidden="true"><div class="project-window"><div class="window-bar"><i></i><i></i><i></i><span>YOUR NEXT PROJECT</span></div><div class="pixel-game"><span class="game-score">SCORE 124</span><i class="pixel-rock r1"></i><i class="pixel-rock r2"></i><i class="pixel-rock r3"></i><i class="pixel-player"></i><div class="pixel-floor"></div><span class="game-controls">← &nbsp; → &nbsp; 나의 규칙으로 플레이</span></div></div><span class="visual-badge">IDEA → REALITY <b>↗</b></span></div><div class="project-copy"><span class="project-label">PYTHON PROJECT LAB</span><h3>한 줄의 코드에서<br>하나의 작품으로.</h3><p>장애물 피하기 게임, 나의 할 일 웹서비스,<br>데이터 분석과 AI 예측을 직접 만들어요.</p><ul><li><span>32차시</span> 준비부터 포트폴리오까지</li><li><span>96개 미션</span> 기능별로 만들고 테스트하기</li><li><span>제작 기록</span> 시도와 개선 과정을 남기기</li></ul><button class="home-cta dark" type="button" data-auth="login" data-target="v/python/projects/">프로젝트 수업 시작하기 <span aria-hidden="true">↗</span></button><small>기초 문법을 배운 학습자 대상 · PC 실습</small></div></div></section>
+  <section class="home-bottom"><span class="bottom-star" aria-hidden="true">✳</span><p class="home-eyebrow">YOUR NEXT CHAPTER STARTS HERE</p><h2>내일의 가능성은,<br>오늘의 작은 시작에서.</h2><button class="home-cta lime" type="button" data-auth="join">코드마루와 함께 시작하기 <span aria-hidden="true">↗</span></button><p class="bottom-note">이미 함께하고 있다면 <button type="button" data-auth="login">로그인하기 →</button></p></section>
+</main>
+<footer class="home-footer"><a class="footer-brand" href="./">코드마루 <span>CODING & AI LAB</span></a><p>생각하고, 만들고, 나의 세계를 넓히는 시간.</p><a href="#landing">맨 위로 ↑</a></footer>
+<noscript><div class="home-noscript">로그인과 입체 화면을 이용하려면 브라우저의 JavaScript를 켜 주세요. 수업 소개는 아래에서 읽을 수 있어요.</div></noscript>
+<dialog id="authDialog" class="auth-dialog" aria-labelledby="authTitle"><button type="button" id="closeAuth" class="auth-close" aria-label="로그인 창 닫기">✕</button><section id="main">
   <img class="logo" src="icons/icon-192.png" alt="" width="84" height="84">
-  <h1>코드마루</h1>
+  <h2 id="authTitle">코드마루 로그인</h2>
   <p class="tagline">코딩·AI 탐구학원</p>
   <p id="lead"></p>
 
   <!-- 수업 비밀번호: 기록이 꺼져 있을 때, 또는 선생님이 새 태블릿을 처음 등록할 때 한 번 -->
   <form id="form" autocomplete="off" hidden>
-    <input id="pass" type="password" placeholder="수업 비밀번호" autocapitalize="off" autocorrect="off" spellcheck="false" required>
+    <input id="pass" type="password" aria-label="수업 비밀번호" placeholder="수업 비밀번호" autocapitalize="off" autocorrect="off" spellcheck="false" required>
     <button id="go" type="submit">들어가기</button>
   </form>
 
   <!-- 가입하기 · 로그인 -->
   <section id="auth" hidden>
-    <div class="tabs" role="tablist">
-      <button id="tabLogin" type="button" role="tab" aria-selected="true">로그인</button>
-      <button id="tabJoin" type="button" role="tab" aria-selected="false">가입하기</button>
+    <div class="tabs" role="tablist" aria-label="로그인 또는 회원가입">
+      <button id="tabLogin" type="button" role="tab" aria-controls="paneLogin" aria-selected="true">로그인</button>
+      <button id="tabJoin" type="button" role="tab" aria-controls="paneJoin" aria-selected="false" tabindex="-1">회원가입</button>
     </div>
 
-    <div id="paneLogin">
+    <div id="paneLogin" role="tabpanel" aria-labelledby="tabLogin">
       <div class="stack">
         <div id="gbtnLogin"></div>
       </div>
@@ -85,18 +121,18 @@
       <p class="note" id="gHelp" style="margin:4px 0 0"></p>
       <div class="or">또는 학생</div>
       <form id="stuLogin" autocomplete="off">
-        <input id="lName" type="text" placeholder="이름" maxlength="20" autocomplete="off" required>
-        <input id="lPin" type="password" inputmode="numeric" pattern="\d{4}" maxlength="4" placeholder="번호 4자리" autocomplete="off" required>
+        <input id="lName" type="text" aria-label="학생 이름" placeholder="이름" maxlength="20" autocomplete="off" required>
+        <input id="lPin" type="password" aria-label="학생 번호 4자리" inputmode="numeric" pattern="\d{4}" maxlength="4" placeholder="번호 4자리" autocomplete="off" required>
         <button type="submit" id="lGo">로그인</button>
       </form>
     </div>
 
-    <div id="paneJoin" hidden>
+    <div id="paneJoin" role="tabpanel" aria-labelledby="tabJoin" hidden>
       <form id="stuJoin" autocomplete="off">
         <h2>학생 가입</h2>
-        <input id="jName" type="text" placeholder="내 이름" maxlength="20" autocomplete="off" required>
-        <input id="jPin" type="password" inputmode="numeric" pattern="\d{4}" maxlength="4" placeholder="번호 4자리 (숫자)" autocomplete="off" required>
-        <input id="jPin2" type="password" inputmode="numeric" pattern="\d{4}" maxlength="4" placeholder="번호 한 번 더" autocomplete="off" required>
+        <input id="jName" type="text" aria-label="가입할 학생 이름" placeholder="내 이름" maxlength="20" autocomplete="off" required>
+        <input id="jPin" type="password" aria-label="가입할 번호 4자리" inputmode="numeric" pattern="\d{4}" maxlength="4" placeholder="번호 4자리 (숫자)" autocomplete="off" required>
+        <input id="jPin2" type="password" aria-label="번호 한 번 더" inputmode="numeric" pattern="\d{4}" maxlength="4" placeholder="번호 한 번 더" autocomplete="off" required>
         <button type="submit" id="jGo">가입하기</button>
         <p class="note">번호는 잊어버리지 않게 기억해 두세요. 로그인할 때마다 이름과 번호가 필요해요.</p>
       </form>
@@ -119,7 +155,7 @@
 
   <button id="install" class="link" type="button" hidden>이 태블릿에 앱으로 설치</button>
   <p id="msg" role="status" aria-live="polite"></p>
-</main>
+</section></dialog>
 
 <script src="core.js"></script>
 <script src="record.js"></script>
@@ -130,6 +166,18 @@
   var msg = $('msg'), lead = $('lead'), form = $('form'), pass = $('pass'), go = $('go');
   var next = new URLSearchParams(location.search).get('next');
   var cfg = null, keyOk = false, passMode = 'legacy', me = null;
+  var autoEntry = !!next || /[?&]expired=1/.test(location.search);
+  var authDialog = $('authDialog'), googleStarted = false;
+
+  function openDialog() {
+    if (!authDialog.open) authDialog.showModal();
+  }
+  $('closeAuth').onclick = function () { authDialog.close(); };
+  authDialog.addEventListener('click', function (e) {
+    if (e.target !== authDialog) return;
+    var r = authDialog.getBoundingClientRect();
+    if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) authDialog.close();
+  });
 
   function say(t, ok) { msg.textContent = t || ''; msg.className = ok ? 'ok' : ''; }
   // 서버가 돌려준 오류를 선생님이 원인을 알 수 있는 말로 바꾼다
@@ -142,9 +190,12 @@
     return m;
   }
   function goLessons() { location.replace(next && /^v\//.test(next) ? next : 'v/index.html'); }
-  function show(which) {
+  function show(which, silent) {
     ['form', 'auth', 'admin'].forEach(function (id) { $(id).hidden = id !== which; });
     $('main').className = which === 'admin' ? 'wide' : '';
+    authDialog.classList.toggle('admin-mode', which === 'admin');
+    $('authTitle').textContent = which === 'admin' ? '선생님 관리' : which === 'form' ? '수업 들어가기' : '코드마루 로그인';
+    if (!silent) openDialog();
   }
 
   // ---- 설치 단추 / 서비스워커 ----
@@ -198,7 +249,9 @@
   function tab(which) {
     $('tabLogin').setAttribute('aria-selected', String(which === 'login'));
     $('tabJoin').setAttribute('aria-selected', String(which === 'join'));
+    $('tabLogin').tabIndex = which === 'login' ? 0 : -1; $('tabJoin').tabIndex = which === 'join' ? 0 : -1;
     $('paneLogin').hidden = which !== 'login'; $('paneJoin').hidden = which !== 'join';
+    $('authTitle').textContent = which === 'join' ? '코드마루 회원가입' : '코드마루 로그인';
     say('');
   }
   $('tabLogin').onclick = function () { tab('login'); };
@@ -256,11 +309,13 @@
     });
   }
   async function initGoogle() {
+    if (googleStarted) return;
+    googleStarted = true;
     try {
       await loadGoogle();
       google.accounts.id.initialize({ client_id: cfg.clientId, callback: function (r) { teacherAuth({ p: 'google', t: r.credential }); }, ux_mode: 'popup', auto_select: false });
-      google.accounts.id.renderButton($('gbtnLogin'), { theme: 'outline', size: 'large', text: 'signin_with', shape: 'pill', locale: 'ko', width: 280 });
-    } catch (e) { say('구글 로그인을 불러오지 못했어요. 인터넷과 광고 차단 설정을 확인해 주세요.'); }
+      google.accounts.id.renderButton($('gbtnLogin'), { theme: 'outline', size: 'large', text: 'signin_with', shape: 'pill', locale: 'ko', width: Math.min(280, Math.max(200, authDialog.clientWidth - 60)) });
+    } catch (e) { googleStarted = false; say('구글 로그인을 불러오지 못했어요. 인터넷과 광고 차단 설정을 확인해 주세요.'); }
   }
 
   async function teacherAuth(auth) {
@@ -407,11 +462,31 @@
   };
 
   // ---- 처음 화면 ----
-  function showAuth() {
-    show('auth'); passMode = 'legacy'; tab('login');
+  function showAuth(silent) {
+    show('auth', silent); passMode = 'legacy'; tab('login');
     lead.textContent = '이름과 번호로 로그인하세요.';
     $('deviceNote').hidden = true;
-    initGoogle();
+    if (!silent) initGoogle();
+  }
+
+  async function enterAuth(mode) {
+    if (!cfg || !('serviceWorker' in navigator) || !window.isSecureContext) {
+      openDialog(); say('이 브라우저에서는 수업을 열 수 없어요. 크롬의 보안 연결에서 열어 주세요.'); return;
+    }
+    if (!cfg.on) {
+      if (mode !== 'join' && keyOk) { await swReady; goLessons(); return; }
+      show('form');
+      lead.textContent = mode === 'join' ? '현재는 수업 비밀번호로 들어갈 수 있어요. 학생 회원가입은 수업 기록 기능이 연결되면 사용할 수 있어요.' : '수업 비밀번호를 입력해 주세요. 이 기기에서는 처음 한 번만 입력하면 돼요.';
+      pass.focus(); return;
+    }
+    var s = CHRecord.session();
+    if (mode !== 'join' && s && CHRecord.sessionOk()) {
+      if (s.role === 'teacher') { me = { email: s.email }; showAdmin(); return; }
+      if (keyOk) { await swReady; goLessons(); return; }
+      if (s.role === 'student') { askClassPass(); return; }
+    }
+    showAuth(); tab(mode === 'join' ? 'join' : 'login');
+    (mode === 'join' ? $('jName') : $('lName')).focus();
   }
 
   async function boot() {
@@ -421,19 +496,23 @@
     if (!cfg.on) {                                    // 수업 기록이 꺼져 있다: 예전 방식
       lead.innerHTML = '수업 비밀번호를 입력해 주세요.<br>이 태블릿에서는 처음 한 번만 입력하면 돼요.';
       keyOk = await checkKey();
-      if (keyOk) { await swReady; return goLessons(); }
-      show('form'); pass.focus(); return;
+      show('form', true);
+      if (autoEntry) return enterAuth('login');
+      return;
     }
     keyOk = await checkKey();
-    var s = CHRecord.session();
-    if (s && CHRecord.sessionOk()) {
-      if (s.role === 'teacher') { me = { email: s.email }; return showAdmin(); }
-      if (keyOk) { await swReady; return goLessons(); }
-      if (s.role === 'student') return askClassPass();
-    }
-    showAuth();
+    showAuth(true);
+    if (autoEntry) return enterAuth('login');
   }
-  boot();
+  var bootReady = boot().catch(function () { openDialog(); say('수업 연결을 준비하지 못했어요. 인터넷을 확인하고 새로고침해 주세요.'); });
+  window.CHHomeAuth = {
+    open: async function (mode, target) {
+      if (target && /^v\/(?!\/)/.test(target) && target.indexOf('..') < 0) next = target;
+      openDialog();
+      await bootReady;
+      return enterAuth(mode);
+    }
+  };
 })();
 </script>
 </body>
