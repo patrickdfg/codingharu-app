@@ -15,3 +15,5 @@ body.auth-open{overflow:hidden}
 
 /* Shared thinking / AI curriculum overview. */
 .home-curriculum{background:#f4f3ee}.curriculum-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px}.curriculum-grid article{background:#fff;border:1px solid #dfdfdc;border-radius:20px;padding:28px}.curriculum-grid article>span{color:#6a4fa1;font-size:12px;font-weight:800;letter-spacing:.08em}.curriculum-grid h3{color:#211935;font-size:25px;margin:16px 0}.curriculum-grid p{color:#5c5868;font-size:16px;line-height:1.9}.curriculum-grid small{color:#625d70;font-size:13px}.home-curriculum .curriculum-note{color:#5c5868;font-size:16px;line-height:1.9;margin:26px 0}.home-curriculum .home-cta{width:fit-content;max-width:100%}@media(max-width:760px){.curriculum-grid{grid-template-columns:1fr}.curriculum-grid article{padding:24px}.curriculum-grid h3{font-size:23px}}
+
+.home-curriculum .section-heading h2{color:#211935}
