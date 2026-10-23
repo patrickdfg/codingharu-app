@@ -265,3 +265,6 @@ curl -s https://patrickdfg.github.io/codingharu-app/version.json
 
 - 2026-10-23 Codex: COS Pro 전 회차 상단 도구 버튼 높이·글자 크기·여백 통일(class 03e6f70). 공통 글자 확대 설정에도 버튼 크기가 섞이지 않게 수정.
 - 60문제/78예제 정적 검사, 실제 Python 실행·채점·저장, IDE 검사 통과. 요청한 3회차 5번에서 390/1024/1331/1920px와 글자 확대 상태의 동일 높이·글꼴 확인. 실물 태블릿은 미확인.
+
+- 2026-10-23 Codex: class f9bbb1f에 파이썬 코딩 농장 초급12·중급8·고급8 총28차시 추가, python 목록에서 연결. 실제 Python Worker 실행 후 농장 행동 재생, 목표 확인·학생별 코드/예상/관찰 기록·시작 .py 제공.
+- 28개 전체 실제 브라우저 Python 통과, 저장/복원·로컬 학생 분리·오류/정지/무한 반복 제한·모바일390/1024/1440 검사. 상세는 class work/farm-verification.md. 실물 태블릿·실제 학생 원격 서버 왕복은 미확인. 후속 수정은 class python/farm/README.md·python/AGENTS.md와 생성기를 따른다.
