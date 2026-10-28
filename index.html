@@ -43,6 +43,9 @@
   #msg { min-height:1.6em; margin:14px 0 0; color:var(--warn); font-weight:600; }
   #msg.ok { color:var(--green); }
   .note { font-size:14px; color:var(--mute); margin:14px 0 0; }
+  .phone-auto-wrap { display:flex;align-items:flex-start;gap:10px;text-align:left;padding:12px 14px;margin:12px 0;border:1px solid #c6d5e9;border-radius:10px;background:#f0f6ff;font-size:14px;color:#23415b;cursor:pointer; }
+  .phone-auto-wrap input[type="checkbox"] { width:20px;height:20px;flex:none;padding:0;margin:2px 0 0;accent-color:var(--green); }
+  .phone-auto-wrap span { flex:1;line-height:1.5; }
   [hidden] { display:none !important; }
   /* 관리자 */
   .bar { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin:14px 0 20px; }
@@ -151,6 +154,10 @@
       <button type="button" id="aUnpair" class="ghost">이 기기 등록 해제</button>
       <button type="button" id="aLogout" class="ghost">로그아웃</button>
     </div>
+    <label id="phoneAutoWrap" class="phone-auto-wrap" hidden>
+      <input id="phoneAuto" type="checkbox">
+      <span>이 휴대폰에서 다음 접속부터 구글 자동 로그인 사용<small style="display:block;color:#5b6780">내 휴대폰에서만 켜세요. 로그아웃하면 자동 로그인이 해제됩니다.</small></span>
+    </label>
     <div id="status"></div>
   </section>
 
@@ -168,7 +175,8 @@
   var next = new URLSearchParams(location.search).get('next');
   var cfg = null, keyOk = false, passMode = 'legacy', me = null;
   var autoEntry = !!next || /[?&]expired=1/.test(location.search);
-  var authDialog = $('authDialog'), googleStarted = false;
+  var authDialog = $('authDialog'), googleReady = null, googleButtonRendered = false, teacherBusy = false;
+  var PHONE_AUTO_KEY = 'codingharu-teacher-phone-auto-v1';
 
   function openDialog() {
     if (!authDialog.open) authDialog.showModal();
@@ -181,6 +189,21 @@
   });
 
   function say(t, ok) { msg.textContent = t || ''; msg.className = ok ? 'ok' : ''; }
+  function isPhone() {
+    return !!(navigator.userAgentData && navigator.userAgentData.mobile) ||
+      /iPhone|iPod|Android.*Mobile/i.test(navigator.userAgent || '');
+  }
+  function phoneAutoEnabled() {
+    try { return isPhone() && localStorage.getItem(PHONE_AUTO_KEY) === '1'; }
+    catch (e) { return false; }
+  }
+  function setPhoneAuto(enabled) {
+    try {
+      if (enabled) localStorage.setItem(PHONE_AUTO_KEY, '1');
+      else localStorage.removeItem(PHONE_AUTO_KEY);
+      return true;
+    } catch (e) { say('이 휴대폰에 자동 로그인 설정을 저장할 수 없어요.'); return false; }
+  }
   // 서버가 돌려준 오류를 선생님이 원인을 알 수 있는 말로 바꾼다
   function explain(err) {
     var m = (err && err.message) || String(err);
@@ -309,17 +332,34 @@
       document.head.appendChild(s);
     });
   }
-  async function initGoogle() {
-    if (googleStarted) return;
-    googleStarted = true;
+  async function initGoogle(autoPrompt) {
+    if (!googleReady) {
+      googleReady = loadGoogle().then(function () {
+        google.accounts.id.initialize({
+          client_id: cfg.clientId,
+          callback: function (r) { teacherAuth({ p: 'google', t: r.credential }); },
+          ux_mode: 'popup', auto_select: phoneAutoEnabled()
+        });
+      }).catch(function (e) { googleReady = null; throw e; });
+    }
     try {
-      await loadGoogle();
-      google.accounts.id.initialize({ client_id: cfg.clientId, callback: function (r) { teacherAuth({ p: 'google', t: r.credential }); }, ux_mode: 'popup', auto_select: false });
-      google.accounts.id.renderButton($('gbtnLogin'), { theme: 'outline', size: 'large', text: 'signin_with', shape: 'pill', locale: 'ko', width: Math.min(280, Math.max(200, authDialog.clientWidth - 60)) });
-    } catch (e) { googleStarted = false; say('구글 로그인을 불러오지 못했어요. 인터넷과 광고 차단 설정을 확인해 주세요.'); }
+      await googleReady;
+      if (authDialog.open && !googleButtonRendered) {
+        google.accounts.id.renderButton($('gbtnLogin'), {
+          theme: 'outline', size: 'large', text: 'signin_with', shape: 'pill', locale: 'ko',
+          width: Math.min(280, Math.max(200, authDialog.clientWidth - 60))
+        });
+        googleButtonRendered = true;
+      }
+      if (autoPrompt && phoneAutoEnabled()) google.accounts.id.prompt();
+    } catch (e) {
+      say('구글 로그인을 불러오지 못했어요. 인터넷과 광고 차단 설정을 확인해 주세요.');
+    }
   }
 
   async function teacherAuth(auth) {
+    if (teacherBusy) return;
+    teacherBusy = true;
     say('선생님 계정을 확인하는 중…', true);
     try {
       var dev = CHRecord.device(), out;
@@ -336,9 +376,10 @@
       if (!keyOk) { askSitePass(); return; }
       startTeacher();
     } catch (err) {
+      if (!authDialog.open) showAuth();
       say('로그인하지 못했어요. ' + explain(err)); console.error('teacherAuth', err);
       $('gHelp').textContent = '구글 창 자체에서 오류가 나면 클라이언트의 승인된 JavaScript 원본에 ' + location.origin + ' 가 있는지, 테스트 사용자에 이 계정이 있는지 확인하세요.';
-    }
+    } finally { teacherBusy = false; }
   }
 
   // 이 기기에서 처음이라 수업 비밀번호를 한 번 입력해야 할 때(학생)
@@ -377,6 +418,8 @@
   function showAdmin() {
     show('admin'); lead.textContent = '';
     $('adminWho').textContent = (me ? me.email : '') + ' · 선생님';
+    $('phoneAutoWrap').hidden = !isPhone();
+    $('phoneAuto').checked = phoneAutoEnabled();
     say(''); loadStatus();
   }
   async function loadStatus() {
@@ -452,11 +495,16 @@
     draw();
   }
   function logout(m) {
+    setPhoneAuto(false);
+    try { if (window.google && google.accounts && google.accounts.id) google.accounts.id.disableAutoSelect(); } catch (e) {}
     CHRecord.endSession(); me = null; showAuth(); say(m || '');
   }
   $('aLessons').onclick = function () { goLessons(); };
   $('aReload').onclick = loadStatus;
   $('aLogout').onclick = function () { logout(''); };
+  $('phoneAuto').onchange = function () {
+    if (!setPhoneAuto(this.checked)) this.checked = !this.checked;
+  };
   $('aUnpair').onclick = function () {
     if (!confirm('이 태블릿의 등록을 풀까요? 학생이 이 태블릿에서 로그인하려면 선생님이 다시 로그인해야 해요.')) return;
     CHRecord.forgetDevice(); logout('이 태블릿의 등록을 풀었어요.');
@@ -503,7 +551,12 @@
     }
     keyOk = await checkKey();
     showAuth(true);
-    if (autoEntry) return enterAuth('login');
+    if (autoEntry) {
+      await enterAuth('login');
+      if (phoneAutoEnabled() && !CHRecord.sessionOk()) initGoogle(true);
+      return;
+    }
+    if (phoneAutoEnabled() && !CHRecord.sessionOk()) initGoogle(true);
   }
   var bootReady = boot().catch(function () { openDialog(); say('수업 연결을 준비하지 못했어요. 인터넷을 확인하고 새로고침해 주세요.'); });
   window.CHHomeAuth = {

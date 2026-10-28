@@ -270,3 +270,6 @@ curl -s https://patrickdfg.github.io/codingharu-app/version.json
 - 28개 전체 실제 브라우저 Python 통과, 저장/복원·로컬 학생 분리·오류/정지/무한 반복 제한·모바일390/1024/1440 검사. 상세는 class work/farm-verification.md. 실물 태블릿·실제 학생 원격 서버 왕복은 미확인. 후속 수정은 class python/farm/README.md·python/AGENTS.md와 생성기를 따른다.
 
 - 2026-10-23 Codex: 코딩 농장28차시 Ace 자동완성 추가. 농장 명령/방향/Python 기본 함수 추천, Tab 삽입·Esc 닫기·일반 Tab 들여쓰기·모바일용 명령어 추천 버튼. 빠른 입력 후 중복 없이 완성하는 회귀검사와 기존28개 실행/저장/화면 검사 통과. 실제 태블릿은 미확인.
+
+- 2026-10-28 Codex: 선생님 구글 로그인에 휴대폰별 명시적 동의 옵션을 추가. 선생님 관리에서만 켜며 다음 방문부터 GIS One Tap 자동 로그인 시도, PC/학생 동작 유지, 로그아웃 시 해제. 기존 수업 기록 서버·교안·암호화 변경 없음.
+  모의 Google/CHRecord 테스트로 PC 제외·휴대폰 미동의/동의·선생님 확인·로그아웃 해제 통과. 실제 Google 계정/실물 휴대폰 One Tap은 미확인. 인증은 브라우저/Google 정책에 따라 수동 선택이 필요할 수 있음.
