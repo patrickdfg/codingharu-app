@@ -143,14 +143,14 @@
     // 들어갈 때마다 로그인: 이번에 로그인하지 않았으면 처음 화면으로 보낸다
     if (!CHRecord.sessionOk()) { location.replace(login); return; }
 
-    // 왼쪽 아래 학생 표시
+    // 계정 동작은 유지하고 이름·저장 상태 텍스트는 화면에서 숨긴다.
     var tag = document.createElement('div');
     tag.setAttribute('data-ch-app', ''); tag.id = 'ch-student';
     var css = document.createElement('style'); css.setAttribute('data-ch-app', '');
-    css.textContent = '#ch-student{position:fixed;left:14px;bottom:14px;z-index:2147483646;display:flex;align-items:center;gap:8px;padding:6px 8px 6px 14px;' +
+    css.textContent = '#ch-student{position:fixed;left:14px;bottom:14px;z-index:2147483646;display:flex;align-items:center;gap:8px;padding:6px 8px;' +
       'border-radius:999px;background:rgba(255,255,255,.96);border:1px solid #dae1ed;box-shadow:0 2px 8px rgba(0,0,0,.18);font:600 15px/1.2 sans-serif;color:#0056d2}' +
       '#ch-student button,#ch-student a{border:0;border-radius:999px;background:#0056d2;color:#fff;font:700 13px sans-serif;padding:7px 12px;text-decoration:none;cursor:pointer}' +
-      '#ch-student .st{font-size:12px;font-weight:500;color:#6b7a72}@media print{#ch-student{display:none!important}}';
+      '#ch-student>span{display:none!important}@media print{#ch-student{display:none!important}}';
     document.head.appendChild(css);
     var sess = CHRecord.session();
     if (sess && sess.role === 'teacher') {
