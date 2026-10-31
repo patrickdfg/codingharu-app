@@ -83,6 +83,7 @@ Codex(ChatGPT)는 `AGENTS.md`, Claude Code 는 `CLAUDE.md` 를 자동으로 읽�
 
 ```bash
 node test/interop.test.mjs        # 잠금·풀기 시험 (맨 위 "SITE_PASS 가 없거나..." 한 줄은 정상 출력)
+node test/gallery.test.mjs        # 작품 게시판 서버(record.gs gallery*) 공개 범위·승인·좋아요 시험
 ```
 
 로컬에서 브라우저로 보려면(실제 비밀번호 말고 **임시 값**을 쓴다):
@@ -286,3 +287,4 @@ curl -s https://patrickdfg.github.io/codingharu-app/version.json
 - 2026-10-31 Claude: 사용자 요청으로 코드위즈를 로봇 메뉴에도 넣었다(class robot/codewiz/ 안내 쪽 → entry/codewiz/·scratch/codewiz/). 레벨 표기는 Lv4 능선 · 센서 그대로. 로봇 발표 모드는 진짜 전체화면이면 닫기 단추를 숨긴다(브라우저 ✕ 사용).
 - 2026-10-31 Claude: class에 아두이노 센서 수업 12차시(robot/arduino/, 초6~중등, Lv4 능선 · 센서)를 만들었다. 생성 python work/arduino/build.py(내용 content.py, 교사용 스케치 sketches/*.ino). 1~4차시 엔트리 확장모드 블록, 5~12차시 C++. 로컬 브라우저로 링크·넘침·기록 저장/복원을 확인했다. C++ 스케치는 컴파일러가 없어 실제 컴파일·실물 보드 동작은 미확인(arduino-cli 내려받기는 권한 확인에서 보류).
 - 2026-10-31 Claude: class 7e998be에 코드마루 아두이노 블록 편집기(robot/arduino/editor/)를 만들었다. Blockly 12(coding/vendor) + 자체 블록·C++ 생성기(blocks.js), 화면(editor.js). 미션 36개 + 자유 작업을 학생별 저장(CodingHaruWorkbook id arduino-editor, 키 work:lNN-mK). 업로드는 코드 복사·.ino → 아두이노 IDE(브라우저 직접 업로드 없음). 1~5차시를 엔트리 대신 편집기 기준으로 고쳤다. 대표 프로그램 12개의 생성 코드와 저장·복원·미션 전환을 로컬 브라우저로 확인했고, 실제 컴파일·보드 동작은 미확인. 블록올리(비피랩)는 외부 서비스라 쓰지 않았다.
+- 2026-10-31 Claude: **작품 게시판**을 만들었다(class af96832 `gallery/`, 사이드 메뉴·홈 카드). 학생이 엔트리·스크래치·웹 작품 https 주소를 올리고 공개 범위를 고른다 — 모두 보기 / 우리 반만(학생 탭 D열 반이 같은 학생) / 나만 보기. 모두·우리 반은 선생님 승인 뒤 보이고, 나만 보기는 승인 없이 본인과 선생님만 본다. 가리기는 화면이 아니라 서버(record.gs `galleryList`)에서 한다. 새 요청 galleryList·galleryPost·galleryEdit·galleryReview·galleryLike, 시트 탭 '작품 게시판'은 처음 쓸 때 자동으로 생긴다(setup 다시 안 해도 됨). 엔트리·스크래치는 공식 퍼가기 iframe을 '여기서 실행'을 눌렀을 때만 싣고, 웹 작품은 새 창으로 연다. 학생당 60개, 시간당 20개. record.gs 가 바뀌어 **Apps Script 새 버전 배포가 필요**하다(사람). test/gallery.test.mjs 와, 같은 record.gs 를 흉내 환경으로 띄운 가짜 서버로 학생 3명(1반 2·2반 1)·선생님 화면에서 올리기·승인·반 가리기·좋아요·iframe을 확인했다. 실제 Apps Script·실기기는 미확인.
