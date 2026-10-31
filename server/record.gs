@@ -13,7 +13,7 @@ const TABS_ = {
   devices: ['기기 열쇠(암호화)', '선생님 이메일', '등록 시각', '마지막 사용', '기기 정보'],
   workbooks: ['학생 번호', '학생 이름', '워크북 ID', '제목', '페이지', '완료', '전체', '처음 저장', '마지막 저장', '선생님', '기록(JSON)'],
   visits: ['날짜', '학생 번호', '학생 이름', '페이지', '제목', '처음 연 시각', '마지막 연 시각', '연 횟수'],
-  gallery: ['ID', '학생 번호', '학생 이름', '반', '제목', '주소', '종류', '소개', '공개 범위', '상태', '좋아요(학생 번호)', '올린 시각', '바꾼 시각']
+  gallery: ['ID', '학생 번호', '학생 이름', '반', '제목', '주소', '종류', '소개', '공개 범위', '상태', '좋아요(학생 번호)', '올린 시각', '바꾼 시각', '파일 ID', '파일 이름', '파일 크기']
 };
 const TAB_NAMES_ = { teachers: '선생님', students: '학생', devices: '기기', workbooks: '워크북 기록', visits: '수업 기록', gallery: '작품 게시판' };
 const DEVICE_DAYS_ = 365;
@@ -203,10 +203,10 @@ const ACTIONS_ = {
       if (!r[0]) return;
       const it = galleryItem_(r);
       const mine = it.studentId === v.id;
-      const shared = it.status === '승인' && (it.vis === 'all' || (it.vis === 'class' && v.group && it.group === v.group));
-      if (!v.teacher && !mine && !shared) return;
+      if (!galleryCanSee_(v, it)) return;
       const likes = galleryLikes_(r[10]);
       items.push({ id: it.id, studentId: it.studentId, name: it.name, group: it.group, title: it.title, url: it.url, kind: it.kind, desc: it.desc,
+        file: it.fileId ? { name: it.fileName, size: it.fileSize, ext: galleryExt_(it.fileName) } : null,
         vis: it.vis, status: (v.teacher || mine) ? it.status : '승인', mine: mine, likes: likes.length, liked: !v.teacher && likes.indexOf(v.id) >= 0,
         at: r[11] instanceof Date ? r[11].getTime() : 0, day: r[11] instanceof Date ? Utilities.formatDate(r[11], tz, 'yyyy-MM-dd') : '' });
     });
@@ -218,13 +218,14 @@ const ACTIONS_ = {
     const v = galleryViewer_(req);
     const title = String(req.title || '').replace(/\s+/g, ' ').trim();
     const desc = String(req.desc || '').replace(/\s+/g, ' ').trim();
-    const url = String(req.url || '').trim();
+    const file = req.file ? galleryCheckFile_(req.file) : null;
+    const url = file ? '' : String(req.url || '').trim();
     const vis = galleryVis_(req.vis);
     const group = v.teacher ? galleryGroup_(vis, req.group) : v.group;
     const status = vis === 'me' ? '개인' : v.teacher ? '승인' : '대기';
     if (title.length < 1 || title.length > 40) throw new Error('제목은 1~40자로 써 주세요.');
     if (desc.length > 200) throw new Error('소개는 200자까지 쓸 수 있어요.');
-    if (!/^https:\/\/[^\s<>"']+$/.test(url) || url.length > 500) throw new Error('https:// 로 시작하는 작품 주소를 넣어 주세요.');
+    if (!file && (!/^https:\/\/[^\s<>"']+$/.test(url) || url.length > 500)) throw new Error('https:// 로 시작하는 작품 주소를 넣거나 파일을 골라 주세요.');
     const cache = CacheService.getScriptCache(), ck = 'gpost:' + v.id + ':' + Utilities.formatDate(new Date(), 'UTC', 'yyyyMMddHH');
     if (Number(cache.get(ck) || 0) >= 20) throw new Error('작품을 너무 많이 올렸어요. 잠시 뒤에 다시 해 주세요.');
     cache.put(ck, String(Number(cache.get(ck) || 0) + 1), 3700);
@@ -233,10 +234,19 @@ const ACTIONS_ = {
       const sh = gallerySheet_();
       const all = rows_('gallery');
       const max = v.teacher ? 200 : 60;
-      if (all.filter(r => String(r[1]) === v.id).length >= max) throw new Error('작품은 한 사람당 ' + max + '개까지 올릴 수 있어요. 예전 작품을 지우고 올려 주세요.');
+      const own = all.filter(r => String(r[1]) === v.id);
+      if (own.length >= max) throw new Error('작품은 한 사람당 ' + max + '개까지 올릴 수 있어요. 예전 작품을 지우고 올려 주세요.');
+      let saved = null;
+      if (file) {
+        const quota = (v.teacher ? GALLERY_QUOTA_TEACHER_MB_ : GALLERY_QUOTA_MB_) * 1048576;
+        const used = own.reduce((n, r) => n + (Number(r[15]) || 0), 0);
+        if (used + file.bytes.length > quota) throw new Error('올린 파일이 너무 많아요(한 사람당 ' + (quota / 1048576) + 'MB). 예전 파일 작품을 지우고 올려 주세요.');
+        saved = galleryFolder_().createFile(Utilities.newBlob(file.bytes, file.mime, file.name));
+      }
       id = Utilities.getUuid().replace(/-/g, '').slice(0, 12);
       const now = new Date();
-      sh.appendRow([id, v.id, v.name, group, title, url, galleryKind_(url), desc, vis, status, '[]', now, now]);
+      sh.appendRow([id, v.id, v.name, group, title, url, file ? file.kind : galleryKind_(url), desc, vis, status, '[]', now, now,
+        saved ? saved.getId() : '', file ? file.name : '', file ? file.bytes.length : '']);
     });
     return { id: id, status: status };
   },
@@ -249,7 +259,7 @@ const ACTIONS_ = {
       const f = galleryFind_(req.id);
       if (!f || String(f.row[1]) !== v.id) throw new Error('내 작품만 고칠 수 있어요.');
       const sh = gallerySheet_();
-      if (req.remove) { sh.deleteRow(f.index); status = 'removed'; return; }
+      if (req.remove) { galleryTrash_(f.row); sh.deleteRow(f.index); status = 'removed'; return; }
       const it = galleryItem_(f.row);
       const title = req.title == null ? it.title : String(req.title).replace(/\s+/g, ' ').trim();
       const desc = req.desc == null ? it.desc : String(req.desc).replace(/\s+/g, ' ').trim();
@@ -276,7 +286,7 @@ const ACTIONS_ = {
       const f = galleryFind_(req.id);
       if (!f) throw new Error('작품을 찾지 못했어요.');
       const sh = gallerySheet_();
-      if (req.decision === 'delete') { sh.deleteRow(f.index); return; }
+      if (req.decision === 'delete') { galleryTrash_(f.row); sh.deleteRow(f.index); return; }
       if (req.decision !== 'approve' && req.decision !== 'hide') throw new Error('알 수 없는 처리입니다.');
       if (String(f.row[8]) === 'me') throw new Error("'나만 보기' 작품은 승인할 수 없어요.");
       sh.getRange(f.index, 10).setValue(req.decision === 'approve' ? '승인' : '숨김');
@@ -291,8 +301,7 @@ const ACTIONS_ = {
       const f = galleryFind_(req.id);
       if (!f) throw new Error('작품을 찾지 못했어요.');
       const it = galleryItem_(f.row);
-      const visible = it.status === '승인' && (it.vis === 'all' || (it.vis === 'class' && v.group && it.group === v.group));
-      if (!visible || it.studentId === v.id) throw new Error('이 작품에는 좋아요를 누를 수 없어요.');
+      if (!galleryCanSee_(v, it) || it.studentId === v.id) throw new Error('이 작품에는 좋아요를 누를 수 없어요.');
       const likes = galleryLikes_(f.row[10]);
       const i = likes.indexOf(v.id);
       if (i >= 0) likes.splice(i, 1); else likes.push(v.id);
@@ -300,10 +309,61 @@ const ACTIONS_ = {
       count = likes.length; liked = i < 0;
     });
     return { likes: count, liked: liked };
+  },
+  // 파일 받기: 볼 수 있는 작품의 파일만. {name, mime, data(base64)}
+  galleryFile(req) {
+    const v = galleryViewer_(req);
+    const cache = CacheService.getScriptCache(), ck = 'gfile:' + v.id + ':' + Utilities.formatDate(new Date(), 'UTC', 'yyyyMMddHH');
+    if (Number(cache.get(ck) || 0) >= 120) throw new Error('파일을 너무 많이 열었어요. 잠시 뒤에 다시 해 주세요.');
+    cache.put(ck, String(Number(cache.get(ck) || 0) + 1), 3700);
+    const f = galleryFind_(req.id);
+    if (!f) throw new Error('작품을 찾지 못했어요.');
+    const it = galleryItem_(f.row);
+    if (!galleryCanSee_(v, it) || !it.fileId) throw new Error('이 작품의 파일은 열 수 없어요.');
+    const blob = DriveApp.getFileById(it.fileId).getBlob();
+    return { name: it.fileName, mime: GALLERY_TYPES_[galleryExt_(it.fileName)].mime, data: Utilities.base64Encode(blob.getBytes()) };
   }
 };
 
 // ---- 작품 게시판 도우미 ----
+// 받는 파일: 확장자 → 종류·MIME·앞머리 확인(zip·sb3 는 PK, ent 는 gzip). 한 파일 10MB, 한 사람 학생 50MB · 선생님 300MB.
+const GALLERY_TYPES_ = {
+  zip: { kind: 'zip', mime: 'application/zip', magic: [0x50, 0x4b] },
+  sb3: { kind: 'scratch', mime: 'application/x.scratch.sb3', magic: [0x50, 0x4b] },
+  ent: { kind: 'entry', mime: 'application/octet-stream', magic: [0x1f, 0x8b] },
+  html: { kind: 'html', mime: 'text/html', magic: null },
+  htm: { kind: 'html', mime: 'text/html', magic: null }
+};
+const GALLERY_FILE_MB_ = 10, GALLERY_QUOTA_MB_ = 50, GALLERY_QUOTA_TEACHER_MB_ = 300;
+function galleryExt_(name) { const m = String(name).match(/\.([a-z0-9]+)$/i); return m ? m[1].toLowerCase() : ''; }
+function galleryCheckFile_(f) {
+  const name = String(f.name || '').replace(/[\\/:*?"<>|\u0000-\u001f]/g, '_').replace(/\s+/g, ' ').trim().slice(-80);
+  const t = GALLERY_TYPES_[galleryExt_(name)];
+  if (!t) throw new Error('zip · html · ent · sb3 파일만 올릴 수 있어요.');
+  let bytes;
+  try { bytes = Utilities.base64Decode(String(f.data || '')); } catch (e) { throw new Error('파일을 읽지 못했어요. 다시 골라 주세요.'); }
+  if (!bytes.length) throw new Error('빈 파일이에요.');
+  if (bytes.length > GALLERY_FILE_MB_ * 1048576) throw new Error('파일은 ' + GALLERY_FILE_MB_ + 'MB까지 올릴 수 있어요.');
+  if (t.magic && !t.magic.every((b, i) => (bytes[i] & 255) === b)) throw new Error(name + ' 은(는) 이름과 내용이 맞지 않는 파일이에요.');
+  return { name: name, kind: t.kind, mime: t.mime, bytes: bytes };
+}
+// 파일을 모아 둘 Drive 폴더(시트 주인 Drive, 공유하지 않음). 처음 쓸 때 만들고 ID 를 기억한다.
+function galleryFolder_() {
+  const pr = PropertiesService.getScriptProperties();
+  const id = pr.getProperty('GALLERY_FOLDER');
+  if (id) { try { return DriveApp.getFolderById(id); } catch (e) {} }
+  const folder = DriveApp.createFolder('코드마루 작품 게시판 파일');
+  pr.setProperty('GALLERY_FOLDER', folder.getId());
+  return folder;
+}
+// Apps Script 편집기에서 한 번 실행하면 Drive 권한을 허락받는다(새 버전 배포 전에).
+function authorizeGalleryFiles() { galleryFolder_(); }
+function galleryTrash_(row) { const id = String(row[13] || ''); if (id) { try { DriveApp.getFileById(id).setTrashed(true); } catch (e) {} } }
+// 이 사람이 이 작품을 볼 수 있는가: 선생님은 모두, 내 것, 승인된 '모두 보기'·같은 반 '우리 반만'
+function galleryCanSee_(v, it) {
+  if (v.teacher || it.studentId === v.id) return true;
+  return it.status === '승인' && (it.vis === 'all' || (it.vis === 'class' && !!v.group && it.group === v.group));
+}
 function gallerySheet_() {   // 예전에 setup 한 시트에도 탭이 없으면 만든다(다시 setup 하지 않아도 되게)
   const ss = SpreadsheetApp.getActive();
   let sh = ss.getSheetByName(TAB_NAMES_.gallery);
@@ -312,6 +372,8 @@ function gallerySheet_() {   // 예전에 setup 한 시트에도 탭이 없으�
     sh.appendRow(TABS_.gallery);
     sh.getRange(1, 1, 1, TABS_.gallery.length).setFontWeight('bold').setBackground('#e4ece1');
     sh.setFrozenRows(1);
+  } else if (String(sh.getRange(1, 14).getValue()) !== TABS_.gallery[13]) {
+    sh.getRange(1, 1, 1, TABS_.gallery.length).setValues([TABS_.gallery]).setFontWeight('bold').setBackground('#e4ece1');
   }
   return sh;
 }
@@ -341,7 +403,8 @@ function galleryKind_(url) {
 function galleryLikes_(v) { try { const a = JSON.parse(v || '[]'); return Array.isArray(a) ? a.map(String) : []; } catch (e) { return []; } }
 function galleryItem_(r) {
   return { id: String(r[0]), studentId: String(r[1]), name: String(r[2]), group: String(r[3] || '').trim(), title: String(r[4]), url: String(r[5]),
-    kind: String(r[6] || 'web'), desc: String(r[7] || ''), vis: String(r[8] || 'me'), status: String(r[9] || '대기') };
+    kind: String(r[6] || 'web'), desc: String(r[7] || ''), vis: String(r[8] || 'me'), status: String(r[9] || '대기'),
+    fileId: String(r[13] || ''), fileName: String(r[14] || ''), fileSize: Number(r[15]) || 0 };
 }
 function galleryFind_(id) {
   const sh = gallerySheet_();

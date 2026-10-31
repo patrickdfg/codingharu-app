@@ -33,6 +33,8 @@ function env() {
   const sheets = new Map();
   const ss = { getSheetByName: n => sheets.get(n) || null, insertSheet: n => { const s = makeSheet(n); sheets.set(n, s); return s; } };
   const cache = new Map(), props = new Map([['CLIENT_ID', CLIENT_ID]]);
+  const drive = new Map(); let fid = 0;
+  const folder = { getId: () => 'F1', createFile: b => { const id = 'D' + ++fid; drive.set(id, { ...b, trashed: false }); return { getId: () => id }; } };
   const ctx = {
     SpreadsheetApp: { getActive: () => ss },
     Session: { getScriptTimeZone: () => 'Asia/Seoul', getEffectiveUser: () => ({ getEmail: () => 'admin@test.kr' }) },
@@ -42,6 +44,14 @@ function env() {
       computeHmacSha256Signature: (msg, key) => [...crypto.createHmac('sha256', key).update(msg).digest()].map(b => (b > 127 ? b - 256 : b)),
       computeDigest: (_, s) => [...crypto.createHash('sha256').update(s).digest()].map(b => (b > 127 ? b - 256 : b)),
       DigestAlgorithm: { SHA_256: 'sha256' },
+      // Apps Script 처럼 바이트는 -128~127 배열
+      base64Decode: s => { if (!/^[A-Za-z0-9+/=]*$/.test(s)) throw new Error('bad base64'); return [...Buffer.from(s, 'base64')].map(b => (b > 127 ? b - 256 : b)); },
+      base64Encode: bytes => Buffer.from(bytes.map(b => b & 255)).toString('base64'),
+      newBlob: (bytes, mime, name) => ({ bytes, mime, name }),
+    },
+    DriveApp: {   // 가짜 Drive: 폴더 하나, 파일은 drive 맵에
+      createFolder: () => folder, getFolderById: id => { if (id !== 'F1') throw new Error('no folder'); return folder; },
+      getFileById: id => { const f = drive.get(id); if (!f) throw new Error('no file'); return { getBlob: () => ({ getBytes: () => f.bytes }), setTrashed: t => { f.trashed = t; } }; },
     },
     CacheService: { getScriptCache: () => ({ get: k => cache.get(k) ?? null, put: (k, v) => cache.set(k, v), remove: k => cache.delete(k) }) },
     LockService: { getScriptLock: () => ({ tryLock: () => true, releaseLock() {} }) },
@@ -60,10 +70,10 @@ function env() {
   const src = fs.readFileSync(new URL('../server/record.gs', import.meta.url), 'utf8');
   vm.runInContext(src + '\nthis.__call = (o) => doPost({ postData: { contents: JSON.stringify(o) } }).s;\nthis.__setup = setup;', ctx);
   ctx.__setup();
-  return { call: o => JSON.parse(ctx.__call(o)), ss, sheets };
+  return { call: o => JSON.parse(ctx.__call(o)), ss, sheets, drive };
 }
 
-const { call, sheets } = env();
+const { call, sheets, drive } = env();
 const T = { auth: 'ok:admin@test.kr' };
 const ok = r => { assert.equal(r.ok, true, r.error); return r; };
 const bad = (r, re) => { assert.equal(r.ok, false, '실패해야 함: ' + JSON.stringify(r)); if (re) assert.match(r.error, re); };
@@ -162,6 +172,38 @@ bad(call({ action: 'galleryEdit', ...T, id: pAll.id, title: '남의 것' }), /�
 bad(call({ action: 'galleryEdit', ...A, id: tAll.id, remove: true }), /내 작품/);
 ok(call({ action: 'galleryLike', ...B, id: tAll.id }));
 ok(call({ action: 'galleryEdit', ...T, id: tAll.id, remove: true }));
+// 파일 작품: zip·html·ent·sb3 만, 앞머리 확인, 볼 수 있는 사람만 받기, 지우면 휴지통
+const b64 = buf => Buffer.from(buf).toString('base64');
+const sb3 = Buffer.concat([Buffer.from('PK\x03\x04'), Buffer.alloc(100, 7)]);
+const fSb3 = ok(call({ action: 'galleryPost', ...B, title: '스크래치 파일', vis: 'class', file: { name: '../../고양이.sb3', data: b64(sb3) } }));
+const fHtml = ok(call({ action: 'galleryPost', ...B, title: '내 웹앱', vis: 'me', file: { name: 'app.html', data: b64('<h1>hi</h1>') } }));
+ok(call({ action: 'galleryPost', ...C, title: '엔트리 파일', vis: 'all', file: { name: 'game.ent', data: b64(Buffer.from([0x1f, 0x8b, 8, 0, 1, 2])) } }));
+bad(call({ action: 'galleryPost', ...B, title: '가짜 ent', vis: 'all', file: { name: 'x.ent', data: b64('not gzip') } }), /맞지 않는/);
+bad(call({ action: 'galleryPost', ...B, title: 'exe', vis: 'all', file: { name: 'x.exe', data: b64('MZ') } }), /zip · html/);
+bad(call({ action: 'galleryPost', ...B, title: '큰 파일', vis: 'all', file: { name: 'big.html', data: b64(Buffer.alloc(10 * 1048576 + 1, 65)) } }), /10MB/);
+bad(call({ action: 'galleryPost', ...B, title: '빈 것', vis: 'all' }), /파일을 골라/);
+const bl = ok(call({ action: 'galleryList', ...B })).items;
+const sItem = bl.find(i => i.id === fSb3.id);
+assert.deepEqual([sItem.kind, sItem.url, sItem.file.name, sItem.file.ext, sItem.file.size], ['scratch', '', '.._.._고양이.sb3', 'sb3', sb3.length]);
+assert.equal(sItem.file.id, undefined);                                  // Drive ID 는 보내지 않는다
+assert.equal(bl.find(i => i.id === fHtml.id).kind, 'html');
+const got = ok(call({ action: 'galleryFile', ...B, id: fHtml.id }));
+assert.deepEqual([got.name, got.mime, Buffer.from(got.data, 'base64').toString()], ['app.html', 'text/html', '<h1>hi</h1>']);
+bad(call({ action: 'galleryFile', ...A, id: fHtml.id }), /열 수 없/);    // 남의 나만 보기
+bad(call({ action: 'galleryFile', ...A, id: fSb3.id }), /열 수 없/);     // 승인 전
+ok(call({ action: 'galleryReview', ...T, id: fSb3.id, decision: 'approve' }));
+assert.equal(Buffer.from(ok(call({ action: 'galleryFile', ...A, id: fSb3.id })).data, 'base64').length, sb3.length);   // 같은 반 1반
+bad(call({ action: 'galleryFile', ...C, id: fSb3.id }), /열 수 없/);     // 2반
+ok(call({ action: 'galleryFile', ...T, id: fHtml.id }));                 // 선생님은 모두
+const tFile = ok(call({ action: 'galleryPost', ...T, title: '예시 zip', vis: 'all', file: { name: 'site.zip', data: b64(sb3) } }));
+assert.equal(tFile.status, '승인');
+ok(call({ action: 'galleryEdit', ...B, id: fHtml.id, remove: true }));
+ok(call({ action: 'galleryReview', ...T, id: fSb3.id, decision: 'delete' }));
+assert.deepEqual([...drive.values()].map(f => f.trashed), [true, true, false, false]);
+// 한 사람 50MB: 9.9MB 다섯 개는 되고 여섯 번째는 막힌다
+const big = b64(Buffer.alloc(9.9 * 1048576, 65));
+for (let i = 0; i < 5; i++) ok(call({ action: 'galleryPost', ...A, title: '큰 ' + i, vis: 'me', file: { name: i + '.html', data: big } }));
+bad(call({ action: 'galleryPost', ...A, title: '넘침', vis: 'me', file: { name: 'z.html', data: big } }), /50MB/);
 // 기존 기능은 그대로
 ok(call({ action: 'save', ...A, workbook: 'w1', title: '시험', state: { a: 1 }, progress: { done: 1, total: 2 } }));
 assert.deepEqual(ok(call({ action: 'load', ...A, workbook: 'w1' })).state, { a: 1 });
