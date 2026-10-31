@@ -194,6 +194,7 @@ const ACTIONS_ = {
   // ---- 작품 게시판 ----
   // 공개 범위: all(모두 보기) · class(우리 반만) · me(나만 보기). 상태: 대기 · 승인 · 숨김 · 개인(나만 보기).
   // 학생에게는 서버가 볼 수 있는 작품만 보낸다(남의 '나만 보기'·승인 전 작품은 보내지 않는다). 선생님은 모두 본다.
+  // 선생님도 올릴 수 있다: 학생 번호 칸은 'T:이메일', 이름은 '선생님', '우리 반만'은 고른 반, 승인 없이 바로 보인다('나만 보기'는 선생님끼리만).
   galleryList(req) {
     const v = galleryViewer_(req);
     const tz = Session.getScriptTimeZone();
@@ -201,7 +202,7 @@ const ACTIONS_ = {
     rows_('gallery').forEach(r => {
       if (!r[0]) return;
       const it = galleryItem_(r);
-      const mine = !v.teacher && it.studentId === v.id;
+      const mine = it.studentId === v.id;
       const shared = it.status === '승인' && (it.vis === 'all' || (it.vis === 'class' && v.group && it.group === v.group));
       if (!v.teacher && !mine && !shared) return;
       const likes = galleryLikes_(r[10]);
@@ -210,14 +211,17 @@ const ACTIONS_ = {
         at: r[11] instanceof Date ? r[11].getTime() : 0, day: r[11] instanceof Date ? Utilities.formatDate(r[11], tz, 'yyyy-MM-dd') : '' });
     });
     items.sort((a, b) => b.at - a.at);
-    return { items: items.slice(0, 400), teacher: v.teacher, me: v.teacher ? null : { id: v.id, name: v.name, group: v.group } };
+    const groups = v.teacher ? rows_('students').map(r => String(r[3] || '').trim()).filter((g, i, a) => g && a.indexOf(g) === i).sort() : [];
+    return { items: items.slice(0, 400), teacher: v.teacher, me: { id: v.id, name: v.name, group: v.group }, groups: groups };
   },
   galleryPost(req) {
-    const v = galleryStudent_(req);
+    const v = galleryViewer_(req);
     const title = String(req.title || '').replace(/\s+/g, ' ').trim();
     const desc = String(req.desc || '').replace(/\s+/g, ' ').trim();
     const url = String(req.url || '').trim();
     const vis = galleryVis_(req.vis);
+    const group = v.teacher ? galleryGroup_(vis, req.group) : v.group;
+    const status = vis === 'me' ? '개인' : v.teacher ? '승인' : '대기';
     if (title.length < 1 || title.length > 40) throw new Error('제목은 1~40자로 써 주세요.');
     if (desc.length > 200) throw new Error('소개는 200자까지 쓸 수 있어요.');
     if (!/^https:\/\/[^\s<>"']+$/.test(url) || url.length > 500) throw new Error('https:// 로 시작하는 작품 주소를 넣어 주세요.');
@@ -228,16 +232,18 @@ const ACTIONS_ = {
     withLock_(() => {
       const sh = gallerySheet_();
       const all = rows_('gallery');
-      if (all.filter(r => String(r[1]) === v.id).length >= 60) throw new Error('작품은 한 사람당 60개까지 올릴 수 있어요. 예전 작품을 지우고 올려 주세요.');
+      const max = v.teacher ? 200 : 60;
+      if (all.filter(r => String(r[1]) === v.id).length >= max) throw new Error('작품은 한 사람당 ' + max + '개까지 올릴 수 있어요. 예전 작품을 지우고 올려 주세요.');
       id = Utilities.getUuid().replace(/-/g, '').slice(0, 12);
       const now = new Date();
-      sh.appendRow([id, v.id, v.name, v.group, title, url, galleryKind_(url), desc, vis, vis === 'me' ? '개인' : '대기', '[]', now, now]);
+      sh.appendRow([id, v.id, v.name, group, title, url, galleryKind_(url), desc, vis, status, '[]', now, now]);
     });
-    return { id: id, status: vis === 'me' ? '개인' : '대기' };
+    return { id: id, status: status };
   },
   // 내 작품 고치기: 제목·소개·공개 범위, 또는 지우기(remove). 함께 보는 작품의 글을 바꾸거나 '나만 보기'에서 넓히면 다시 승인을 기다린다.
+  // 선생님 작품은 승인 없이 바로 보이고, '우리 반만'은 group 으로 반을 바꿀 수 있다.
   galleryEdit(req) {
-    const v = galleryStudent_(req);
+    const v = galleryViewer_(req);
     let status = null;
     withLock_(() => {
       const f = galleryFind_(req.id);
@@ -250,12 +256,14 @@ const ACTIONS_ = {
       const vis = req.vis == null ? it.vis : galleryVis_(req.vis);
       if (title.length < 1 || title.length > 40) throw new Error('제목은 1~40자로 써 주세요.');
       if (desc.length > 200) throw new Error('소개는 200자까지 쓸 수 있어요.');
+      const group = v.teacher ? galleryGroup_(vis, req.group == null ? it.group : req.group) : it.group;
       if (vis === 'me') status = '개인';
+      else if (v.teacher) status = '승인';
       else if (it.status === '숨김') status = '숨김';
       else if (it.vis === 'me' || title !== it.title || desc !== it.desc) status = '대기';
       else if (vis === 'all' && it.vis === 'class') status = '대기';
       else status = it.status;
-      sh.getRange(f.index, 5, 1, 1).setValue(title);
+      sh.getRange(f.index, 4, 1, 2).setValues([[group, title]]);
       sh.getRange(f.index, 8, 1, 3).setValues([[desc, vis, status]]);
       sh.getRange(f.index, 13).setValue(new Date());
     });
@@ -308,8 +316,15 @@ function gallerySheet_() {   // 예전에 setup 한 시트에도 탭이 없으�
   return sh;
 }
 function galleryViewer_(req) {
-  if (req.auth) { const t = teacher_(req.auth); return { teacher: true, email: t.email }; }
+  if (req.auth) { const t = teacher_(req.auth); return { teacher: true, email: t.email, id: 'T:' + t.email, name: '선생님', group: '' }; }
   return galleryStudent_(req);
+}
+// 선생님 글의 반: '우리 반만'일 때만 고른 반을 쓴다.
+function galleryGroup_(vis, group) {
+  group = String(group || '').trim();
+  if (vis !== 'class') return '';
+  if (!group || group.length > 20) throw new Error("'우리 반만'으로 올릴 때는 보여 줄 반을 골라 주세요.");
+  return group;
 }
 function galleryStudent_(req) {
   auth_(req);

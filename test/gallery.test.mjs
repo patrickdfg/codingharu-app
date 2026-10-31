@@ -140,6 +140,28 @@ ok(call({ action: 'galleryEdit', ...A, id: pMe.id, remove: true }));
 assert.equal(ok(call({ action: 'galleryList', ...A })).items.length, 2);
 ok(call({ action: 'galleryReview', ...T, id: pClass.id, decision: 'delete' }));
 assert.equal(ok(call({ action: 'galleryList', ...T })).items.length, 1);
+// 선생님 글: 승인 없이 바로 보이고, '우리 반만'은 고른 반에만, '나만 보기'는 학생에게 안 보인다
+const tAll = ok(call({ action: 'galleryPost', ...T, title: '선생님 예시', url: 'https://playentry.org/project/aaaaaaaaaaaaaaaaaaaaaaaa', vis: 'all' }));
+const tCls = ok(call({ action: 'galleryPost', ...T, title: '2반 과제 예시', url: 'https://scratch.mit.edu/projects/42', vis: 'class', group: '2반' }));
+const tMe = ok(call({ action: 'galleryPost', ...T, title: '준비 중', url: 'https://t.example.kr/', vis: 'me' }));
+assert.deepEqual([tAll.status, tCls.status, tMe.status], ['승인', '승인', '개인']);
+bad(call({ action: 'galleryPost', ...T, title: '반 없음', url: 'https://x.kr', vis: 'class' }), /반을 골라/);
+bad(call({ action: 'galleryPost', auth: 'nope', title: '가짜', url: 'https://x.kr', vis: 'all' }), /구글/);
+assert.deepEqual(ids(ok(call({ action: 'galleryList', ...B }))), [tAll.id].sort());
+assert.deepEqual(ids(ok(call({ action: 'galleryList', ...C }))), [tAll.id, tCls.id].sort());
+assert.equal(ok(call({ action: 'galleryList', ...C })).items.find(i => i.id === tCls.id).name, '선생님');
+const tl2 = ok(call({ action: 'galleryList', ...T }));
+assert.deepEqual(tl2.groups, ['1반', '2반']);
+assert.deepEqual(tl2.items.filter(i => i.mine).map(i => i.id).sort(), [tAll.id, tCls.id, tMe.id].sort());
+// 선생님이 반을 1반으로 바꾸면 C 에게서 사라지고 B 에게 보인다. 나만 보기에서 넓혀도 바로 승인.
+assert.equal(ok(call({ action: 'galleryEdit', ...T, id: tCls.id, group: '1반' })).status, '승인');
+assert.ok(ids(ok(call({ action: 'galleryList', ...B }))).includes(tCls.id));
+assert.ok(!ids(ok(call({ action: 'galleryList', ...C }))).includes(tCls.id));
+assert.equal(ok(call({ action: 'galleryEdit', ...T, id: tMe.id, vis: 'all' })).status, '승인');
+bad(call({ action: 'galleryEdit', ...T, id: pAll.id, title: '남의 것' }), /내 작품/);   // 학생 작품은 승인·숨김·지우기로만
+bad(call({ action: 'galleryEdit', ...A, id: tAll.id, remove: true }), /내 작품/);
+ok(call({ action: 'galleryLike', ...B, id: tAll.id }));
+ok(call({ action: 'galleryEdit', ...T, id: tAll.id, remove: true }));
 // 기존 기능은 그대로
 ok(call({ action: 'save', ...A, workbook: 'w1', title: '시험', state: { a: 1 }, progress: { done: 1, total: 2 } }));
 assert.deepEqual(ok(call({ action: 'load', ...A, workbook: 'w1' })).state, { a: 1 });
