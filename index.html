@@ -222,6 +222,16 @@
     if (!silent) openDialog();
   }
 
+  function updateAccountNavigation() {
+    var session = CHRecord.session();
+    var teacher = !!(session && session.role === 'teacher' && CHRecord.auth());
+    var login = document.querySelector('.nav-login'), join = document.querySelector('.nav-join');
+    var bottomLogin = document.querySelector('.bottom-note [data-auth="login"]');
+    if (login) login.textContent = teacher ? '선생님 관리' : '로그인';
+    if (join) join.hidden = teacher;
+    if (bottomLogin) bottomLogin.textContent = teacher ? '선생님 관리 →' : '로그인하기 →';
+  }
+
   // ---- 설치 단추 / 서비스워커 ----
   var deferred = null;
   addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); deferred = e; $('install').hidden = false; });
@@ -416,6 +426,7 @@
   }
 
   function showAdmin() {
+    updateAccountNavigation();
     show('admin'); lead.textContent = '';
     $('adminWho').textContent = (me ? me.email : '') + ' · 선생님';
     $('phoneAutoWrap').hidden = !isPhone();
@@ -523,7 +534,7 @@
   function logout(m) {
     setPhoneAuto(false);
     try { if (window.google && google.accounts && google.accounts.id) google.accounts.id.disableAutoSelect(); } catch (e) {}
-    CHRecord.endSession(); me = null; showAuth(); say(m || '');
+    CHRecord.endSession(); me = null; updateAccountNavigation(); showAuth(); say(m || '');
   }
   $('aLessons').onclick = function () { goLessons(); };
   $('aReload').onclick = loadStatus;
@@ -576,6 +587,13 @@
       return;
     }
     keyOk = await checkKey();
+    var activeSession = CHRecord.session();
+    if (activeSession && activeSession.role === 'teacher' && CHRecord.auth()) {
+      me = { email: activeSession.email };
+      showAdmin();
+      return;
+    }
+    updateAccountNavigation();
     showAuth(true);
     if (autoEntry) {
       await enterAuth('login');

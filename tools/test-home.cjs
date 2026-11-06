@@ -8,7 +8,7 @@ const root=path.resolve(__dirname,'..');
 const tmp=fs.mkdtempSync(path.join(os.tmpdir(),'codingharu-home-'));
 const source=path.join(tmp,'source'),out=path.join(tmp,'out');
 fs.mkdirSync(source);fs.mkdirSync(out);
-for(const [rel,title] of [['index.html','수업 모음 테스트'],['python/projects/index.html','프로젝트 테스트'],['entry/index.html','엔트리 테스트'],['python/index.html','파이썬 테스트']]){
+for(const [rel,title] of [['index.html','수업 모음 테스트'],['python/projects/index.html','프로젝트 테스트'],['ai-projects/index.html','AI 수업 테스트'],['entry/index.html','엔트리 테스트'],['python/index.html','파이썬 테스트']]){
  const f=path.join(source,rel);fs.mkdirSync(path.dirname(f),{recursive:true});fs.writeFileSync(f,`<!doctype html><html lang="ko"><head><meta charset="utf-8"></head><body><h1>${title}</h1></body></html>`);
 }
 const pass=require('crypto').randomBytes(24).toString('hex');
@@ -80,7 +80,7 @@ async function main(){
  await p.keyboard.press('Escape');await p.locator('.ai-course [data-auth]').click();await p.locator('#lName').fill('시험 학생');await p.locator('#lPin').fill('0123');await p.locator('#lGo').click();
  await p.waitForSelector('#form:visible');await p.locator('#pass').fill('wrong-fixture');await p.locator('#go').click();
  await p.waitForFunction(()=>document.querySelector('#msg').textContent.includes('맞지 않아요'));
- await p.locator('#pass').fill(pass);await p.locator('#go').click();await p.waitForURL('**/app/v/python/projects/');assert((await p.locator('h1').innerText()).includes('프로젝트 테스트'));
+ await p.locator('#pass').fill(pass);await p.locator('#go').click();await p.waitForURL('**/app/v/ai-projects/');assert((await p.locator('h1').innerText()).includes('AI 수업 테스트'));
  await p.goto(origin+'/app/');await p.waitForFunction(()=>window.CHHomeAuth);await p.waitForTimeout(350);assert(p.url().endsWith('/app/'),'existing session must not skip public home');
  await p.locator('.block-course [data-auth]').click();await p.waitForURL('**/app/v/entry/');assert((await p.locator('h1').innerText()).includes('엔트리 테스트'));
  console.log('PASS: modal join/mismatch/approval message, keyboard/Escape, rejected login, real class-key password and protected course target, existing session public home');
@@ -88,7 +88,11 @@ async function main(){
  const tc=await context();const tp=await tc.newPage();await tp.goto(origin+'/app/');await tp.locator('.nav-login').click();await tp.waitForSelector('#mockGoogle');await tp.locator('#mockGoogle').click();await tp.waitForSelector('#form:visible');await tp.locator('#pass').fill(pass);await tp.locator('#go').click();await tp.waitForSelector('#admin:visible');
  assert((await tp.locator('#adminWho').innerText()).includes('fixture@example.test'));await tp.waitForFunction(()=>document.querySelector('#status').textContent.includes('학생별 요약'));
  assert(await tp.locator('#authDialog').evaluate(n=>n.classList.contains('admin-mode')));
- await tp.locator('#aLessons').click();await tp.waitForURL('**/app/v/index.html');await tp.goto(origin+'/app/');await tp.locator('.nav-login').click();await tp.waitForSelector('#admin:visible');await tp.locator('#aLogout').click();await tp.waitForSelector('#auth:visible');await tc.close();
+ await tp.locator('#aLessons').click();await tp.waitForURL('**/app/v/index.html');await tp.goto(origin+'/app/');await tp.waitForSelector('#admin:visible');
+ assert.strictEqual(await tp.locator('.nav-login').innerText(),'선생님 관리');assert.strictEqual(await tp.locator('.nav-join').isVisible(),false);
+ await tp.locator('#closeAuth').click();assert.strictEqual(await tp.locator('#authDialog').evaluate(n=>n.open),false);
+ await tp.locator('.nav-login').click();await tp.waitForSelector('#admin:visible');await tp.locator('#aLogout').click();await tp.waitForSelector('#auth:visible');
+ assert.strictEqual(await tp.locator('.nav-login').innerText(),'로그인');assert.strictEqual(await tp.locator('.nav-join').isVisible(),true);await tc.close();
  console.log('PASS: teacher Google callback/pair/class-key/admin/course/logout with mock account server');
  const lc=await context();const lp=await lc.newPage();await lp.goto(origin+'/legacy/');await lp.locator('.nav-join').click();await lp.waitForSelector('#form:visible');assert((await lp.locator('#lead').innerText()).includes('회원가입은'));await lp.locator('#pass').fill(pass);await lp.locator('#go').click();await lp.waitForURL('**/legacy/v/index.html');await lp.goto(origin+'/legacy/');await lp.waitForTimeout(250);assert(lp.url().endsWith('/legacy/'));await lp.locator('.nav-login').click();await lp.waitForURL('**/legacy/v/index.html');await lc.close();
  const rc=await context({reducedMotion:'reduce'});const rp=await rc.newPage();await rp.goto(origin+'/app/');await rp.waitForFunction(()=>document.querySelector('#heroScene').dataset.scene==='webgl');
