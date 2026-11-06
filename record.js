@@ -38,6 +38,36 @@
     return out;
   }
 
+  // 각 학생의 미전송 지급 요청을 기기에 보관하고, 서버에서 활동별 중복을 제거한다.
+  function pointQueueKey(id) { return 'codingharu-points-queue-s' + id; }
+  var pointBusy = false;
+  function flushPoints() {
+    var session = sget(K_SESSION), student = get(K_STUDENT);
+    if (pointBusy || !student || !session || session.role !== 'student' || !session.sid) return;
+    var qkey = pointQueueKey(student.id), queue = get(qkey) || [];
+    if (!queue.length) return;
+    pointBusy = true;
+    api('pointsAward', Object.assign({ studentId: student.id }, queue[0])).then(function (out) {
+      var current = get(qkey) || [];
+      current = current.filter(function (x) { return !(x.kind === queue[0].kind && x.key === queue[0].key); });
+      put(qkey, current); g.dispatchEvent(new CustomEvent('codingharu:points-balance', {detail:out}));
+      pointBusy = false; flushPoints();
+    }, function () {
+      var current = get(qkey) || [], i = current.findIndex(function(x) { return x.kind === queue[0].kind && x.key === queue[0].key; });
+      if (i >= 0 && current.length > 1) current.push(current.splice(i,1)[0]);
+      put(qkey, current); pointBusy = false; g.setTimeout(flushPoints, 8000);
+    });
+  }
+  document.addEventListener('codingharu:points', function (e) {
+    var session = sget(K_SESSION), student = get(K_STUDENT), d = e.detail || {};
+    if (!student || !session || session.role !== 'student' || !d.kind || !d.key) return;
+    var qkey = pointQueueKey(student.id), queue = get(qkey) || [];
+    if (!queue.some(function (x) { return x.kind === d.kind && x.key === d.key; })) queue.push({kind:d.kind,key:d.key,label:String(d.label || '').slice(0,120)});
+    put(qkey, queue); g.setTimeout(flushPoints, 3000);
+  });
+  g.addEventListener('online', flushPoints);
+  g.setTimeout(flushPoints, 1000);
+
   g.CHRecord = {
     config: config, api: api,
     device: function () { return get(K_TOKEN); },

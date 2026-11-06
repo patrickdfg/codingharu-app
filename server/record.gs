@@ -13,9 +13,10 @@ const TABS_ = {
   devices: ['기기 열쇠(암호화)', '선생님 이메일', '등록 시각', '마지막 사용', '기기 정보'],
   workbooks: ['학생 번호', '학생 이름', '워크북 ID', '제목', '페이지', '완료', '전체', '처음 저장', '마지막 저장', '선생님', '기록(JSON)'],
   visits: ['날짜', '학생 번호', '학생 이름', '페이지', '제목', '처음 연 시각', '마지막 연 시각', '연 횟수'],
+  points: ['학생 번호', '시각', '종류', '식별자', '점수', '사유', '지급자'],
   gallery: ['ID', '학생 번호', '학생 이름', '반', '제목', '주소', '종류', '소개', '공개 범위', '상태', '좋아요(학생 번호)', '올린 시각', '바꾼 시각', '파일 ID', '파일 이름', '파일 크기']
 };
-const TAB_NAMES_ = { teachers: '선생님', students: '학생', devices: '기기', workbooks: '워크북 기록', visits: '수업 기록', gallery: '작품 게시판' };
+const TAB_NAMES_ = { points: '포인트 내역', teachers: '선생님', students: '학생', devices: '기기', workbooks: '워크북 기록', visits: '수업 기록', gallery: '작품 게시판' };
 const DEVICE_DAYS_ = 365;
 const SESSION_DAYS_ = 14;
 
@@ -75,8 +76,10 @@ const ACTIONS_ = {
     teacher_(req.auth);
     const tz = Session.getScriptTimeZone();
     const ms = d => (d instanceof Date ? d.getTime() : 0);
+    let pointRows; withLock_(() => { pointRows = rows_('points'); });
+    const totals = {}; pointRows.forEach(r => { const id = String(r[0]); totals[id] = (totals[id] || 0) + (Number(r[4]) || 0); });
     const students = rows_('students').filter(r => r[0] !== '' && r[1] !== '')
-      .map(r => ({ id: String(r[0]), name: String(r[1]), group: String(r[3] || ''), pending: pending_(r) }));
+      .map(r => ({ id: String(r[0]), name: String(r[1]), group: String(r[3] || ''), pending: pending_(r), points: totals[String(r[0])] || 0 }));
     const workbooks = rows_('workbooks').map(r => ({
       studentId: String(r[0]), workbook: String(r[2]), title: String(r[3]), page: String(r[4]),
       done: Number(r[5]) || 0, total: Number(r[6]) || 0, updatedAt: ms(r[8])
@@ -86,7 +89,60 @@ const ACTIONS_ = {
       day: r[0] instanceof Date ? Utilities.formatDate(r[0], tz, 'yyyy-MM-dd') : String(r[0]),
       studentId: String(r[1]), page: String(r[3]), title: String(r[4]), last: ms(r[6]), count: Number(r[7]) || 0
     }));
-    return { students: students, workbooks: workbooks, visits: visits, now: Date.now() };
+    const pointHistory = pointRows.slice(-200).reverse().map(r => ({studentId:String(r[0]), at:ms(r[1]), kind:String(r[2]), amount:Number(r[4]) || 0, reason:String(r[5] || ''), by:String(r[6] || '')}));
+    return { students: students, workbooks: workbooks, visits: visits, now: Date.now(), pointRates: pointsRates_(), pointHistory: pointHistory };
+  },
+  // 포인트 장부: 자동 지급은 학생·활동 식별자별 한 번만 기록한다.
+  pointsBalance(req) {
+    if (!req.sid) throw new Error('학생으로 로그인해 주세요.');
+    checkSid_(req.sid, req.studentId); const student = student_(req.studentId);
+    let total; withLock_(() => { total = pointsTotal_(String(student[0])); });
+    return { points: total };
+  },
+  pointsAward(req) {
+    if (!req.sid) throw new Error('학생으로 로그인해 주세요.');
+    checkSid_(req.sid, req.studentId); const student = student_(req.studentId);
+    const kind = String(req.kind || ''), key = String(req.key || '');
+    const rateKey = pointsRule_(kind, key);
+    if (!rateKey) throw new Error('포인트를 지급할 수 없는 활동입니다.');
+    let total, awarded = false;
+    withLock_(() => {
+      const rows = rows_('points'), amount = pointsRates_()[rateKey];
+      if (!rows.some(r => String(r[0]) === String(student[0]) && String(r[2]) === kind && String(r[3]) === key)) {
+        if (!pointsProof_(String(student[0]), kind, key)) throw new Error('완료 기록을 저장한 뒤 포인트를 지급합니다.');
+        sheet_('points').appendRow([String(student[0]), new Date(), kind, key, amount, pointsText_(String(req.label || '').slice(0, 120)), '자동']); awarded = true;
+      }
+      total = pointsTotal_(String(student[0]));
+    });
+    return { points: total, awarded: awarded };
+  },
+  pointsSetRates(req) {
+    teacher_(req.auth);
+    const defaults = pointsDefaults_(), rates = {};
+    Object.keys(defaults).forEach(k => {
+      const n = Number((req.rates || {})[k]);
+      if (!Number.isSafeInteger(n) || n < 0 || n > 100000) throw new Error('점수는 0~100000 사이의 정수로 입력해 주세요.');
+      rates[k] = n;
+    });
+    withLock_(() => PropertiesService.getScriptProperties().setProperty('POINT_RATES', JSON.stringify(rates)));
+    return { rates: rates };
+  },
+  pointsGrant(req) {
+    const teacher = teacher_(req.auth), student = student_(req.studentId);
+    const amount = Number(req.amount), reason = String(req.reason || '').trim();
+    if (!Number.isSafeInteger(amount) || amount === 0 || Math.abs(amount) > 100000) throw new Error('-100000~100000 사이의 0이 아닌 정수를 입력해 주세요.');
+    if (!reason || reason.length > 120) throw new Error('지급 이유를 1~120자로 입력해 주세요.');
+    const id = String(req.requestId || '');
+    if (!/^[a-zA-Z0-9-]{16,80}$/.test(id)) throw new Error('요청 번호가 올바르지 않습니다.');
+    let total;
+    withLock_(() => {
+      if (!rows_('points').some(r => String(r[0]) === String(student[0]) && r[2] === 'teacher' && r[3] === id)) {
+        if (pointsTotal_(String(student[0])) + amount < 0) throw new Error('보유 포인트보다 많이 차감할 수 없습니다.');
+        sheet_('points').appendRow([String(student[0]), new Date(), 'teacher', id, amount, pointsText_(reason), teacher.email]);
+      }
+      total = pointsTotal_(String(student[0]));
+    });
+    return { points: total };
   },
   // 학생 가입: 이름과 4자리 숫자 번호. 등록된 기기에서만 할 수 있다.
   studentSignup(req) {
@@ -497,7 +553,48 @@ function findWorkbook_(studentId, workbook) {
   return null;
 }
 
+function pointsTotal_(id) { return rows_('points').reduce((sum, r) => sum + (String(r[0]) === id ? (Number(r[4]) || 0) : 0), 0); }
+function pointsText_(s) { return /^[\s]*[=+\-@]/.test(s) ? "'" + s : s; }
+function pointsDefaults_() { return {problem:10, block:10, pythonUnit:500, entry:50, scratch:50, junior:100}; }
+function pointsRates_() { const defaults=pointsDefaults_(); let rates; try { rates=JSON.parse(PropertiesService.getScriptProperties().getProperty('POINT_RATES') || '{}'); } catch(e) { rates={}; } Object.keys(defaults).forEach(k => { const v=rates[k]; if (Number.isSafeInteger(v) && v>=0 && v<=100000) defaults[k]=v; }); return defaults; }
+function pointsRule_(kind, key) {
+  if (kind === 'block' && (/^(?:[1-9]|10)-(?:[1-9]|10)$/.test(key) || /^games:g(?:[1-9]|[1-5][0-9]|60)-[1-5][a-d]?$/.test(key))) return 'block';
+  if (kind === 'problem' && /^(python-basic-u(?:[1-9]|1[0-7]):(?:[0-9]|[1-9][0-9])|cospro2-r[1-6]:r[1-6]-p(?:0[1-9]|10)|bebras:p(?:0[1-9]|1[0-9]|20))$/.test(key)) return 'problem';
+  if (kind === 'problem' && /^detective:c(?:0[1-9]|1[0-9]|20):(main|challenge)$/.test(key)) return 'problem';
+  if (kind === 'problem' && /^farm:(?:beginner-(?:0[1-9]|1[0-2])|(?:intermediate|advanced)-0[1-8])$/.test(key)) return 'problem';
+  if (kind === 'python-unit' && /^(python-basic-u(?:[1-9]|1[0-7])|cospro2-r[1-6])$/.test(key)) return 'pythonUnit';
+  if (kind === 'lesson' && /^entry\/[^/]+\/$/.test(key)) return 'entry';
+  if (kind === 'lesson' && /^scratch\/junior\/.+\/$/.test(key)) return 'junior';
+  if (kind === 'lesson' && /^scratch\/(?!junior\/).+\/$/.test(key)) return 'scratch';
+  return 0;
+}
+function pointsProof_(studentId, kind, key) {
+  function workbook(id) {
+    const found = findWorkbook_(studentId, id); if (!found) return null;
+    let state; try { state = JSON.parse(found.row[10] || '{}'); } catch(e) { return null; }
+    const n = Math.min(20, Number(state.__parts) || 1);
+    for (let i=2; i<=n; i++) { const part=findWorkbook_(studentId,id+'~'+i); if (!part) return null; try { Object.assign(state, JSON.parse(part.row[10] || '{}')); } catch(e) { return null; } }
+    return state;
+  }
+  if (kind === 'lesson') { const state=workbook('done:'+key); return !!(state && state.done === true); }
+  if (kind === 'block') { const games=key.startsWith('games:'), state=workbook(games ? 'coding-games-easy-v1' : 'coding-playground-v1'); return !!(state && Array.isArray(state.done) && state.done.includes(games ? key.slice(6) : key)); }
+  if (kind === 'problem' && key.startsWith('farm:')) { const state=workbook('python-farm-'+key.slice(5)+'-v1'); return !!(state && state['check-success'] === true); }
+  if (kind === 'problem' && key.startsWith('detective:')) { const parts=key.split(':'), state=workbook('coding-detective-start-v1'); return !!(state && state.lessons && state.lessons[parts[1]] && state.lessons[parts[1]][parts[2] === 'main' ? 'mainSolved' : 'challengeSolved'] === true); }
+  if (kind === 'problem' && key.startsWith('bebras:')) { const state=workbook('coding-bebras-original-v1'); return !!(state && Array.isArray(state.done) && state.done.includes(key.slice(7))); }
+  if ((kind === 'problem' || kind === 'python-unit') && key.startsWith('python-basic-u')) {
+    const unit=key.split(':')[0], state=workbook(unit+'-v1'); if (!state) return false;
+    if (kind === 'problem') { const index=Number(key.split(':')[1]); const n=unit === 'python-basic-u5' ? 8 : 15; return index < n && state['ok-'+index] === true; }
+    const n=unit === 'python-basic-u5' ? 8 : 15; return Array.from({length:n},(_,i)=>state['ok-'+i] === true).every(Boolean);
+  }
+  if ((kind === 'problem' || kind === 'python-unit') && key.startsWith('cospro2-r')) {
+    const unit=key.split(':')[0], round=Number(unit.slice(-1)), state=workbook('python-'+unit+'-v1'); if (!state) return false;
+    if (kind === 'problem') { const p=key.split(':')[1]; return p.startsWith('r'+round+'-') && state['check-'+p] === true; }
+    return Array.from({length:10},(_,i)=>state['check-r'+round+'-p'+String(i+1).padStart(2,'0')] === true).every(Boolean);
+  }
+  return false;
+}
 function sheet_(k) {
+  if (k === 'points') { const ss = SpreadsheetApp.getActive(); let sh = ss.getSheetByName(TAB_NAMES_[k]); if (!sh) { sh = ss.insertSheet(TAB_NAMES_[k]); sh.appendRow(TABS_[k]); sh.setFrozenRows(1); } return sh; }
   if (k === 'gallery') return gallerySheet_();
   const sh = SpreadsheetApp.getActive().getSheetByName(TAB_NAMES_[k]);
   if (!sh) throw new Error('시트에 "' + TAB_NAMES_[k] + '" 탭이 없습니다. setup 을 실행해 주세요.');

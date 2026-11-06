@@ -452,6 +452,13 @@
       })));
     }
 
+    var ratesForm=el('form'), rateInputs={}, rateDefs=[['problem','문제 정답'],['block','블록 코딩 단계'],['pythonUnit','파이썬 단원 전체'],['entry','엔트리 수업'],['scratch','스크래치 수업'],['junior','스크래치주니어 수업']];
+    box.appendChild(el('h3','자동 지급 점수 설정','sec'));
+    rateDefs.forEach(function(pair) { var label=el('label',pair[1]+' '), input=el('input'); input.type='number'; input.min='0'; input.max='100000'; input.step='1'; input.required=true; input.value=(d.pointRates||{})[pair[0]]; input.setAttribute('aria-label',pair[1]+' 점수'); input.style.width='105px'; label.appendChild(input); label.style.cssText='display:inline-flex;align-items:center;gap:4px;margin:5px 12px 5px 0'; rateInputs[pair[0]]=input; ratesForm.appendChild(label); });
+    var saveRates=el('button','점수 설정 저장'); saveRates.type='submit'; ratesForm.appendChild(saveRates); box.appendChild(ratesForm);
+    box.appendChild(el('p','설정 저장 후 지급되는 점수부터 적용되며, 이미 지급한 점수는 바뀌지 않습니다.'));
+    ratesForm.onsubmit=function(e) {e.preventDefault();var rates={};rateDefs.forEach(function(pair){rates[pair[0]]=Number(rateInputs[pair[0]].value);});saveRates.disabled=true;CHRecord.api('pointsSetRates',{auth:CHRecord.auth(),rates:rates}).then(function(){say('자동 지급 점수를 저장했어요.');loadStatus();},function(err){saveRates.disabled=false;say(err.message);});};
+
     var groups = {}; d.students.forEach(function (s) { groups[s.group || ''] = 1; });
     var gnames = Object.keys(groups).sort(), filter = null;
     if (gnames.length > 1) {
@@ -467,6 +474,21 @@
       var g = filter ? filter.value : '__all', ok = function (s) { return g === '__all' || (s.group || '') === g; };
       var students = d.students.filter(ok), ids = {}; students.forEach(function (s) { ids[s.id] = 1; });
 
+      body.appendChild(el('h3', '학생 포인트 지급·차감', 'sec'));
+      var form = el('form'), choose = el('select'), amount = el('input'), reason = el('input'), submit = el('button', '포인트 반영');
+      choose.setAttribute('aria-label','학생 선택');
+      var blank = el('option','학생을 선택하세요'); blank.value=''; choose.appendChild(blank);
+      students.forEach(function(s) { var opt=el('option',s.name + ' · ' + (s.group || '반 없음') + ' · ' + (s.points || 0) + ' P'); opt.value=s.id; choose.appendChild(opt); });
+      amount.type='number'; amount.min='-100000'; amount.max='100000'; amount.step='1'; amount.required=true; amount.placeholder='점수 (+지급 / -차감)'; amount.setAttribute('aria-label','지급 또는 차감할 점수');
+      reason.type='text'; reason.required=true; reason.maxLength=120; reason.placeholder='지급 이유'; reason.setAttribute('aria-label','지급 이유');
+      choose.required=true; submit.type='submit'; form.append(choose,amount,reason,submit); body.appendChild(form);
+      var requestId = null;
+      form.onsubmit = function(e) { e.preventDefault(); if (!choose.value) return;
+        if (!requestId) requestId = crypto.randomUUID(); submit.disabled=true;
+        CHRecord.api('pointsGrant',{auth:CHRecord.auth(), studentId:choose.value, amount:Number(amount.value), reason:reason.value, requestId:requestId}).then(function() { requestId=null; say('포인트를 반영했어요.'); loadStatus(); }, function(err) { submit.disabled=false; say('지급 확인 실패: '+err.message+' 같은 내용으로 다시 누르면 중복 없이 재확인합니다.'); });
+      };
+      [choose,amount,reason].forEach(function(x) { x.addEventListener('input',function(){requestId=null;}); });
+
       body.appendChild(el('h3', '학생별 요약', 'sec'));
       var rows = students.map(function (s) {
         var last = 0, finished = 0;
@@ -475,9 +497,13 @@
           if (w.updatedAt > last) last = w.updatedAt;
           if (isDoneRow(w) && w.done > 0) finished++;
         });
-        return { cells: [s.name, s.group || '-', fmt(last), finished + '개'], last: last };
+        return { cells: [s.name, s.group || '-', fmt(last), finished + '개', (s.points || 0).toLocaleString() + ' P'], last: last };
       }).sort(function (a, b) { return b.last - a.last; });
-      body.appendChild(table(['학생', '반', '마지막 활동', '완료한 수업'], rows.map(function (r) { return r.cells; })));
+      body.appendChild(table(['학생', '반', '마지막 활동', '완료한 수업', '포인트'], rows.map(function (r) { return r.cells; })));
+
+      body.appendChild(el('h3', '최근 포인트 내역', 'sec'));
+      var history = (d.pointHistory || []).filter(function(r) { return ids[r.studentId]; });
+      body.appendChild(table(['학생','일시','점수','내용','지급'], history.map(function(r) { return [(byId[r.studentId] || {}).name || r.studentId, fmt(r.at), (r.amount > 0 ? '+' : '') + r.amount + ' P', r.reason || '-', r.by || '-']; })));
 
       body.appendChild(el('h3', '워크북 진행', 'sec'));
       var wr = d.workbooks.filter(function (w) { return ids[w.studentId] && !isDoneRow(w) && w.workbook !== 'done-index' && String(w.workbook).indexOf('~') < 0; }).sort(function (a, b) { return b.updatedAt - a.updatedAt; }).slice(0, 200);

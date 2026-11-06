@@ -171,6 +171,13 @@
     document.documentElement.appendChild(tag);
     var stEl = tag.querySelector('.st');
     function status(m) { if (stEl) stEl.textContent = m; var wb = window.CodingHaruWorkbook; if (wb && m) wb.setStatus(m); }
+    if (stu && sess && sess.role === 'student') {
+      var points = document.createElement('strong'); points.textContent = '포인트 확인 중'; points.style.cssText = 'color:#23415b;padding:0 6px;font:700 14px sans-serif';
+      tag.insertBefore(points, tag.querySelector('button'));
+      function showPoints(out) { points.textContent = Number(out.points || 0).toLocaleString() + ' P'; }
+      CHRecord.api('pointsBalance', {studentId:stu.id}).then(showPoints, function () { points.textContent = '포인트 연결 대기'; });
+      window.addEventListener('codingharu:points-balance', function (e) { showPoints(e.detail || {}); });
+    }
     if (!stu || !sess || sess.role !== 'student') return;
 
     function fail(err) {
@@ -237,7 +244,7 @@
           try { var tt = JSON.parse(localStorage.getItem(DKEY + '-t') || '{}') || {}; tt[key] = title; localStorage.setItem(DKEY + '-t', JSON.stringify(tt)); } catch (e) {}
           sync();
         }
-        document.getElementById('ch-done-btn').onclick = function () { if (!isDone(dget(), key)) { mark(true); status('완료로 표시했어요'); } };
+        document.getElementById('ch-done-btn').onclick = function () { if (!isDone(dget(), key)) { mark(true); if (/^(entry|scratch)\//.test(key)) document.dispatchEvent(new CustomEvent('codingharu:points',{detail:{kind:'lesson',key:key,label:document.title}})); status('완료로 표시했어요'); } };
         document.getElementById('ch-done-undo').onclick = function () { if (confirm('완료 표시를 취소할까요?')) mark(false); };
       }
       paint(dget()); sync();
