@@ -111,6 +111,7 @@ curl -s https://patrickdfg.github.io/codingharu-app/version.json
 - 2026-11-07 Claude: class 파이썬 과정 전체에 선생님 모드(정답 보기)를 넣고 동기화했다. 앱 세션(codingharu-session)의 role이 teacher이고 email이 class assets/teacher-mode.js의 OWNERS(관리자 계정)일 때만 보인다. 앱 쪽 코드는 바꾸지 않았다. 실제 구글 로그인 상태의 태블릿 표시는 미확인.
 - 2026-11-07 Claude: class main 04aae3f에 파이썬 로봇 코딩 12차시(python/robot/, 단일 HTML, 3D 미션36·채점 문제36, 원본 class/work/python_robot/)를 추가하고 교안 동기화를 수동 실행(73791c1)·Pages 배포 성공. 잠긴 파일 이름으로 python/robot/index.html 포함을 확인했다.
 - 2026-11-07 Claude: class main d9fca49에 알고리즘 엔트리 워크북 9개와 심화 페이지(algorithm/advanced/) 반영 후 sync.yml 수동 실행 성공. 앱 화면·태블릿 미확인.
+- 2026-11-07 Claude: class main 1156766(순열·누적합 워크북, 파이썬 다리 9차시, 심화 파이썬) 반영 후 sync.yml 수동 실행 성공. 앱 화면·태블릿 미확인.
   앱 /v/ 안에서의 실제 실행(Pyodide blob Worker·three.js CDN)은 로컬 재현이 막혀 미확인. 학생별 기록(CodingHaruWorkbook)은 연결하지 않았고 진도는 브라우저 localStorage에만 남는다.
 
 - 2026-10-20 Codex: 공개 홈 AI 카드와 12차시 커리큘럼 소개를 class의 ai-projects/와 연결. 기초·로블록스·파이썬 경로 및 설계→검증→설명, 월별 성장 기록 안내를 추가. 인증·서버·기존 작품/기록은 유지.
