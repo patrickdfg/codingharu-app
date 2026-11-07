@@ -107,6 +107,8 @@ curl -s https://patrickdfg.github.io/codingharu-app/version.json
 - `CLASS_READ_TOKEN` 만료일을 확인해 둔다(만료되면 동기화가 멈춘다).
 
 ## 진행 메모 (도구가 바뀔 때마다 두세 줄로 갱신)
+- 2026-11-07 Claude: class main 04aae3f에 파이썬 로봇 코딩 12차시(python/robot/, 단일 HTML, 3D 미션36·채점 문제36, 원본 class/work/python_robot/)를 추가하고 교안 동기화를 수동 실행(73791c1)·Pages 배포 성공. 잠긴 파일 이름으로 python/robot/index.html 포함을 확인했다.
+  앱 /v/ 안에서의 실제 실행(Pyodide blob Worker·three.js CDN)은 로컬 재현이 막혀 미확인. 학생별 기록(CodingHaruWorkbook)은 연결하지 않았고 진도는 브라우저 localStorage에만 남는다.
 
 - 2026-10-20 Codex: 공개 홈 AI 카드와 12차시 커리큘럼 소개를 class의 ai-projects/와 연결. 기초·로블록스·파이썬 경로 및 설계→검증→설명, 월별 성장 기록 안내를 추가. 인증·서버·기존 작품/기록은 유지.
   node test/interop.test.mjs와 신규 HTML/CSS/JS 암호화 왕복 검사 통과. 교안 동기화 #178·Pages 배포 성공, 공개 홈의 12차시 표시를 브라우저로 확인하고 밝은 영역 제목 대비를 보완. 로컬 Chrome 부재로 워크북 자동 UI 검사는 미실행; class/work/verify-ai-curriculum.cjs에 후속 검사. 실제 계정 서버·태블릿은 미확인.
