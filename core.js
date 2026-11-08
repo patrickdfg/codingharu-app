@@ -58,6 +58,18 @@
   function loadKey() { return kv('readonly', function (s) { return s.get('key'); }); }
   function forgetKey() { return kv('readwrite', function (s) { return s.delete('key'); }); }
 
+  // 선생님 정답 열쇠: 학생과 같이 쓰는 태블릿에 남지 않도록 12시간 뒤에는 버린다
+  // (선생님 로그아웃·학생 로그인 때도 index.html 이 지운다)
+  var TEACHER_TTL = 12 * 3600 * 1000;
+  function saveTeacherKey(key) { return kv('readwrite', function (s) { return s.put({ k: key, at: Date.now() }, 'tkey'); }); }
+  function forgetTeacherKey() { return kv('readwrite', function (s) { return s.delete('tkey'); }); }
+  async function loadTeacherKey() {
+    var v = await kv('readonly', function (s) { return s.get('tkey'); });
+    if (!v || !v.k) return null;
+    if (Date.now() - v.at > TEACHER_TTL) { await forgetTeacherKey(); return null; }
+    return v.k;
+  }
+
   async function getJSON(base, name) {
     var r = await fetch(base + name, { cache: 'no-store' });
     if (!r.ok) throw new Error(name + ' ' + r.status);
@@ -78,6 +90,7 @@
   g.CHCore = {
     deriveKey: deriveKey, decrypt: decrypt, nameFor: nameFor,
     saveKey: saveKey, loadKey: loadKey, forgetKey: forgetKey,
+    saveTeacherKey: saveTeacherKey, loadTeacherKey: loadTeacherKey, forgetTeacherKey: forgetTeacherKey,
     getJSON: getJSON, getBuf: getBuf, keyWorks: keyWorks, hex: hex
   };
 })(globalThis);

@@ -59,5 +59,28 @@ await assert.rejects(CHCore.decrypt(key, buf('check.enc')));
 // 7) 짧은 비밀번호는 거절한다
 assert.throws(() => run('short'), /./, '짧은 비밀번호는 실패해야 한다');
 
+// 8) 선생님 정답 파일(…answers.js·…solutions.js)은 학생 열쇠로 받을 수도 풀 수도 없다
+fs.mkdirSync(path.join(src, 'python/robot'), { recursive: true });
+fs.writeFileSync(path.join(src, 'python/robot/robot-answers.js'), 'window.RobotAnswers=["정답"]');
+const runT = (pass, tpass) => execFileSync('node', ['tools/build.mjs', src, out], { env: { ...process.env, SITE_PASS: pass, TEACHER_PASS: tpass }, encoding: 'utf8' });
+const TPASS = 'teacher only passphrase';
+runT(PASS, '');                                  // TEACHER_PASS 가 없으면 정답 파일을 아예 넣지 않는다
+const meta2 = JSON.parse(fs.readFileSync(path.join(out, 'crypt.json'), 'utf8'));
+const skey = await CHCore.deriveKey(PASS, meta2), tkey = await CHCore.deriveKey(TPASS, meta2);
+const plainName = await CHCore.nameFor('python/robot/robot-answers.js', meta2);
+const teacherName = await CHCore.nameFor('teacher/python/robot/robot-answers.js', meta2);
+assert.ok(!fs.existsSync(path.join(out, 'content', plainName)));
+assert.ok(!fs.existsSync(path.join(out, 'content', teacherName)));
+assert.ok(!fs.existsSync(path.join(out, 'teacher-check.enc')));
+runT(PASS, TPASS);
+assert.ok(!fs.existsSync(path.join(out, 'content', plainName)), '학생 이름으로는 정답 파일이 없어야 한다');
+assert.equal(new TextDecoder().decode(await CHCore.decrypt(tkey, buf('content/' + teacherName))), 'window.RobotAnswers=["정답"]');
+await assert.rejects(CHCore.decrypt(skey, buf('content/' + teacherName)), '학생 열쇠로는 풀리지 않아야 한다');
+assert.equal(new TextDecoder().decode(await CHCore.decrypt(tkey, buf('teacher-check.enc'))), 'codingharu-teacher');
+await assert.rejects(CHCore.decrypt(skey, buf('teacher-check.enc')));
+assert.ok(!buf('content/' + teacherName).includes('정답'));
+assert.throws(() => runT(PASS, PASS), /./, '선생님 비밀번호가 학생 비밀번호와 같으면 실패해야 한다');
+assert.throws(() => runT(PASS, 'short'), /./, '짧은 선생님 비밀번호는 실패해야 한다');
+
 console.log('모든 시험 통과');
 fs.rmSync(tmp, { recursive: true, force: true });

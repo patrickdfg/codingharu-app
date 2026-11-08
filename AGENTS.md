@@ -64,6 +64,8 @@ Codex(ChatGPT)는 `AGENTS.md`, Claude Code 는 `CLAUDE.md` 를 자동으로 읽�
 - `crypt.json` 의 소금은 한 번 만들면 유지한다(바뀌면 모든 기기가 로그아웃).
 - 비밀번호를 바꾸면 모든 기기가 로그아웃된다 = 기기 접속 해제. 기기를 하나씩만 끊는 기능은 없다.
 - `sw.js` 의 `lesson()` 은 열쇠가 없으면 401/로그인으로 보낸다. 이 검사를 약하게 만들지 않는다.
+- **선생님 정답 파일은 이름이 `answers.js`·`solutions.js` 로 끝나야 한다**(`build.mjs` 의 `TEACHER_ONLY`). 이 파일들은 학생 비밀번호가 아닌
+  `TEACHER_PASS` 로 잠겨 `teacher/<경로>` 이름으로만 존재한다. 학생 비밀번호로는 받을 수도 풀 수도 없다. 정답을 교안 HTML 안에 직접 넣지 않는다.
 
 ## 손볼 때 알아 둘 것
 
@@ -107,6 +109,8 @@ curl -s https://patrickdfg.github.io/codingharu-app/version.json
 - `CLASS_READ_TOKEN` 만료일을 확인해 둔다(만료되면 동기화가 멈춘다).
 
 ## 진행 메모 (도구가 바뀔 때마다 두세 줄로 갱신)
+- 2026-11-09 Claude: 학생 비밀번호만으로 정답 파일 8개를 직접 열 수 있던 문제를 막았다. `build.mjs` 가 …answers.js·…solutions.js 를 `TEACHER_PASS` 로 따로 잠그고(없으면 빼고), `sw.js` 는 학생용에 없는 파일만 기기의 선생님 열쇠로 찾는다. 관리 메뉴에 '선생님 정답 열쇠' 칸(teacher-check.enc 로 확인, 12시간·로그아웃·학생 로그인 때 삭제). class 의 로봇 페이지 정답 72개도 robot-answers.js 로 뺐다.
+  interop 시험 8번 추가 통과, 로컬 빌드 브라우저에서 학생 404·선생님 200·로봇 정답 넣기 확인. 실제 구글 로그인·학생 로그인 때 열쇠 삭제·실물 태블릿은 미확인. **`TEACHER_PASS` 비밀값을 넣기 전까지는 앱에 정답이 없다.**
 - 2026-11-07 Claude: class main 6185202에 알고리즘 15차시 재구성(think-1·2, bridge-1~4, 첫 화면 로드맵, 교재 카드 관리자 전용) 반영 후 sync.yml 수동 실행 성공, 새 파일 암호화 이름 확인. 앱 화면·실제 태블릿 미확인.
 - 2026-11-07 Claude: class 파이썬 과정 전체에 선생님 모드(정답 보기)를 넣고 동기화했다. 앱 세션(codingharu-session)의 role이 teacher이고 email이 class assets/teacher-mode.js의 OWNERS(관리자 계정)일 때만 보인다. 앱 쪽 코드는 바꾸지 않았다. 실제 구글 로그인 상태의 태블릿 표시는 미확인.
 - 2026-11-07 Claude: class main 04aae3f에 파이썬 로봇 코딩 12차시(python/robot/, 단일 HTML, 3D 미션36·채점 문제36, 원본 class/work/python_robot/)를 추가하고 교안 동기화를 수동 실행(73791c1)·Pages 배포 성공. 잠긴 파일 이름으로 python/robot/index.html 포함을 확인했다.

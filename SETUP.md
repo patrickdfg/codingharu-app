@@ -15,6 +15,7 @@ Settings → Secrets and variables → Actions → New repository secret
 | 이름 | 값 |
 | --- | --- |
 | `SITE_PASS` | 학생이 입력할 비밀번호. **10자 이상, 길수록 안전** (아래 '보안 한계' 참고) |
+| `TEACHER_PASS` | 선생님 정답 비밀번호. `SITE_PASS` 와 **다른** 10자 이상. 이름이 `answers.js`·`solutions.js` 로 끝나는 정답 파일을 이것으로 잠근다. 없으면 정답 파일은 앱에 들어가지 않는다. 선생님은 관리 메뉴의 '선생님 정답 열쇠'에 입력한다(12시간·로그아웃·학생 로그인 때 기기에서 지워짐) |
 | `CLASS_READ_TOKEN` | github.com → Settings → Developer settings → Fine-grained tokens. Repository access: **Only `patrickdfg/class`**, Permissions: **Contents → Read-only** 만 |
 
 기존 Apps Script 의 GITHUB_TOKEN(읽기/쓰기)은 옮기지 않습니다. 새 읽기 전용 토큰을 따로 만듭니다.

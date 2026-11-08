@@ -85,10 +85,19 @@ async function lesson(req, path) {
   try { key = await CHCore.loadKey(); } catch (err) { key = null; }
   if (!key) return nav ? redirect('./') : new Response('', { status: 401 });
 
-  var buf;
+  var buf, teacherFile = false;
   try {
     var m = await meta();
-    buf = await CHCore.getBuf(BASE.href, 'content/' + await CHCore.nameFor(path, m));
+    try {
+      buf = await CHCore.getBuf(BASE.href, 'content/' + await CHCore.nameFor(path, m));
+    } catch (err) {
+      // 학생용에 없는 파일이면 선생님 정답 파일인지 본다. 이 기기에 선생님 열쇠가 있을 때만 받는다.
+      if (!(err && err.status === 404)) throw err;
+      var tk = await CHCore.loadTeacherKey().catch(function () { return null; });
+      if (!tk) throw err;
+      buf = await CHCore.getBuf(BASE.href, 'content/' + await CHCore.nameFor('teacher/' + path, m));
+      key = tk; teacherFile = true;
+    }
   } catch (err) {
     if (err && err.status === 404) return nav ? page(404, '없는 페이지예요', '교안에 이 주소가 없어요.') : new Response('', { status: 404 });
     return nav ? page(503, '교안을 불러오지 못했어요', '인터넷 연결을 확인하고 다시 열어 주세요. 교안은 오프라인에서는 열 수 없어요.') : Response.error();
@@ -96,7 +105,12 @@ async function lesson(req, path) {
 
   var plain;
   try { plain = await CHCore.decrypt(key, buf); }
-  catch (err) {                      // 비밀번호가 바뀌었다 → 이 기기의 열쇠를 버리고 처음으로
+  catch (err) {
+    if (teacherFile) {               // 선생님 비밀번호가 바뀌었다 → 선생님 열쇠만 버린다
+      await CHCore.forgetTeacherKey().catch(function () {});
+      return new Response('', { status: 404 });
+    }
+    // 비밀번호가 바뀌었다 → 이 기기의 열쇠를 버리고 처음으로
     await CHCore.forgetKey().catch(function () {});
     metaCache = null;
     return nav ? redirect('./?expired=1') : new Response('', { status: 401 });

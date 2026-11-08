@@ -50,6 +50,8 @@
   /* 관리자 */
   .bar { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin:14px 0 20px; }
   .bar button { padding:11px 16px; font-size:16px; }
+  .tkey-box { margin:0 0 18px; padding:12px 14px; border:1px dashed #b7791f; border-radius:12px; background:#fffaf0; color:#4a3410; font-size:15px; }
+  .tkey-box .bar { margin:10px 0 0; } .tkey-box input { flex:1 1 200px; width:auto; }
   .tablewrap { overflow-x:auto; text-align:left; margin:0 0 22px; background:#fff; border:1px solid var(--line); border-radius:14px; }
   table { border-collapse:collapse; width:100%; font-size:15px; }
   th, td { padding:9px 12px; border-bottom:1px solid #e8eef7; white-space:nowrap; }
@@ -159,6 +161,14 @@
       <button type="button" id="aUnpair" class="ghost">이 기기 등록 해제</button>
       <button type="button" id="aLogout" class="ghost">로그아웃</button>
     </div>
+    <form id="tkeyForm" class="tkey-box">
+      <b>선생님 정답 열쇠</b> <span id="tkeyState"></span>
+      <div class="bar">
+        <input id="tkeyPass" type="password" aria-label="선생님 정답 비밀번호" placeholder="선생님 정답 비밀번호" autocomplete="off" required>
+        <button type="submit" id="tkeyGo">넣기</button>
+        <button type="button" id="tkeyForget" class="ghost" hidden>지우기</button>
+      </div>
+    </form>
     <label id="phoneAutoWrap" class="phone-auto-wrap" hidden>
       <input id="phoneAuto" type="checkbox">
       <span>이 휴대폰에서 다음 접속부터 구글 자동 로그인 사용<small style="display:block;color:#5b6780">내 휴대폰에서만 켜세요. 로그아웃하면 자동 로그인이 해제됩니다.</small></span>
@@ -280,7 +290,8 @@
       await CHCore.saveKey(key); clearFails(); pass.value = ''; keyOk = true;
       await swReady;
       go.disabled = false;
-      if (passMode === 'teacher') { say(''); startTeacher(); } else goLessons();
+      if (passMode === 'teacher') { say(''); startTeacher(); }
+      else { await CHCore.forgetTeacherKey().catch(function () {}); goLessons(); }
     } catch (err) { say('교안 서버에 연결하지 못했어요. 인터넷을 확인해 주세요.'); go.disabled = false; }
   });
 
@@ -302,6 +313,7 @@
     if (/연결하지 못|Failed to fetch|NetworkError|Load failed/i.test(err.message)) $('offline').hidden = false;
   }
   async function studentIn(out) {
+    await CHCore.forgetTeacherKey().catch(function () {});   // 같이 쓰는 태블릿에 선생님 정답 열쇠가 남지 않게
     CHRecord.setStudent(out.student); CHRecord.setSession('student', { sid: out.sid });
     if (!keyOk) { askClassPass(); return; }
     say(out.student.name + ' 학생, 반가워요!', true);
@@ -335,6 +347,7 @@
   });
 
   $('offline').onclick = async function () {
+    await CHCore.forgetTeacherKey().catch(function () {});
     CHRecord.setStudent(null); CHRecord.setSession('offline'); await swReady; goLessons();
   };
 
@@ -436,8 +449,31 @@
     $('adminWho').textContent = (me ? me.email : '') + ' · 선생님';
     $('phoneAutoWrap').hidden = !isPhone();
     $('phoneAuto').checked = phoneAutoEnabled();
-    say(''); loadStatus();
+    say(''); loadStatus(); tkeyShow();
   }
+  // 선생님 정답 열쇠: 정답 파일은 학생 비밀번호가 아니라 선생님 정답 비밀번호(GitHub 비밀값 TEACHER_PASS)로 잠겨 있다
+  async function tkeyShow() {
+    var k = await CHCore.loadTeacherKey().catch(function () { return null; });
+    $('tkeyState').textContent = k ? '이 기기에 있어요. 12시간이 지나거나 로그아웃하면 지워져요.' : '없어요. 넣으면 정답 보기가 켜져요.';
+    $('tkeyForget').hidden = !k;
+  }
+  $('tkeyForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    var b = $('tkeyGo'); b.disabled = true; say('확인하는 중…', true);
+    try {
+      var meta = await CHCore.getJSON(BASE, 'crypt.json');
+      var buf;
+      try { buf = await CHCore.getBuf(BASE, 'teacher-check.enc'); }
+      catch (err) { say(err.status === 404 ? '아직 선생님 정답 비밀번호(TEACHER_PASS)가 설정되지 않았어요.' : '교안 서버에 연결하지 못했어요.'); b.disabled = false; return; }
+      var k = await CHCore.deriveKey($('tkeyPass').value, meta);
+      try { await CHCore.decrypt(k, buf); }
+      catch (err) { say('선생님 정답 비밀번호가 맞지 않아요.'); b.disabled = false; $('tkeyPass').select(); return; }
+      await CHCore.saveTeacherKey(k); $('tkeyPass').value = '';
+      say('정답 열쇠를 넣었어요.', true); tkeyShow();
+    } catch (err) { say('정답 열쇠를 넣지 못했어요. 다시 시도해 주세요.'); }
+    b.disabled = false;
+  });
+  $('tkeyForget').onclick = function () { CHCore.forgetTeacherKey().then(tkeyShow); };
   async function loadStatus() {
     var box = $('status'); box.textContent = '학생 현황을 불러오는 중…';
     var a = CHRecord.auth();
@@ -537,6 +573,7 @@
     draw();
   }
   function logout(m) {
+    CHCore.forgetTeacherKey().catch(function () {});
     setPhoneAuto(false);
     try { if (window.google && google.accounts && google.accounts.id) google.accounts.id.disableAutoSelect(); } catch (e) {}
     CHRecord.endSession(); me = null; updateAccountNavigation(); showAuth(); say(m || '');
