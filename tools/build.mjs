@@ -33,9 +33,10 @@ const ivKey = createHmac('sha256', key).update('iv').digest();
 // 선생님 비밀번호(TEACHER_PASS)로 잠그고 'teacher/' 를 붙인 이름으로 둔다. 학생 열쇠로는 받을 수도 풀 수도 없다.
 // TEACHER_PASS 가 없으면 정답 파일은 아예 넣지 않는다(학생에게 새지 않는 쪽이 기본).
 const TEACHER_ONLY = /(?:^|[/-])(?:answers|solutions)\.js$/;
-const tpass = process.env.TEACHER_PASS || '';
-if (tpass && tpass.length < MIN_PASS) { console.error(`TEACHER_PASS 는 ${MIN_PASS}자 이상이어야 합니다.`); process.exit(2); }
-if (tpass && tpass === pass) { console.error('TEACHER_PASS 는 SITE_PASS 와 달라야 합니다.'); process.exit(2); }
+// 선생님 비밀번호가 짧거나 학생 비밀번호와 같으면 정답을 학생이 풀 수 있게 되므로, 동기화는 멈추지 않고 정답 파일만 뺀다
+let tpass = process.env.TEACHER_PASS || '';
+if (tpass && tpass.length < MIN_PASS) { console.warn(`::warning::TEACHER_PASS 가 ${MIN_PASS}자보다 짧아 정답 파일을 넣지 않습니다.`); tpass = ''; }
+if (tpass && tpass === pass) { console.warn('::warning::TEACHER_PASS 가 SITE_PASS 와 같아 정답 파일을 넣지 않습니다. 다른 비밀번호로 바꿔 주세요.'); tpass = ''; }
 const tkey = tpass ? pbkdf2Sync(tpass, Buffer.from(meta.salt, 'base64'), meta.iter, 32, 'sha256') : null;
 const tivKey = tkey ? createHmac('sha256', tkey).update('iv').digest() : null;
 

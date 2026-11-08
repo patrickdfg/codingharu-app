@@ -109,6 +109,7 @@ curl -s https://patrickdfg.github.io/codingharu-app/version.json
 - `CLASS_READ_TOKEN` 만료일을 확인해 둔다(만료되면 동기화가 멈춘다).
 
 ## 진행 메모 (도구가 바뀔 때마다 두세 줄로 갱신)
+- 2026-11-09 Claude: TEACHER_PASS 가 SITE_PASS 와 같게 들어가 동기화 전체가 실패했다. build.mjs 를 고쳐 같거나 짧으면 동기화는 계속하고 정답 파일만 빼며 Actions 경고를 남기게 했다(interop 시험 갱신). 사용자에게 다른 값으로 바꾸도록 안내.
 - 2026-11-09 Claude: 빌드에서 빼는 assets/install.css 를 교안 651쪽이 불러 매번 404 가 나던 것을 sw.js 가 빈 스타일로 답하게 했다(install.js 와 같은 방식). 로컬 앱에서 404 사라짐 확인. 껍데기 목록은 안 바꿔 SHELL_CACHE 는 그대로.
 - 2026-11-09 Claude: 첫 화면 밝은 구역 설명 글자색을 진하게(#5f586b·#6b4f8f, 5.5:1 이상), 폰(780px 이하)에서 9~13px 글자를 11~14px로 키웠다(home-extra.css 끝 블록, home.css 의 !important 3곳). 그림 속 장식 글자는 그대로. test-home.cjs 4묶음 통과, 390·800·1280px 넘침 없음.
 - 2026-11-09 Claude: 사용자 결정으로 첫 화면(index.html)만 검색 공개(noindex 제거, canonical)하고 카톡 등 공유 미리보기(og 태그, og-image.jpg 1200×630 첫 화면 캡처)를 넣었다. 교안 /v/ 는 그대로 noindex·암호화. robots.txt 는 하위 경로라 효과가 없어 맞춤 도메인용으로만 정리. tools/test-home.cjs 4묶음 통과. 실제 검색 노출·카톡 미리보기는 배포 후 사람이 확인. 학원 광고 표시사항(등록번호·교습비 등)은 교육청 기준 확인 필요.

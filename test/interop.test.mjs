@@ -79,8 +79,13 @@ await assert.rejects(CHCore.decrypt(skey, buf('content/' + teacherName)), '학�
 assert.equal(new TextDecoder().decode(await CHCore.decrypt(tkey, buf('teacher-check.enc'))), 'codingharu-teacher');
 await assert.rejects(CHCore.decrypt(skey, buf('teacher-check.enc')));
 assert.ok(!buf('content/' + teacherName).includes('정답'));
-assert.throws(() => runT(PASS, PASS), /./, '선생님 비밀번호가 학생 비밀번호와 같으면 실패해야 한다');
-assert.throws(() => runT(PASS, 'short'), /./, '짧은 선생님 비밀번호는 실패해야 한다');
+// 선생님 비밀번호가 학생 비밀번호와 같거나 짧으면 동기화는 계속하되 정답 파일은 빼야 한다
+for (const bad of [PASS, 'short']) {
+  runT(PASS, bad);
+  assert.ok(!fs.existsSync(path.join(out, 'content', teacherName)), '정답 파일이 빠져야 한다');
+  assert.ok(!fs.existsSync(path.join(out, 'content', plainName)), '학생 이름으로도 없어야 한다');
+  assert.ok(!fs.existsSync(path.join(out, 'teacher-check.enc')));
+}
 
 console.log('모든 시험 통과');
 fs.rmSync(tmp, { recursive: true, force: true });
