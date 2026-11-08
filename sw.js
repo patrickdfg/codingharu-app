@@ -80,6 +80,8 @@ async function lesson(req, path) {
   if (path === 'manifest.webmanifest') return shellFetch(new Request(new URL('manifest.webmanifest', BASE).href));
   if (path === 'assets/install.js')
     return new Response('/* 앱 안에서는 쓰지 않음 */', { headers: { 'Content-Type': TYPES.js } });
+  if (path === 'assets/install.css')   // 빌드에서 빼는 파일. 교안 651쪽이 부르므로 404 대신 빈 스타일을 준다
+    return new Response('/* 앱 안에서는 쓰지 않음 */', { headers: { 'Content-Type': TYPES.css } });
 
   var key;
   try { key = await CHCore.loadKey(); } catch (err) { key = null; }
