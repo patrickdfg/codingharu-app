@@ -14,9 +14,11 @@ const TABS_ = {
   workbooks: ['학생 번호', '학생 이름', '워크북 ID', '제목', '페이지', '완료', '전체', '처음 저장', '마지막 저장', '선생님', '기록(JSON)'],
   visits: ['날짜', '학생 번호', '학생 이름', '페이지', '제목', '처음 연 시각', '마지막 연 시각', '연 횟수'],
   points: ['학생 번호', '시각', '종류', '식별자', '점수', '사유', '지급자'],
+  reports: ['학생 번호', '달', '다음 달 계획', '선생님 한마디', '저장 시각', '선생님'],
+  parents: ['학생 번호', '학생 이름', '학부모 이메일', '수신 동의(Y)', '메모'],
   gallery: ['ID', '학생 번호', '학생 이름', '반', '제목', '주소', '종류', '소개', '공개 범위', '상태', '좋아요(학생 번호)', '올린 시각', '바꾼 시각', '파일 ID', '파일 이름', '파일 크기']
 };
-const TAB_NAMES_ = { points: '포인트 내역', teachers: '선생님', students: '학생', devices: '기기', workbooks: '워크북 기록', visits: '수업 기록', gallery: '작품 게시판' };
+const TAB_NAMES_ = { reports: '월간 리포트', parents: '학부모', points: '포인트 내역', teachers: '선생님', students: '학생', devices: '기기', workbooks: '워크북 기록', visits: '수업 기록', gallery: '작품 게시판' };
 const DEVICE_DAYS_ = 365;
 const SESSION_DAYS_ = 14;
 
@@ -594,6 +596,7 @@ function pointsProof_(studentId, kind, key) {
   return false;
 }
 function sheet_(k) {
+  if (k === 'reports' || k === 'parents') { const ss = SpreadsheetApp.getActive(); let sh = ss.getSheetByName(TAB_NAMES_[k]); if (!sh) { sh = ss.insertSheet(TAB_NAMES_[k]); sh.appendRow(TABS_[k]); sh.setFrozenRows(1); } return sh; }
   if (k === 'points') { const ss = SpreadsheetApp.getActive(); let sh = ss.getSheetByName(TAB_NAMES_[k]); if (!sh) { sh = ss.insertSheet(TAB_NAMES_[k]); sh.appendRow(TABS_[k]); sh.setFrozenRows(1); } return sh; }
   if (k === 'gallery') return gallerySheet_();
   const sh = SpreadsheetApp.getActive().getSheetByName(TAB_NAMES_[k]);
@@ -611,4 +614,96 @@ function withLock_(fn) {
   const lock = LockService.getScriptLock();
   if (!lock.tryLock(15000)) throw new Error('저장이 몰려 있어요. 잠시 뒤 다시 시도해 주세요.');
   try { return fn(); } finally { lock.releaseLock(); }
+}
+
+// ---- 학부모 월간 리포트 (2026-11) ----
+// 선생님이 관리 메뉴에서 달마다 '다음 달 계획'과 '선생님 한마디'를 저장하면
+//  ① 학부모 전용 링크(parent.html)로 언제든 그 달 리포트를 볼 수 있고
+//  ② '학부모' 탭에 이메일과 수신 동의(Y)가 있는 학생은 이메일로도 받는다.
+// 학부모 링크 열쇠는 스크립트 속성 PARENT_SECRET 으로 서명한다. 이 속성을 지우면 지금까지 보낸 링크가 모두 막힌다.
+const APP_URL_DEFAULT_ = 'https://patrickdfg.github.io/codingharu-app/';
+function parentSecret_() {
+  const pr = PropertiesService.getScriptProperties();
+  let s = pr.getProperty('PARENT_SECRET');
+  if (!s) { s = Utilities.getUuid() + Utilities.getUuid(); pr.setProperty('PARENT_SECRET', s); }
+  return s;
+}
+function parentToken_(id) {
+  return Utilities.computeHmacSha256Signature('parent.' + String(id), parentSecret_()).map(b => ('0' + (b & 255).toString(16)).slice(-2)).join('').slice(0, 32);
+}
+function month_(m) { m = String(m || ''); if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(m)) throw new Error('달 형식이 올바르지 않습니다.'); return m; }
+function ymOf_(v) { if (!(v instanceof Date)) return ''; return Utilities.formatDate(v, Session.getScriptTimeZone(), 'yyyy-MM'); }
+function parentLink_(id, month) {
+  const base = PropertiesService.getScriptProperties().getProperty('APP_URL') || APP_URL_DEFAULT_;
+  return base + 'parent.html?s=' + encodeURIComponent(id) + '&t=' + parentToken_(id) + (month ? '&m=' + month : '');
+}
+// 한 학생의 한 달 리포트 재료. 워크북 기록 내용(JSON)·PIN 은 보내지 않는다
+function reportData_(student, month) {
+  const id = String(student[0]);
+  const workbooks = rows_('workbooks').filter(r => String(r[0]) === id && ymOf_(r[8]) === month)
+    .map(r => ({ studentId: id, workbook: String(r[2]), title: String(r[3]), done: Number(r[5]) || 0, total: Number(r[6]) || 0, updatedAt: r[8] instanceof Date ? r[8].getTime() : 0 }));
+  let pts; withLock_(() => { pts = rows_('points'); });
+  const mine = pts.filter(r => String(r[0]) === id);
+  const pointHistory = mine.filter(r => ymOf_(r[1]) === month).map(r => ({ studentId: id, at: r[1] instanceof Date ? r[1].getTime() : 0, amount: Number(r[4]) || 0 }));
+  const points = mine.reduce((s, r) => s + (Number(r[4]) || 0), 0);
+  const rep = rows_('reports').filter(r => String(r[0]) === id && String(r[1]) === month).pop();
+  return {
+    student: { id: id, name: String(student[1]), group: String(student[3] || ''), points: points },
+    workbooks: workbooks, pointHistory: pointHistory, month: month, now: Date.now(),
+    report: rep ? { plan: String(rep[2] || ''), comment: String(rep[3] || '') } : null
+  };
+}
+function reportEmail_(student, month) {
+  const id = String(student[0]);
+  const to = rows_('parents').filter(r => String(r[0]) === id && /^y/i.test(String(r[3]).trim()) && /@/.test(String(r[2]))).map(r => String(r[2]).trim());
+  if (!to.length) return 0;
+  const d = reportData_(student, month), p = month.split('-');
+  const done = d.workbooks.filter(w => w.workbook.indexOf('done:') === 0 && w.done > 0).length;
+  const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const link = parentLink_(id, month);
+  const html = '<div style="font-family:sans-serif;line-height:1.7;color:#231d38">' +
+    '<h2 style="margin:0 0 8px">' + esc(d.student.name) + ' 학생 ' + p[0] + '년 ' + Number(p[1]) + '월 리포트</h2>' +
+    '<p>이번 달 완료한 수업 <b>' + done + '개</b> · 누적 포인트 <b>' + d.student.points + '</b></p>' +
+    (d.report && d.report.comment ? '<p style="background:#efeaff;padding:12px 14px;border-radius:10px"><b>선생님 한마디</b><br>' + esc(d.report.comment).replace(/\n/g, '<br>') + '</p>' : '') +
+    (d.report && d.report.plan ? '<p><b>다음 달 계획</b> ' + esc(d.report.plan) + '</p>' : '') +
+    '<p><a href="' + link + '" style="display:inline-block;background:#5b3fa0;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none">리포트 자세히 보기</a></p>' +
+    '<p style="color:#5f586b;font-size:13px">코드마루 코딩·AI 탐구학원 · 010-9855-1322<br>이 메일을 받지 않으시려면 학원으로 알려 주세요.</p></div>';
+  MailApp.sendEmail({ to: to.join(','), subject: '[코드마루] ' + d.student.name + ' 학생 ' + Number(p[1]) + '월 리포트', htmlBody: html, name: '코드마루' });
+  return to.length;
+}
+Object.assign(ACTIONS_, {
+  // 선생님: 그 달의 계획·한마디 저장(같은 학생·달이면 덮어씀). email 이 true 면 학부모 이메일로도 보낸다
+  reportSave(req) {
+    const t = teacher_(req.auth), student = student_(req.studentId), month = month_(req.month);
+    const plan = pointsText_(String(req.plan || '').slice(0, 120)), comment = pointsText_(String(req.comment || '').slice(0, 400));
+    withLock_(() => {
+      const sh = sheet_('reports'), data = rows_('reports');
+      const i = data.findIndex(r => String(r[0]) === String(student[0]) && String(r[1]) === month);
+      const row = [String(student[0]), "'" + month, plan, comment, new Date(), t.email];
+      if (i >= 0) sh.getRange(i + 2, 1, 1, row.length).setValues([row]); else sh.appendRow(row);
+    });
+    const sent = req.email ? reportEmail_(student, month) : 0;
+    return { link: parentLink_(String(student[0]), month), sent: sent };
+  },
+  // 학부모: 링크의 열쇠가 맞으면 그 학생의 한 달 리포트 재료만 돌려준다
+  parentReport(req) {
+    const id = String(req.s || ''), t = String(req.t || '');
+    if (!id || t.length !== 32 || t !== parentToken_(id)) throw new Error('링크가 올바르지 않거나 만료되었어요. 학원에 새 링크를 요청해 주세요.');
+    const student = student_(id);
+    return reportData_(student, month_(req.m || Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM')));
+  }
+});
+// 매달 1일 아침에 지난달 리포트를 이메일로 일괄 발송하려면 이 함수를 한 번 실행해 트리거를 만든다(선택)
+function setupMonthlyReportTrigger() {
+  ScriptApp.getProjectTriggers().filter(t => t.getHandlerFunction() === 'sendMonthlyReports').forEach(t => ScriptApp.deleteTrigger(t));
+  ScriptApp.newTrigger('sendMonthlyReports').timeBased().onMonthDay(1).atHour(9).create();
+}
+// 지난달에 선생님 한마디를 저장한 학생 가운데 학부모 이메일·수신 동의가 있는 학생에게 보낸다
+function sendMonthlyReports() {
+  const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - 1);
+  const month = Utilities.formatDate(d, Session.getScriptTimeZone(), 'yyyy-MM');
+  const saved = {}; rows_('reports').forEach(r => { if (String(r[1]) === month && String(r[3]).trim()) saved[String(r[0])] = 1; });
+  let n = 0;
+  rows_('students').forEach(r => { if (saved[String(r[0])] && !pending_(r)) { try { n += reportEmail_(r, month); } catch (e) { console.log(String(r[1]) + ': ' + e); } } });
+  console.log(month + ' 리포트 이메일 ' + n + '통');
 }

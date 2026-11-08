@@ -109,6 +109,7 @@ curl -s https://patrickdfg.github.io/codingharu-app/version.json
 - `CLASS_READ_TOKEN` 만료일을 확인해 둔다(만료되면 동기화가 멈춘다).
 
 ## 진행 메모 (도구가 바뀔 때마다 두세 줄로 갱신)
+- 2026-11-09 Claude: 학부모 리포트 2·3번. record.gs 에 월간 리포트·학부모 탭(자동 생성), reportSave(선생님, 같은 학생·달 덮어씀, email 옵션)·parentReport(PARENT_SECRET HMAC 링크, 그 학생·그 달 요약만, JSON·PIN 없음)·sendMonthlyReports/setupMonthlyReportTrigger 추가(ACTIONS_ 에 Object.assign). parent.html(학부모 화면, report.js 로 그림). **record.gs 재배포 필요**(사람). test/report.test.cjs 통과, parent.html 가짜 서버로 확인. 실제 Apps Script·메일 발송 미확인.
 - 2026-11-09 Claude: 관리 메뉴에 학부모 월간 리포트(report.js) 추가. admin 응답만으로 학생·달별 완료 수업·진행 워크북·포인트를 모아 선생님 한마디와 함께 1080px PNG를 그리고, 안드로이드는 공유 시트(카톡)로 보낸다. 서버 변경 없음. 이번 달 포인트는 admin 이 주는 최근 200건 내역 기준이라 학생이 많으면 적게 셀 수 있다. 셸 목록이 바뀌어 SHELL_CACHE shell-8. 가짜 기록으로 그림 확인, test-home 통과. 실제 태블릿 공유 미확인.
 - 2026-11-09 Claude: TEACHER_PASS 가 SITE_PASS 와 같게 들어가 동기화 전체가 실패했다. build.mjs 를 고쳐 같거나 짧으면 동기화는 계속하고 정답 파일만 빼며 Actions 경고를 남기게 했다(interop 시험 갱신). 사용자에게 다른 값으로 바꾸도록 안내.
 - 2026-11-09 Claude: 빌드에서 빼는 assets/install.css 를 교안 651쪽이 불러 매번 404 가 나던 것을 sw.js 가 빈 스타일로 답하게 했다(install.js 와 같은 방식). 로컬 앱에서 404 사라짐 확인. 껍데기 목록은 안 바꿔 SHELL_CACHE 는 그대로.

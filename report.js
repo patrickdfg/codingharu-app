@@ -143,6 +143,26 @@
         }, 'image/png');
       };
       bar.append(share, save); out.appendChild(bar);
+      // 2·3번: 기록 서버에 한마디를 저장하고 학부모 링크를 받거나 이메일로 보낸다 (record.gs 새 버전 배포가 필요)
+      var bar2 = el('div', null, 'bar'), linkBtn = el('button', '저장하고 학부모 링크 복사'), mailBtn = el('button', '저장하고 학부모 이메일로 보내기');
+      linkBtn.type = mailBtn.type = 'button'; linkBtn.className = mailBtn.className = 'ghost';
+      function saveReport(email) {
+        linkBtn.disabled = mailBtn.disabled = true; say('저장하는 중…', true);
+        return CHRecord.api('reportSave', { auth: CHRecord.auth(), studentId: s.id, month: info.month, plan: info.plan, comment: info.comment, email: !!email })
+          .catch(function (err) { throw new Error(/알 수 없는 요청/.test(err.message) ? '기록 서버(Apps Script)를 새 버전으로 배포해야 이 기능을 쓸 수 있어요.' : err.message); })
+          .finally(function () { linkBtn.disabled = mailBtn.disabled = false; });
+      }
+      linkBtn.onclick = function () {
+        saveReport(false).then(function (r) {
+          var text = s.name + ' 학생 ' + monthLabel(info.month) + ' 리포트예요. 이 링크에서 언제든 확인하실 수 있어요.\n' + r.link;
+          (navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject()).then(function () { say('저장했어요. 링크를 복사했으니 카톡에 붙여 넣어 주세요.', true); },
+            function () { window.prompt('이 링크를 복사해 보내 주세요', r.link); say('저장했어요.', true); });
+        }, function (err) { say(err.message); });
+      };
+      mailBtn.onclick = function () {
+        saveReport(true).then(function (r) { say(r.sent ? '저장하고 학부모 이메일 ' + r.sent + '곳에 보냈어요.' : '저장했어요. 시트 \'학부모\' 탭에 이 학생의 이메일과 수신 동의(Y)가 없어 보내지 않았어요.', !!r.sent); }, function (err) { say(err.message); });
+      };
+      bar2.append(linkBtn, mailBtn); out.appendChild(bar2);
       if (!info.data.done.length && !info.data.progress.length) say('이 달에는 기록이 없어요. 선생님 한마디 위주로 보내 주세요.');
     };
   }
