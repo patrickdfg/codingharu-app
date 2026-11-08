@@ -1,2 +1,5 @@
+# 이 파일은 사이트가 도메인 맨 위에 있을 때만 쓰인다(github.io/codingharu-app 아래에서는 효과 없음).
+# 첫 화면은 공개하고, 잠긴 교안과 교안 주소는 막는다.
 User-agent: *
-Disallow: /
+Disallow: /v/
+Disallow: /content/
