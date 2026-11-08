@@ -62,6 +62,9 @@
   /* 관리자 */
   .bar { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin:14px 0 20px; }
   .bar button { padding:11px 16px; font-size:16px; }
+  .report-box form { display:grid; gap:8px; text-align:left; } .report-box textarea { width:100%; font:inherit; padding:10px; border:1px solid var(--line); border-radius:10px; }
+  .report-out img { width:100%; max-width:540px; display:block; margin:14px auto 0; border:1px solid var(--line); border-radius:12px; }
+  .report-out .ghost-link { align-self:center; }
   .tkey-box { margin:0 0 18px; padding:12px 14px; border:1px dashed #b7791f; border-radius:12px; background:#fffaf0; color:#4a3410; font-size:15px; }
   .tkey-box .bar { margin:10px 0 0; } .tkey-box input { flex:1 1 200px; width:auto; }
   .tablewrap { overflow-x:auto; text-align:left; margin:0 0 22px; background:#fff; border:1px solid var(--line); border-radius:14px; }
@@ -194,6 +197,7 @@
 
 <script src="core.js"></script>
 <script src="record.js"></script>
+<script src="report.js"></script>
 <script>
 (function () {
   var BASE = new URL('./', location.href).href;
@@ -564,6 +568,8 @@
         return { cells: [s.name, s.group || '-', fmt(last), finished + '개', (s.points || 0).toLocaleString() + ' P'], last: last };
       }).sort(function (a, b) { return b.last - a.last; });
       body.appendChild(table(['학생', '반', '마지막 활동', '완료한 수업', '포인트'], rows.map(function (r) { return r.cells; })));
+
+      if (window.CHReport) CHReport.mount(body, d, students, say);   // 학부모 월간 리포트 (report.js)
 
       body.appendChild(el('h3', '최근 포인트 내역', 'sec'));
       var history = (d.pointHistory || []).filter(function(r) { return ids[r.studentId]; });
