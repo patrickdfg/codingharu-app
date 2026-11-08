@@ -109,6 +109,7 @@ curl -s https://patrickdfg.github.io/codingharu-app/version.json
 - `CLASS_READ_TOKEN` 만료일을 확인해 둔다(만료되면 동기화가 멈춘다).
 
 ## 진행 메모 (도구가 바뀔 때마다 두세 줄로 갱신)
+- 2026-11-09 Claude: 첫 화면 밝은 구역 설명 글자색을 진하게(#5f586b·#6b4f8f, 5.5:1 이상), 폰(780px 이하)에서 9~13px 글자를 11~14px로 키웠다(home-extra.css 끝 블록, home.css 의 !important 3곳). 그림 속 장식 글자는 그대로. test-home.cjs 4묶음 통과, 390·800·1280px 넘침 없음.
 - 2026-11-09 Claude: 사용자 결정으로 첫 화면(index.html)만 검색 공개(noindex 제거, canonical)하고 카톡 등 공유 미리보기(og 태그, og-image.jpg 1200×630 첫 화면 캡처)를 넣었다. 교안 /v/ 는 그대로 noindex·암호화. robots.txt 는 하위 경로라 효과가 없어 맞춤 도메인용으로만 정리. tools/test-home.cjs 4묶음 통과. 실제 검색 노출·카톡 미리보기는 배포 후 사람이 확인. 학원 광고 표시사항(등록번호·교습비 등)은 교육청 기준 확인 필요.
 - 2026-11-09 Claude: 학생 비밀번호만으로 정답 파일 8개를 직접 열 수 있던 문제를 막았다. `build.mjs` 가 …answers.js·…solutions.js 를 `TEACHER_PASS` 로 따로 잠그고(없으면 빼고), `sw.js` 는 학생용에 없는 파일만 기기의 선생님 열쇠로 찾는다. 관리 메뉴에 '선생님 정답 열쇠' 칸(teacher-check.enc 로 확인, 12시간·로그아웃·학생 로그인 때 삭제). class 의 로봇 페이지 정답 72개도 robot-answers.js 로 뺐다.
   interop 시험 8번 추가 통과, 로컬 빌드 브라우저에서 학생 404·선생님 200·로봇 정답 넣기 확인. 실제 구글 로그인·학생 로그인 때 열쇠 삭제·실물 태블릿은 미확인. **`TEACHER_PASS` 비밀값을 넣기 전까지는 앱에 정답이 없다.**
