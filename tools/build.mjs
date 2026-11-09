@@ -53,7 +53,7 @@ function* walk(dir, rel = '') {
     const r = rel ? rel + '/' + e.name : e.name;
     if (!rel && SKIP_TOP.has(e.name) && !(e.isDirectory() && [...ALLOW].some((a) => a.startsWith(e.name + '/')))) continue;
     if (e.isDirectory()) yield* walk(path.join(dir, e.name), r);
-    else if (!SKIP_FILE.has(r) && (!r.startsWith('admin/') || ALLOW.has(r))) yield r;
+    else if (!SKIP_FILE.has(r) && !/\.md$/i.test(r) && (!r.startsWith('admin/') || ALLOW.has(r))) yield r;   // AGENTS·README 같은 작업 문서(.md)는 앱에 넣지 않는다
   }
 }
 
