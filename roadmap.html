@@ -65,6 +65,7 @@
   .cta a { text-decoration:none; padding:12px 18px; border-radius:12px; font-weight:700; background:var(--night); color:#fff; }
   .cta a.lime { background:var(--lime); color:#243016; }
   @media (max-width:600px) { header { padding-bottom:48px; } .level, .track { padding:22px 18px; } .top nav a { margin-left:10px; font-size:14px; } }
+.track-links{margin:14px 0 0;font-size:14px;font-weight:700}.track-links a{color:inherit;text-decoration:underline;text-underline-offset:3px}
 </style>
 </head>
 <body>
@@ -81,10 +82,11 @@
       <a href="#lv1"><b>LV1 기슭</b><small>유아~초2 · 놀이 코딩</small></a>
       <a href="#lv2"><b>LV2 오솔길</b><small>초2~4 · 엔트리·로봇</small></a>
       <a href="#lv3"><b>LV3 고개</b><small>초4~6 · 스크래치·로블록스</small></a>
-      <a href="#lv4"><b>LV4 능선</b><small>초6~중2 · 알고리즘·센서</small></a>
+      <a href="#lv4"><b>LV4 능선</b><small>초6~중2 · 알고리즘·웹·센서</small></a>
       <a href="#lv5"><b>LV5 마루</b><small>중1~고 · 파이썬·AI</small></a>
       <a href="#adult"><b>성인</b><small>AI 실무</small></a>
     </div>
+    <p class="track-links">학교 수업 연계 · <a href="#info-track">중등 트랙</a> · <a href="#high-track">고등 트랙</a></p>
   </div>
 </header>
 
@@ -177,6 +179,27 @@
         <li>결과물: 포트폴리오와 발표 자료</li></ul></div>
     </div>
     <p class="src">주 1회 2시간 기준 한 학기 약 16회. 학년 전환기(중3·고1)에는 학교 일정에 맞춰 짧은 집중 과정으로 조정할 수 있어요. 시수 근거: 교육부 2022 개정 교육과정 발표(2022. 12.)</p>
+  </section>
+
+  <section class="track" id="high-track">
+    <span class="lv-tag">고등 트랙 · 진로선택 과목 연계</span>
+    <h2>고등학교 '인공지능 기초'·'데이터 과학'과 진로 탐구로 이어지는 3학기</h2>
+    <p>2022 개정 교육과정 고등학교 정보 교과에는 진로선택 과목 '인공지능 기초'와 '데이터 과학'이 있어요. 고등 트랙은 이 과목에서 다루는 데이터 정리·분석, 머신러닝의 원리, 문제 해결 프로젝트를 코드로 직접 해 보고, 탐구 과정과 결과를 진로 활동·교과 세부 특기사항에 쓸 수 있는 보고서로 정리해요.</p>
+    <div class="terms">
+      <div class="term"><h3>1학기 · 데이터 과학 기초</h3><ul>
+        <li><a href="v/python/projects/">파이썬 프로젝트</a> 데이터 분석 차시 (pandas로 정리·시각화)</li>
+        <li><a href="v/digital/excel-8/">엑셀 데이터 분석 8차시</a> (빠른 정리·피벗·차트)</li>
+        <li>결과물: 공공데이터 탐구 보고서 1편</li></ul></div>
+      <div class="term"><h3>2학기 · 인공지능 기초</h3><ul>
+        <li><a href="v/robot/cubroid/pyai/">큐로AI 파이썬 AI 20차시</a> (이미지·소리 분류 모델 만들기)</li>
+        <li><a href="v/ai-projects/">AI·문제해결 12차시</a> (AI 제안 검증·설명)</li>
+        <li>결과물: AI 모델 비교 실험 보고서 1편</li></ul></div>
+      <div class="term"><h3>3학기 · 진로 프로젝트와 자격</h3><ul>
+        <li><a href="v/web/">웹 만들기 기초</a> → <a href="v/python/projects/">파이썬 프로젝트</a> 웹서비스 차시로 내 진로 주제 서비스 만들기</li>
+        <li><a href="v/algorithm/advanced/">알고리즘 심화·DSM</a> 또는 <a href="v/python/cospro2/">COS Pro 2급</a></li>
+        <li>결과물: 진로 연계 포트폴리오와 발표 자료</li></ul></div>
+    </div>
+    <p class="src">주 1회 2시간 기준 한 학기 약 16회. 학교 시험 기간에는 보고서 정리 위주로 조정해요. 과목 근거: 교육부 2022 개정 교육과정(정보과, 2022. 12.)</p>
   </section>
 
   <section class="level" id="adult" style="margin-top:0"><div class="lv-head"><span class="lv-tag">성인 과정</span><span class="who">공무원·교직원·직장인</span></div><h2>업무에 바로 쓰는 생성형 AI</h2><p class="goal">홍보물에서 공문서, 엑셀까지 AI로 초안을 빠르게 만들고 사실과 기준은 직접 확인하는 방법을 익혀요.</p><ol class="path"><li><div><a href="v/adult/ai-16/">성인 AI 실무 16차시</a><p>홍보물 → 공문서 → 엑셀·자동화 → 내 업무 프로젝트.</p></div></li></ol></section>
