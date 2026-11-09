@@ -86,6 +86,7 @@ Codex(ChatGPT)는 `AGENTS.md`, Claude Code 는 `CLAUDE.md` 를 자동으로 읽�
 ```bash
 node test/interop.test.mjs        # 잠금·풀기 시험 (맨 위 "SITE_PASS 가 없거나..." 한 줄은 정상 출력)
 node test/gallery.test.mjs        # 작품 게시판 서버(record.gs gallery*) 공개 범위·승인·좋아요 시험
+node test/lesson-check.test.mjs   # 로봇 수업 참여 기록(lessonStatus·lessonCheck) 시험
 ```
 
 로컬에서 브라우저로 보려면(실제 비밀번호 말고 **임시 값**을 쓴다):
@@ -324,3 +325,4 @@ curl -s https://patrickdfg.github.io/codingharu-app/version.json
 - 2026-11-06 Codex: 공개 첫 화면에 로봇 코딩 카드, 수업 사진 흐름, 학습 과정 카드와 학년군별 12문항 무료 레벨 테스트를 추가했다. 테스트는 로그인과 사전 파이썬 지식 없이 사용하며 정식 진단이 아닌 참고 결과다. 기존 로그인·관리자와 교안 경로는 유지했다. 로컬 브라우저에서 로그인 창·모바일·테스트·사진과 기존 interop/gallery/points 시험을 확인했으며 실제 계정 로그인과 태블릿 실기기는 확인하지 않았다.
 
 - 2026-11-06 Codex: 첫 화면에 학부모용 학원 소개·수업 특징·자주 묻는 질문과 전화/인스타그램 상담 경로를 더하고, 모바일에서 소개 문구와 3D가 겹치지 않게 배치했다. 로컬 브라우저에서 전화 링크·FAQ·로그인 창·화면 폭 및 interop 시험을 확인했다. 실제 학생 계정 로그인과 실물 태블릿은 미확인이다.
+- 2026-11-09 Claude: **로봇 수업 참여 기록**(사용자 요청: 선생님이 교안을 띄우고 학생은 같이 보기만 해서 완료가 안 남음). record.gs 에 lessonStatus(선생님: 수업 key → 승인된 학생별 완료·누가(teacher/student)·확인 미션 점수/평가, 반 목록)·lessonCheck(선생님: 최대 80명 완료/취소를 학생 done-index 지도와 done:key 줄에 저장, 선생님 칸에 이메일). key 는 robot/… 형식만. class 8cbf1147: assets/lesson-check.js(로봇 차시 188쪽 — 선생님 [✓ 오늘 수업 체크]·[QR 띄우기]·발표 모드 [QR], 학생 [확인 미션 풀기]), robot/check/(학생 태블릿 확인 미션 → check:key 와 완료 표시를 학생이 save 로 직접 저장), work/robot_check/build.py(quiz.js·QR SVG·태그). inject.js 로그인 next 에 location.search 를 붙여 ?l= 를 지키고 SHELL_CACHE shell-9. **record.gs 재배포 필요**(사람, 학부모 리포트와 함께). test/lesson-check.test.mjs 통과, 가짜 서버·앱 순서 가짜 CHRecord 로 선생님 체크(반 고르기·모두 선택·저장·바뀐 것 없음)·QR(디코드 확인)·학생 미션(채점·완료 3줄)·로그인 뒤 쿼리 없을 때 기억값·375px 확인. 실제 Apps Script·태블릿 QR 찍기는 미확인.

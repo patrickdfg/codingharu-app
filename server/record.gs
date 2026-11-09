@@ -707,3 +707,74 @@ function sendMonthlyReports() {
   rows_('students').forEach(r => { if (saved[String(r[0])] && !pending_(r)) { try { n += reportEmail_(r, month); } catch (e) { console.log(String(r[1]) + ': ' + e); } } });
   console.log(month + ' 리포트 이메일 ' + n + '통');
 }
+
+// ---- 로봇 수업 참여 기록(선생님 일괄 체크 · 학생 확인 미션) ----
+// 로봇 수업은 선생님 화면을 함께 보므로 학생 기기에 '완료'가 남지 않는다. 선생님이 출석한 학생을 한꺼번에 완료로 표시한다.
+// 기록 모양은 학생의 '완료' 단추(inject.js)와 같다: 'done-index' 지도(pages[key]=+시각/-시각) + 수업마다 'done:'+key 한 줄.
+// 학생이 QR 로 푼 확인 미션은 'check:'+key 한 줄(progress=점수/문항, state={rating,note,...})로 학생이 직접 저장한다.
+function lessonKey_(k) {
+  k = String(k || '');
+  if (k.length > 300 || !/^robot\/[a-z0-9\/_-]+\/$/.test(k)) throw new Error('수업 주소가 올바르지 않아요.');
+  return k;
+}
+function lessonJson_(v) { try { return JSON.parse(v || '{}') || {}; } catch (e) { return {}; } }
+Object.assign(ACTIONS_, {
+  // 선생님: 이 수업의 학생별 완료·확인 미션 상태와 반 목록
+  lessonStatus(req) {
+    teacher_(req.auth);
+    const key = lessonKey_(req.page);
+    const done = {}, check = {};
+    rows_('workbooks').forEach(r => {
+      const id = String(r[0]), wb = String(r[2]);
+      if (wb === 'done:' + key) {
+        const st = lessonJson_(r[10]);
+        done[id] = { done: !!st.done, by: String(r[9]) === '학생 로그인' ? 'student' : 'teacher' };
+      } else if (wb === 'check:' + key) {
+        const st = lessonJson_(r[10]);
+        check[id] = { score: Number(r[5]) || 0, total: Number(r[6]) || 0, rating: String(st.rating || ''), note: String(st.note || '').slice(0, 200),
+          at: r[8] instanceof Date ? r[8].getTime() : 0 };
+      }
+    });
+    const students = rows_('students').filter(r => r[0] !== '' && r[1] !== '' && !pending_(r)).map(r => {
+      const id = String(r[0]), d = done[id];
+      return { id: id, name: String(r[1]), group: String(r[3] || '').trim(), done: !!(d && d.done), by: d && d.done ? d.by : '', check: check[id] || null };
+    });
+    const groups = students.map(s => s.group).filter((g, i, a) => g && a.indexOf(g) === i).sort();
+    return { students: students, groups: groups };
+  },
+  // 선생님: checks=[{studentId, done}] 를 한꺼번에 완료/취소로 저장(최대 80명)
+  lessonCheck(req) {
+    const t = teacher_(req.auth);
+    const key = lessonKey_(req.page);
+    const title = String(req.title || '').replace(/\s+/g, ' ').trim().slice(0, 150) || key;
+    const checks = Array.isArray(req.checks) ? req.checks : [];
+    if (!checks.length || checks.length > 80) throw new Error('체크할 학생을 1~80명 골라 주세요.');
+    const uniq = {}; checks.forEach(c => { uniq[String(c.studentId)] = !!c.done; });   // 같은 학생이 두 번 오면 마지막 값
+    const people = Object.keys(uniq).map(id => ({ s: student_(id), done: uniq[id] }));
+    let saved = 0;
+    withLock_(() => {
+      const sh = sheet_('workbooks');
+      const last = sh.getLastRow();
+      const data = last > 1 ? sh.getRange(2, 1, last - 1, 11).getValues() : [];
+      const at = {};                                           // '학생|워크북' → 행 번호
+      data.forEach((r, i) => { at[String(r[0]) + '|' + String(r[2])] = i + 2; });
+      let next = last + 1;
+      const put = (s, wb, line) => {
+        const k = String(s[0]) + '|' + wb, row = at[k];
+        if (row) { line[7] = data[row - 2][7] || line[7]; sh.getRange(row, 1, 1, line.length).setValues([line]); }
+        else { sh.appendRow(line); at[k] = next++; }
+      };
+      people.forEach(p => {
+        const now = new Date(), ts = now.getTime(), id = String(p.s[0]), name = String(p.s[1]);
+        const row = at[id + '|done-index'];
+        const pages = (lessonJson_(row ? data[row - 2][10] : '').pages) || {};
+        pages[key] = p.done ? ts : -ts;
+        const count = Object.keys(pages).filter(k => pages[k] > 0).length;
+        put(p.s, 'done-index', [id, name, 'done-index', '완료한 수업', '', count, Math.max(1, Object.keys(pages).length), now, now, t.email, JSON.stringify({ pages: pages })]);
+        put(p.s, 'done:' + key, [id, name, 'done:' + key, '완료 · ' + title, key, p.done ? 1 : 0, 1, now, now, t.email, JSON.stringify({ done: p.done, at: ts, by: 'teacher' })]);
+        saved++;
+      });
+    });
+    return { saved: saved };
+  }
+});

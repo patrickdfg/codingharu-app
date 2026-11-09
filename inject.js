@@ -139,7 +139,7 @@
     if (!cfg.on) return;
     var dev = CHRecord.device(), stu = CHRecord.student();
     var page = decodeURIComponent(location.pathname.split('/v/')[1] || 'index.html');
-    var login = CHRecord.base + 'index.html?next=' + encodeURIComponent('v/' + page);
+    var login = CHRecord.base + 'index.html?next=' + encodeURIComponent('v/' + page + location.search);   // ?l= 같은 쿼리도 로그인 뒤 그대로
     // 들어갈 때마다 로그인: 이번에 로그인하지 않았으면 처음 화면으로 보낸다
     if (!CHRecord.sessionOk()) { location.replace(login); return; }
 
