@@ -130,39 +130,59 @@
       var canvas = draw(info);
       out.textContent = '';
       var img = el('img'); img.alt = s.name + ' 학생 ' + monthLabel(month.value) + ' 리포트'; img.src = canvas.toDataURL('image/png'); out.appendChild(img);
-      var bar = el('div', null, 'bar'), share = el('button', '카톡 등으로 보내기'), save = el('a', '그림 저장');
-      share.type = 'button';
       var fname = '코드마루_' + s.name + '_' + month.value + '.png';
+      // 카톡 보내기 한 번에 그림 + 안내글(학부모 링크 포함)을 넘긴다.
+      // navigator.share 는 누른 순간에 바로 불러야 해서(서버를 기다리면 막힌다) 그림 파일과 링크를 미리 준비해 둔다.
+      var file = null, link = '', linkNote = el('p', '학부모 링크를 준비하는 중…', 'report-link');
+      canvas.toBlob(function (blob) { file = new File([blob], fname, { type: 'image/png' }); }, 'image/png');
+      function message() {
+        return '[코드마루] ' + s.name + ' 학생 ' + monthLabel(info.month) + ' 리포트를 보내드려요.\n' +
+          '이번 달 완료한 수업 ' + info.data.done.length + '개 · 포인트 +' + info.data.earned.toLocaleString() +
+          (link ? '\n\n리포트 자세히 보기(언제든 다시 열 수 있어요)\n' + link : '');
+      }
+      function copy(text) { return navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(text) : Promise.reject(); }
+      var bar = el('div', null, 'bar'), share = el('button', '카톡으로 보내기 (그림 + 안내글)'), copyBtn = el('button', '안내글만 복사'), save = el('a', '그림 저장');
+      share.type = copyBtn.type = 'button'; copyBtn.className = 'ghost';
       save.href = img.src; save.download = fname; save.className = 'ghost-link';
       share.onclick = function () {
-        canvas.toBlob(function (blob) {
-          var file = new File([blob], fname, { type: 'image/png' });
-          if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            navigator.share({ files: [file], title: fname }).catch(function () {});
-          } else { save.click(); say('이 기기는 바로 보내기를 지원하지 않아 그림을 저장했어요. 카톡에서 사진으로 보내 주세요.', true); }
-        }, 'image/png');
+        var text = message();
+        copy(text).catch(function () {});           // 카톡이 그림만 받고 글을 빼먹을 때 붙여 넣을 수 있게 먼저 복사(공유는 누른 기회를 써 버린다)
+        if (file && navigator.canShare && navigator.canShare({ files: [file], text: text })) {
+          navigator.share({ files: [file], text: text, title: fname })
+            .then(function () { say('보냈어요. 카톡에 글이 안 보이면 대화창을 길게 눌러 붙여넣기 하면 안내글이 들어가요.', true); }, function () {});
+        } else {
+          save.click();
+          say('이 기기는 바로 보내기를 지원하지 않아 그림을 저장하고 안내글을 복사했어요. 카톡에서 사진을 보내고 안내글을 붙여 넣어 주세요.', true);
+        }
       };
-      bar.append(share, save); out.appendChild(bar);
-      // 2·3번: 기록 서버에 한마디를 저장하고 학부모 링크를 받거나 이메일로 보낸다 (record.gs 새 버전 배포가 필요)
-      var bar2 = el('div', null, 'bar'), linkBtn = el('button', '저장하고 학부모 링크 복사'), mailBtn = el('button', '저장하고 학부모 이메일로 보내기');
-      linkBtn.type = mailBtn.type = 'button'; linkBtn.className = mailBtn.className = 'ghost';
+      copyBtn.onclick = function () {
+        var text = message();
+        copy(text).then(function () { say('안내글을 복사했어요. 카톡 대화창에 붙여 넣어 주세요.', true); }, function () { window.prompt('이 글을 복사해 보내 주세요', text); });
+      };
+      bar.append(share, copyBtn, save);
+      // 이메일로 보내기와 다음 학생으로 넘어가기
+      var bar2 = el('div', null, 'bar'), mailBtn = el('button', '학부모 이메일로도 보내기'), nextBtn = el('button', '다음 학생 →');
+      mailBtn.type = nextBtn.type = 'button'; mailBtn.className = nextBtn.className = 'ghost';
       function saveReport(email) {
-        linkBtn.disabled = mailBtn.disabled = true; say('저장하는 중…', true);
         return CHRecord.api('reportSave', { auth: CHRecord.auth(), studentId: s.id, month: info.month, plan: info.plan, comment: info.comment, email: !!email })
-          .catch(function (err) { throw new Error(/알 수 없는 요청/.test(err.message) ? '기록 서버(Apps Script)를 새 버전으로 배포해야 이 기능을 쓸 수 있어요.' : err.message); })
-          .finally(function () { linkBtn.disabled = mailBtn.disabled = false; });
+          .catch(function (err) { throw new Error(/알 수 없는 요청/.test(err.message) ? '기록 서버(Apps Script)를 새 버전으로 배포해야 학부모 링크·이메일을 쓸 수 있어요. 그림은 지금도 보낼 수 있어요.' : err.message); });
       }
-      linkBtn.onclick = function () {
-        saveReport(false).then(function (r) {
-          var text = s.name + ' 학생 ' + monthLabel(info.month) + ' 리포트예요. 이 링크에서 언제든 확인하실 수 있어요.\n' + r.link;
-          (navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject()).then(function () { say('저장했어요. 링크를 복사했으니 카톡에 붙여 넣어 주세요.', true); },
-            function () { window.prompt('이 링크를 복사해 보내 주세요', r.link); say('저장했어요.', true); });
-        }, function (err) { say(err.message); });
-      };
       mailBtn.onclick = function () {
-        saveReport(true).then(function (r) { say(r.sent ? '저장하고 학부모 이메일 ' + r.sent + '곳에 보냈어요.' : '저장했어요. 시트 \'학부모\' 탭에 이 학생의 이메일과 수신 동의(Y)가 없어 보내지 않았어요.', !!r.sent); }, function (err) { say(err.message); });
+        mailBtn.disabled = true; say('저장하고 보내는 중…', true);
+        saveReport(true).then(function (r) { say(r.sent ? '학부모 이메일 ' + r.sent + '곳에 보냈어요.' : '시트 \'학부모\' 탭에 이 학생의 이메일과 수신 동의(Y)가 없어 이메일은 보내지 않았어요.', !!r.sent); }, function (err) { say(err.message); })
+          .then(function () { mailBtn.disabled = false; });
       };
-      bar2.append(linkBtn, mailBtn); out.appendChild(bar2);
+      var idx = who.selectedIndex, last = idx >= who.options.length - 1;
+      nextBtn.disabled = last; if (last) nextBtn.textContent = '마지막 학생이에요';
+      nextBtn.onclick = function () {   // 달·계획은 그대로 두고 학생과 한마디만 바꾼다
+        who.selectedIndex = idx + 1; comment.value = ''; out.textContent = ''; say('');
+        comment.focus(); wrapEl.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      };
+      bar2.append(mailBtn, nextBtn);
+      out.append(linkNote, bar, bar2);
+      // 리포트를 만들 때 바로 기록 서버에 저장하고 학부모 링크를 받아 둔다(같은 학생·달은 덮어쓴다)
+      saveReport(false).then(function (r) { link = r.link || ''; linkNote.textContent = link ? '학부모 링크 준비됨 · 안내글에 함께 들어가요' : '학부모 링크 없이 그림만 보내요'; },
+        function (err) { linkNote.textContent = '학부모 링크 없이 그림만 보내요 — ' + err.message; });
       if (!info.data.done.length && !info.data.progress.length) say('이 달에는 기록이 없어요. 선생님 한마디 위주로 보내 주세요.');
     };
   }
