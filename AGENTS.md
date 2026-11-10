@@ -350,3 +350,4 @@ curl -s https://patrickdfg.github.io/codingharu-app/version.json
 - **앱 용량 방침**(GitHub Pages 사이트 1GB): 2026-11-09 class 기준 앱에 들어가는 파일 477MB(로봇 WebP 158MB가 가장 큼). tools/build.mjs 는 이제 .md 작업 문서를 넣지 않는다. 쓰지 않게 된 큰 파일은 지우지 말고 class work/archive/ 로 옮긴다(앱에서 빠지고 저장소에는 남음). 교안 동기화 전에 `python work/size_audit.py` 로 이름이 어디에도 안 나오는 200KB 넘는 파일을 확인한다. 새 교재 그림은 WebP 가로 1280 이하, 5MB 넘는 원본(PDF·zip·영상)은 Drive 에 두고 링크한다. content/ 가 800MB 를 넘으면 로봇 WebP 화질·가로를 낮추는 것부터 검토.
 
 - 2026-11-10 Claude: class 스크래치 주니어 11개월차(m11-1~4)를 교재 11권 게임 4개로 교체 후 sync.yml 실행(성공). 남은 일 없음. 앱 iframe·태블릿 실기기 화면은 확인 못 함.
+- 2026-11-10 Claude: class 스크래치 주니어 11권 워크북(book11, 펼친면 사진·스티커 끌기) 추가 후 sync.yml 성공. 앱 주소는 v/scratch/junior/book11/. 앱 iframe·태블릿 실기기에서 스티커 끌기는 확인 못 함.
