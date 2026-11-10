@@ -109,7 +109,7 @@ const ACTIONS_ = {
     if (!rateKey) throw new Error('포인트를 지급할 수 없는 활동입니다.');
     let total, awarded = false;
     withLock_(() => {
-      const rows = rows_('points'), amount = pointsRates_()[rateKey];
+      const rows = rows_('points'), amount = pointsAmount_(kind, key, rateKey);
       if (!rows.some(r => String(r[0]) === String(student[0]) && String(r[2]) === kind && String(r[3]) === key)) {
         if (!pointsProof_(String(student[0]), kind, key)) throw new Error('완료 기록을 저장한 뒤 포인트를 지급합니다.');
         sheet_('points').appendRow([String(student[0]), new Date(), kind, key, amount, pointsText_(String(req.label || '').slice(0, 120)), '자동']); awarded = true;
@@ -117,6 +117,25 @@ const ACTIONS_ = {
       total = pointsTotal_(String(student[0]));
     });
     return { points: total, awarded: awarded };
+  },
+  // 선생님이 수업 쪽에서 그 수업 하나의 완료 점수를 보고 고친다(inject.js 의 #ch-pt). points 를 비우면 묶음 점수로 돌아간다.
+  pointsLesson(req) {
+    teacher_(req.auth); const key = String(req.key || ''), item = pointsRule_('lesson', key);
+    if (!item) return { item: '', rate: 0, override: null, points: 0 };
+    const rate = pointsRates_()[item], v = pointsLessonMap_()[key], has = Number.isSafeInteger(v) && v >= 0 && v <= 100000;
+    return { item: item, rate: rate, override: has ? v : null, points: has ? v : rate };
+  },
+  pointsSetLesson(req) {
+    teacher_(req.auth); const key = String(req.key || '');
+    if (!pointsRule_('lesson', key)) throw new Error('완료 점수가 붙지 않는 쪽입니다.');
+    withLock_(() => {
+      const m = pointsLessonMap_();
+      if (req.points === null || req.points === undefined || req.points === '') delete m[key];
+      else { const n = Number(req.points); if (!Number.isSafeInteger(n) || n < 0 || n > 100000) throw new Error('점수는 0~100000 사이의 정수로 입력해 주세요.'); m[key] = n; }
+      const text = JSON.stringify(m); if (text.length > 8500) throw new Error('따로 정한 수업이 너무 많아요. 묶음 점수를 바꾸는 쪽이 좋아요.');
+      PropertiesService.getScriptProperties().setProperty('POINT_LESSON', text);
+    });
+    return ACTIONS_.pointsLesson(req);
   },
   pointsSetRates(req) {
     teacher_(req.auth);
@@ -575,6 +594,12 @@ function pointsRates_() {
   Object.keys(POINT_LEGACY_).forEach(old => { if (ok(rates[old])) POINT_LEGACY_[old].forEach(k => { if (!(k in rates)) defaults[k]=rates[old]; }); });
   Object.keys(defaults).forEach(k => { if (ok(rates[k])) defaults[k]=rates[k]; });
   return defaults;
+}
+// 수업별 점수: 속성 POINT_LESSON = {"수업 주소": 점수}. 수업 완료(kind lesson)에만 쓰고, 없으면 묶음 점수(pointsRates_)다. 속성 한 칸이 9KB 라 200개쯤까지 담긴다.
+function pointsLessonMap_() { try { const m = JSON.parse(PropertiesService.getScriptProperties().getProperty('POINT_LESSON') || '{}'); return m && typeof m === 'object' && !Array.isArray(m) ? m : {}; } catch(e) { return {}; } }
+function pointsAmount_(kind, key, rateKey) {
+  if (kind === 'lesson') { const v = pointsLessonMap_()[key]; if (Number.isSafeInteger(v) && v >= 0 && v <= 100000) return v; }
+  return pointsRates_()[rateKey];
 }
 function pointsRule_(kind, key) {
   if (kind === 'block' && /^(?:[1-9]|10)-(?:[1-9]|10)$/.test(key)) return 'playground';

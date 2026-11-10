@@ -34,4 +34,12 @@ assert.equal(run(`ACTIONS_.pointsAward({sid:'valid',studentId:'5',kind:'python-r
 assert.throws(()=>run(`ACTIONS_.pointsAward({sid:'valid',studentId:'5',kind:'python-robot',key:'python-robot:L2'})`));   // 6개를 다 통과하지 못한 차시
 assert.throws(()=>run(`ACTIONS_.pointsAward({sid:'valid',studentId:'5',kind:'python-robot',key:'python-robot:L3'})`));   // 기록 없는 차시
 run(`books['5|python-robot-v1'].progress=Object.assign(books['5|python-robot-v1'].progress,${JSON.stringify(full(2))})`);assert.equal(run(`ACTIONS_.pointsAward({sid:'valid',studentId:'5',kind:'python-robot',key:'python-robot:L2'}).awarded`),true);assert.equal(run(`pointsTotal_('5')`),78);
-console.log('서버 지급, 중복 방지, 학생 분리, 교사 인증, 완료 검증, 모든 수업 점수, 로봇 차시별 점수 통과');
+// 수업별 점수: 선생님만 보고 고치고, 따로 정한 값이 묶음 점수보다 먼저다. 비우면 묶음 점수로 돌아간다.
+const webRate=run(`pointsRates_().web`);assert.throws(()=>run(`ACTIONS_.pointsLesson({auth:'student',key:'web/l01/'})`));assert.equal(run(`ACTIONS_.pointsLesson({auth:'teacher',key:'web/l01/'}).points`),webRate);assert.equal(run(`ACTIONS_.pointsLesson({auth:'teacher',key:'web/l01/'}).override`),null);
+assert.equal(run(`ACTIONS_.pointsLesson({auth:'teacher',key:'python/farm/lesson-beginner-01/'}).item`),'');assert.throws(()=>run(`ACTIONS_.pointsSetLesson({auth:'teacher',key:'python/farm/lesson-beginner-01/',points:50})`));
+assert.throws(()=>run(`ACTIONS_.pointsSetLesson({auth:'teacher',key:'web/l01/',points:-1})`));assert.throws(()=>run(`ACTIONS_.pointsSetLesson({auth:'student',key:'web/l01/',points:150})`));
+assert.equal(run(`ACTIONS_.pointsSetLesson({auth:'teacher',key:'web/l01/',points:150}).points`),150);assert.equal(run(`ACTIONS_.pointsLesson({auth:'teacher',key:'web/l02/'}).points`),webRate);
+run(`books['5|done:web/l01/']={done:true}; books['5|done:web/l02/']={done:true}`);const before5=run(`pointsTotal_('5')`);
+assert.equal(run(`ACTIONS_.pointsAward({sid:'valid',studentId:'5',kind:'lesson',key:'web/l01/'}).points`),before5+150);assert.equal(run(`ACTIONS_.pointsAward({sid:'valid',studentId:'5',kind:'lesson',key:'web/l02/'}).points`),before5+150+webRate);
+assert.equal(run(`ACTIONS_.pointsSetLesson({auth:'teacher',key:'web/l01/',points:null}).override`),null);assert.equal(run(`ACTIONS_.pointsLesson({auth:'teacher',key:'web/l01/'}).points`),webRate);
+console.log('서버 지급, 중복 방지, 학생 분리, 교사 인증, 완료 검증, 모든 수업 점수, 로봇 차시별 점수, 수업별 점수 통과');

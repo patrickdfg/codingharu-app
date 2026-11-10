@@ -147,16 +147,52 @@
     var tag = document.createElement('div');
     tag.setAttribute('data-ch-app', ''); tag.id = 'ch-student';
     var css = document.createElement('style'); css.setAttribute('data-ch-app', '');
-    css.textContent = '#ch-student{position:fixed;left:14px;bottom:14px;z-index:2147483646;display:flex;align-items:center;gap:8px;padding:6px 8px;' +
+    css.textContent = '#ch-student{position:absolute;right:10px;top:8px;z-index:2147483646;display:flex;align-items:center;gap:6px;padding:4px 6px;' +
       'border-radius:999px;background:rgba(255,255,255,.96);border:1px solid #dae1ed;box-shadow:0 2px 8px rgba(0,0,0,.18);font:600 15px/1.2 sans-serif;color:#0056d2}' +
       '#ch-student button,#ch-student a{border:0;border-radius:999px;background:#0056d2;color:#fff;font:700 13px sans-serif;padding:7px 12px;text-decoration:none;cursor:pointer}' +
-      '#ch-student>span{display:none!important}@media print{#ch-student{display:none!important}}';
+      '#ch-student>span{display:none!important}@media print{#ch-student,#ch-pt{display:none!important}}' +
+      // 위쪽 머리줄(.chtop·header.top)이 있으면 그 안에 놓는다. 좁은 화면의 header.top 은 자리가 없어 머리줄 바로 아래 오른쪽에 둔다.
+      '#ch-student.in-bar{position:static;box-shadow:none;flex:none;margin-left:8px}' +
+      '.chtop>#ch-student.in-bar{margin-left:auto}.chtop>#ch-student.in-bar+nav{margin-left:0}@media (max-width:1150px){.chtop:has(#ch-student) .brand small{display:none}}' +   // 좁으면 메뉴만 아랫줄로 내려가고 라벨은 첫 줄 오른쪽에 남는다
+      '@media (max-width:999px){header.top>#ch-student.in-bar{position:absolute;right:10px;top:calc(100% + 6px);box-shadow:0 2px 8px rgba(0,0,0,.18)}}' +
+      '#ch-pt{max-width:560px;margin:36px auto 96px;padding:14px 16px;border:2px dashed #b7791f;border-radius:14px;background:#fffaf0;color:#5a3d0a;font:600 15px/1.6 sans-serif;text-align:center}' +
+      '#ch-pt input{width:92px;font:700 18px sans-serif;padding:6px 8px;border:1px solid #b7791f;border-radius:8px;text-align:right}' +
+      '#ch-pt button{margin-left:6px;border:0;border-radius:999px;background:#0056d2;color:#fff;font:700 14px sans-serif;padding:8px 14px;cursor:pointer}#ch-pt button.sub{background:#6b7a72}#ch-pt small{display:block;font-weight:500;opacity:.85}';
     document.head.appendChild(css);
     var sess = CHRecord.session();
     if (sess && sess.role === 'teacher') {
       tag.innerHTML = '<span></span><span class="st"></span><a>관리자 메뉴</a>';
       tag.firstChild.textContent = '선생님';
       tag.querySelector('a').href = CHRecord.base + 'index.html';
+      // 선생님: 이 수업의 완료 점수를 보고 고친다(서버 pointsLesson·pointsSetLesson). 목록 쪽에는 붙이지 않는다.
+      (function () {
+        var key = page.replace(/index\.html$/, '');
+        if (!key || document.querySelector('[data-lessons], a.category, a.row')) return;
+        var NAMES = {entry:'엔트리 수업', entryWork:'엔트리 작품', scratch:'스크래치 수업', scratchWork:'스크래치 작품', junior:'스크래치주니어 수업', algorithm:'알고리즘 수업', pythonLesson:'파이썬 수업',
+          codingLesson:'코딩 수업', roblox:'로블록스 수업', robot:'로봇 수업', web:'웹 수업', digital:'디지털 수업', adult:'성인 수업', otherLesson:'기타 수업', doubleLesson:'2차시 분량 수업'};
+        var box = document.createElement('div'); box.id = 'ch-pt'; box.setAttribute('data-ch-app', '');
+        function line(t) { var s = document.createElement('small'); s.textContent = t; return s; }
+        function render(out) {
+          box.textContent = '';
+          if (!out.item) {
+            var own = /^python\/(?:basic|cospro2|farm|robot)\//.test(key) || /^coding\/(?:bebras|block-games|detective)\//.test(key);
+            box.appendChild(document.createTextNode(own ? '🅿 이 수업은 문제·단계·차시마다 점수가 들어가요.' : '🅿 이 쪽은 완료 점수가 없어요.'));
+            box.appendChild(line(own ? '값은 관리자 메뉴의 「자동 지급 점수 설정」에서 고쳐요.' : '차시 안내·도구 쪽이에요. 작품·수업 쪽에서 점수가 들어가요.'));
+            return;
+          }
+          var inp = document.createElement('input'), save = document.createElement('button'), reset = document.createElement('button'), msg = line('');
+          inp.type = 'number'; inp.min = '0'; inp.max = '100000'; inp.step = '1'; inp.value = out.points; inp.setAttribute('aria-label', '이 수업 완료 점수');
+          save.type = reset.type = 'button'; save.textContent = '저장'; reset.textContent = '묶음 점수로'; reset.className = 'sub'; reset.hidden = out.override === null;
+          box.appendChild(document.createTextNode('🅿 이 수업 완료 점수 ')); box.appendChild(inp); box.appendChild(document.createTextNode(' 점')); box.appendChild(save); box.appendChild(reset);
+          box.appendChild(line((NAMES[out.item] || out.item) + ' 묶음 점수 ' + out.rate + '점' + (out.override === null ? ' 을 그대로 쓰고 있어요.' : ' 대신 이 수업만 따로 정한 값이에요.') + ' 학생에게는 보이지 않아요.'));
+          box.appendChild(msg);
+          function send(points) { save.disabled = reset.disabled = true; CHRecord.api('pointsSetLesson', {auth: CHRecord.auth(), key: key, points: points}).then(function (o) { render(o); box.lastChild.textContent = '저장했어요. 지금부터 완료하는 학생에게 적용돼요.'; },
+            function (e) { save.disabled = reset.disabled = false; msg.textContent = (e && e.message) || '저장하지 못했어요.'; }); }
+          save.onclick = function () { var n = Number(inp.value); if (inp.value === '' || !Number.isInteger(n) || n < 0 || n > 100000) { msg.textContent = '0~100000 사이의 정수로 써 주세요.'; return; } send(n); };
+          reset.onclick = function () { send(null); };
+        }
+        CHRecord.api('pointsLesson', {auth: CHRecord.auth(), key: key}).then(function (out) { render(out); (document.body || document.documentElement).appendChild(box); }, function () {});
+      })();
     } else if (stu && sess && sess.role === 'student') {
       tag.innerHTML = '<span></span><span class="st"></span><button type="button">로그아웃</button>';
       tag.firstChild.textContent = stu.name;
@@ -168,13 +204,19 @@
       tag.innerHTML = '<span>기록이 이 기기에만 남아요</span><a>로그인</a>';
       tag.querySelector('a').href = CHRecord.base + 'index.html';
     }
-    document.documentElement.appendChild(tag);
+    var bar = document.querySelector('.chtop, header.top');   // 아래 왼쪽에 떠 있으면 실행 단추를 가려서 위로 올렸다
+    if (bar) { tag.className = 'in-bar'; var barNav = bar.classList.contains('chtop') && bar.querySelector('nav'); if (barNav) bar.insertBefore(tag, barNav); else bar.appendChild(tag); }
+    else document.documentElement.appendChild(tag);
     var stEl = tag.querySelector('.st');
     function status(m) { if (stEl) stEl.textContent = m; var wb = window.CodingHaruWorkbook; if (wb && m) wb.setStatus(m); }
     if (stu && sess && sess.role === 'student') {
       var points = document.createElement('strong'); points.textContent = '포인트 확인 중'; points.style.cssText = 'color:#23415b;padding:0 6px;font:700 14px sans-serif';
       tag.insertBefore(points, tag.querySelector('button'));
-      function showPoints(out) { points.textContent = Number(out.points || 0).toLocaleString() + ' P'; }
+      var lastP = null;   // 라벨이 위로 올라가 아래에서는 안 보이므로, 점수가 오르면 아래 가운데에 잠깐 알려 준다
+      function toast(t) { var d = document.createElement('div'); d.setAttribute('data-ch-app', ''); d.textContent = t;
+        d.style.cssText = 'position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:2147483647;padding:10px 22px;border-radius:999px;background:#0056d2;color:#fff;font:800 18px sans-serif;box-shadow:0 4px 14px rgba(0,0,0,.25);pointer-events:none';
+        document.documentElement.appendChild(d); setTimeout(function () { d.remove(); }, 2600); }
+      function showPoints(out) { var p = Number(out.points || 0); points.textContent = p.toLocaleString() + ' P'; if (lastP !== null && p > lastP) toast('+' + (p - lastP).toLocaleString() + ' P'); lastP = p; }
       CHRecord.api('pointsBalance', {studentId:stu.id}).then(showPoints, function () { points.textContent = '포인트 연결 대기'; });
       window.addEventListener('codingharu:points-balance', function (e) { showPoints(e.detail || {}); });
     }
