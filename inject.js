@@ -248,7 +248,8 @@
         function lessonScored_(k) {
           if (!/\/$/.test(k)) return false;
           if (/^(?:admin|assets|docs|downloads|gallery|work)\//.test(k)) return false;
-          if (/^python\/(?:basic|cospro2|farm)\//.test(k) || /^coding\/(?:bebras|block-games|detective|vendor)\//.test(k)) return false;
+          if (/^python\/(?:basic|cospro2|farm|robot)\//.test(k) || /^coding\/(?:bebras|block-games|detective|vendor)\//.test(k)) return false;
+          if (/^robot\/(?:check|arduino\/editor)\//.test(k)) return false;
           if (/^entry\//.test(k)) return /^entry\/[^/]+\/$/.test(k);
           return /^[^/]+\/.+\/$/.test(k);
         }

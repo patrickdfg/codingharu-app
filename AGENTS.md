@@ -65,6 +65,11 @@ Codex(ChatGPT)는 `AGENTS.md`, Claude Code 는 `CLAUDE.md` 를 자동으로 읽�
 - **수업이 아닌 폴더만 제외한다:** `admin`, `assets`, `docs`, `downloads`, `gallery`, `work`.
 - **문제·단계·단원 점수를 따로 주는 수업**(파이썬 기초·COS Pro·농장, 비버·탐정·코딩 게임 등)은 페이지가 `codingharu:points` 로 kind·key 를 직접 보내고,
   `pointsRule_`·`pointsProof_` 에 그 규칙을 추가한다. 그 폴더는 수업 완료 점수에서 **반드시 제외**해 같은 활동에 점수가 두 번 붙지 않게 한다.
+- **점수는 차시(수업 1회) 단위로 준다.** 차시마다 페이지가 따로 있는 수업은 페이지의 '완료' 버튼이 차시당 한 번 지급한다.
+  **한 페이지 안에 여러 차시가 들어 있는 수업은 차시마다 완료 체크와 점수를 따로 둔다**(예: `python/robot` 12차시 — 한 차시의 미션 3개·문제 3개를 모두 통과하면
+  그 차시가 ✔ 완료가 되고 `codingharu:points` kind:`python-robot`, key:`python-robot:L<번호>` 를 보낸다). 서버 `pointsRule_`·`pointsProof_` 에 규칙과 검증을 추가하고,
+  그 폴더는 `lessonScored_`·서버 lesson 규칙에서 제외해 페이지 전체 완료로 또 받지 않게 한다. 새로 만드는 다차시 단일 페이지도 같은 방식으로 만든다.
+- **수업이 아닌 도구 페이지**(`robot/check`, `robot/arduino/editor` 등)는 완료 점수에서 제외한다.
 - **`pointsRule_` 의 'lesson' 규칙(`record.gs`)과 `inject.js` 의 `lessonScored_` 는 항상 같아야 한다.** 다르면 앱이 서버가 거절한 요청을 계속 다시 보낸다.
   `test/points.test.cjs` 가 두 규칙을 같은 목록으로 비교하므로 규칙을 고치면 시험을 돌린다.
 - **점수 항목을 추가하면 `index.html` 관리 화면의 `rateDefs` 에도 같은 항목(입력 칸)을 추가한다.** 선생님이 관리자 로그인 후 프로그램별 점수를 보고 고칠 수 있어야 한다.
@@ -128,6 +133,7 @@ curl -s https://patrickdfg.github.io/codingharu-app/version.json
 - `CLASS_READ_TOKEN` 만료일을 확인해 둔다(만료되면 동기화가 멈춘다).
 
 ## 진행 메모 (도구가 바뀔 때마다 두세 줄로 갱신)
+- 2026-11-10 Claude: 파이썬 로봇 코딩(python/robot, 12차시)을 차시마다 점수·완료 체크로 바꿨다. 한 차시의 미션 3 + 문제 3을 모두 통과하면 ✔ 완료 표시와 함께 pythonRobot 점수(기본 100)가 한 번 지급되고, 서버가 워크북 python-robot-v1 의 통과 기록을 다시 확인한다. 점수 항목 22개. robot/check·robot/arduino/editor 는 수업이 아니라 완료 점수에서 뺐다. 차시마다 페이지가 따로 있는 수업(웹 12·성인 AI 16·엑셀 8·바이브 8·로봇 cubroid/arduino·엔트리·스크래치)은 이미 차시당 완료 버튼 1회가 점수다. 시험 통과. 미확인: 실제 학생 계정으로 12차시 한 차시를 끝까지 풀어 본 것, Apps Script 새 버전 배포. **서버(record.gs)를 먼저 배포해야 로봇 차시 점수 요청이 처리된다.**
 - 2026-11-10 Claude: 모든 수업이 점수를 받게 했다(위 '포인트 규칙'). 점수 항목을 프로그램별 21개로 나누고 관리 화면 '자동 지급 점수 설정'에서 보고 고치게 했다. 기본값은 1시간 약 100점 기준(수업 100, 문제 12, 놀이터·게임 단계 3, 단원 30, 알고리즘 25). 수업 완료 점수는 python/basic·cospro2·farm 과 coding/bebras·block-games·detective 만 뺀 모든 수업 폴더에 붙는다. 학생 PIN 의 앞자리 0 이 사라지는 오류(0121 → 121)도 고쳤다(pinOf_ 가 4자리로 복구, 가입은 텍스트로 저장). 시험 5종 통과. 미확인: 관리 화면을 실제 로그인해 본 것, Apps Script 배포, 실물 태블릿. record.gs 는 Apps Script 에 다시 붙여 넣어 새 버전으로 배포해야 한다.
 - 2026-11-09 Claude: roadmap.html 에 새 과정(로블록스 AI 바이브코딩, 중등 바이브코딩·엑셀, 성인 AI 실무 #adult) 반영. 링크 대상 존재 확인.
 - 2026-11-09 Claude: 공개 로드맵 roadmap.html 추가(LV1 기슭~LV5 마루 핵심 경로·다음 단계 기준, 중등 학교 정보 연계 3학기 트랙 #info-track). 수업 링크는 v/ 경로라 로그인한 기기에서 열린다. 첫 화면 과정 카드 아래·레벨 테스트 결과(학년대·점수→lv1~5)·class 수업 홈에서 연결. 링크 대상 파일 존재 확인, 390/1280px 넘침 없음.

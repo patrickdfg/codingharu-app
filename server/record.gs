@@ -565,7 +565,7 @@ function pointsTotal_(id) { return rows_('points').reduce((sum, r) => sum + (Str
 function pointsText_(s) { return /^[\s]*[=+\-@]/.test(s) ? "'" + s : s; }
 // 활동 1시간에 약 100점이 모이도록 잡은 기본값. 관리 화면의 '점수 설정'에서 저장한 값이 있으면 그 값이 우선한다.
 // 프로그램별로 나눈 점수 항목. 옛 설정(problem, block)은 아래 pointsRates_ 에서 새 항목으로 이어받는다.
-function pointsDefaults_() { return {pythonProblem:12, cosproProblem:12, bebras:12, detective:12, farm:12, playground:3, games:3, pythonUnit:30, cosproUnit:30, entry:100, scratch:100, junior:100, algorithm:25, pythonLesson:100, codingLesson:100, roblox:100, robot:100, web:100, digital:100, adult:100, otherLesson:100}; }
+function pointsDefaults_() { return {pythonProblem:12, cosproProblem:12, bebras:12, detective:12, farm:12, playground:3, games:3, pythonUnit:30, cosproUnit:30, entry:100, scratch:100, junior:100, algorithm:25, pythonRobot:100, pythonLesson:100, codingLesson:100, roblox:100, robot:100, web:100, digital:100, adult:100, otherLesson:100}; }
 const POINT_LEGACY_ = { problem:['pythonProblem','cosproProblem','bebras','detective','farm'], block:['playground','games'], pythonUnit:['cosproUnit'] };
 function pointsRates_() {
   const defaults=pointsDefaults_(); let rates; try { rates=JSON.parse(PropertiesService.getScriptProperties().getProperty('POINT_RATES') || '{}'); } catch(e) { rates={}; }
@@ -584,11 +584,14 @@ function pointsRule_(kind, key) {
   if (kind === 'problem' && /^farm:(?:beginner-(?:0[1-9]|1[0-2])|(?:intermediate|advanced)-0[1-8])$/.test(key)) return 'farm';
   if (kind === 'python-unit' && /^python-basic-u(?:[1-9]|1[0-7])$/.test(key)) return 'pythonUnit';
   if (kind === 'python-unit' && /^cospro2-r[1-6]$/.test(key)) return 'cosproUnit';
+  // 파이썬 로봇 코딩: 한 페이지에 12차시가 있어서 차시마다(미션 3 + 문제 3 통과) 점수를 준다.
+  if (kind === 'python-robot' && /^python-robot:L(?:[1-9]|1[0-2])$/.test(key)) return 'pythonRobot';
   // 수업 완료: 수업 폴더는 모두 점수를 받는다. 이미 문제·단계·단원 점수가 따로 있는 곳과 수업이 아닌 폴더만 뺀다.
   // inject.js 의 lessonScored_ 와 같은 규칙이어야 한다(다르면 앱이 거절된 요청을 계속 다시 보낸다).
   if (kind === 'lesson' && /\/$/.test(key)) {
     if (/^(?:admin|assets|docs|downloads|gallery|work)\//.test(key)) return 0;
-    if (/^python\/(?:basic|cospro2|farm)\//.test(key) || /^coding\/(?:bebras|block-games|detective|vendor)\//.test(key)) return 0;
+    if (/^python\/(?:basic|cospro2|farm|robot)\//.test(key) || /^coding\/(?:bebras|block-games|detective|vendor)\//.test(key)) return 0;
+    if (/^robot\/(?:check|arduino\/editor)\//.test(key)) return 0;   // 참여 확인 도구·편집기는 수업이 아니다
     if (/^entry\/[^/]+\/$/.test(key)) return 'entry';
     if (/^entry\//.test(key)) return 0;   // 엔트리는 수업 폴더 한 단계만 점수(그 아래 단계 페이지는 제외)
     if (/^scratch\/junior\/.+\/$/.test(key)) return 'junior';
@@ -614,6 +617,7 @@ function pointsProof_(studentId, kind, key) {
     return state;
   }
   if (kind === 'lesson') { const state=workbook('done:'+key); return !!(state && state.done === true); }
+  if (kind === 'python-robot') { const n=Number(key.split(':L')[1]), state=workbook('python-robot-v1'), p=state && state.progress; return !!(p && ['m0','m1','m2','p0','p1','p2'].every(v => p['L'+n+'-'+v] === true)); }
   if (kind === 'block') { const games=key.startsWith('games:'), state=workbook(games ? 'coding-games-easy-v1' : 'coding-playground-v1'); return !!(state && Array.isArray(state.done) && state.done.includes(games ? key.slice(6) : key)); }
   if (kind === 'problem' && key.startsWith('farm:')) { const state=workbook('python-farm-'+key.slice(5)+'-v1'); return !!(state && state['check-success'] === true); }
   if (kind === 'problem' && key.startsWith('detective:')) { const parts=key.split(':'), state=workbook('coding-detective-start-v1'); return !!(state && state.lessons && state.lessons[parts[1]] && state.lessons[parts[1]][parts[2] === 'main' ? 'mainSolved' : 'challengeSolved'] === true); }
