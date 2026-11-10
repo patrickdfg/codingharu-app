@@ -56,6 +56,24 @@ Codex(ChatGPT)는 `AGENTS.md`, Claude Code 는 `CLAUDE.md` 를 자동으로 읽�
 
 `content/`·`crypt.json`·`check.enc`·`version.json` 은 **봇이 만드는 파일**이다. 손으로 고치지 않는다.
 
+## 포인트 규칙 — 모든 수업(클래스)은 점수를 받는다
+
+**새 수업이나 새 수업 폴더를 만들면 반드시 포인트가 붙어야 한다. 점수가 없는 수업을 만들지 않는다.**
+
+- **기본 방식(수업 페이지를 따로 고치지 않아도 됨).** 수업 페이지의 '완료' 버튼(`inject.js`)이 `codingharu:points`(kind:`lesson`)를 보내고,
+  서버 `pointsRule_`(`server/record.gs`)가 폴더 이름으로 점수 항목을 정한다. 새 수업 폴더는 자동으로 '기타 수업'에 들어가 점수를 받는다.
+- **수업이 아닌 폴더만 제외한다:** `admin`, `assets`, `docs`, `downloads`, `gallery`, `work`.
+- **문제·단계·단원 점수를 따로 주는 수업**(파이썬 기초·COS Pro·농장, 비버·탐정·코딩 게임 등)은 페이지가 `codingharu:points` 로 kind·key 를 직접 보내고,
+  `pointsRule_`·`pointsProof_` 에 그 규칙을 추가한다. 그 폴더는 수업 완료 점수에서 **반드시 제외**해 같은 활동에 점수가 두 번 붙지 않게 한다.
+- **`pointsRule_` 의 'lesson' 규칙(`record.gs`)과 `inject.js` 의 `lessonScored_` 는 항상 같아야 한다.** 다르면 앱이 서버가 거절한 요청을 계속 다시 보낸다.
+  `test/points.test.cjs` 가 두 규칙을 같은 목록으로 비교하므로 규칙을 고치면 시험을 돌린다.
+- **점수 항목을 추가하면 `index.html` 관리 화면의 `rateDefs` 에도 같은 항목(입력 칸)을 추가한다.** 선생님이 관리자 로그인 후 프로그램별 점수를 보고 고칠 수 있어야 한다.
+  항목 수가 `pointsDefaults_` 와 `rateDefs` 에서 어긋나면 저장이 실패한다.
+- **기본 점수는 활동 1시간에 약 100점이 되게 잡는다.** 수업 1회 100점, 문제 1개 12점, 코딩 놀이터·게임 1단계 3점, 알고리즘 1개 25점, 단원·회차 완료 30점이 현재 기본값이다.
+  관리 화면에서 바꾼 값이 기본값보다 우선한다. 실제 학습 시간을 보고 조정한다.
+- `record.gs` 를 고치면 Apps Script 에 다시 붙여 넣고 **배포 관리 → 기존 배포 수정 → 새 버전** 으로 배포해야 반영된다.
+- 점수 기능을 만들기 전에 끝낸 활동은 소급하지 않는다.
+
 ## 지켜야 할 것 (보안)
 
 - **비밀번호·토큰을 채팅·코드·로그·커밋에 적지 않는다.** 저장소 비밀값 `SITE_PASS`(학생 비밀번호, 10자 이상),
@@ -110,6 +128,7 @@ curl -s https://patrickdfg.github.io/codingharu-app/version.json
 - `CLASS_READ_TOKEN` 만료일을 확인해 둔다(만료되면 동기화가 멈춘다).
 
 ## 진행 메모 (도구가 바뀔 때마다 두세 줄로 갱신)
+- 2026-11-10 Claude: 모든 수업이 점수를 받게 했다(위 '포인트 규칙'). 점수 항목을 프로그램별 21개로 나누고 관리 화면 '자동 지급 점수 설정'에서 보고 고치게 했다. 기본값은 1시간 약 100점 기준(수업 100, 문제 12, 놀이터·게임 단계 3, 단원 30, 알고리즘 25). 수업 완료 점수는 python/basic·cospro2·farm 과 coding/bebras·block-games·detective 만 뺀 모든 수업 폴더에 붙는다. 학생 PIN 의 앞자리 0 이 사라지는 오류(0121 → 121)도 고쳤다(pinOf_ 가 4자리로 복구, 가입은 텍스트로 저장). 시험 5종 통과. 미확인: 관리 화면을 실제 로그인해 본 것, Apps Script 배포, 실물 태블릿. record.gs 는 Apps Script 에 다시 붙여 넣어 새 버전으로 배포해야 한다.
 - 2026-11-09 Claude: roadmap.html 에 새 과정(로블록스 AI 바이브코딩, 중등 바이브코딩·엑셀, 성인 AI 실무 #adult) 반영. 링크 대상 존재 확인.
 - 2026-11-09 Claude: 공개 로드맵 roadmap.html 추가(LV1 기슭~LV5 마루 핵심 경로·다음 단계 기준, 중등 학교 정보 연계 3학기 트랙 #info-track). 수업 링크는 v/ 경로라 로그인한 기기에서 열린다. 첫 화면 과정 카드 아래·레벨 테스트 결과(학년대·점수→lv1~5)·class 수업 홈에서 연결. 링크 대상 파일 존재 확인, 390/1280px 넘침 없음.
 - 2026-11-09 Claude: 학부모 리포트 2·3번. record.gs 에 월간 리포트·학부모 탭(자동 생성), reportSave(선생님, 같은 학생·달 덮어씀, email 옵션)·parentReport(PARENT_SECRET HMAC 링크, 그 학생·그 달 요약만, JSON·PIN 없음)·sendMonthlyReports/setupMonthlyReportTrigger 추가(ACTIONS_ 에 Object.assign). parent.html(학부모 화면, report.js 로 그림). **record.gs 재배포 필요**(사람). test/report.test.cjs 통과, parent.html 가짜 서버로 확인. 실제 Apps Script·메일 발송 미확인.

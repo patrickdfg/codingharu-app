@@ -565,7 +565,7 @@ function pointsTotal_(id) { return rows_('points').reduce((sum, r) => sum + (Str
 function pointsText_(s) { return /^[\s]*[=+\-@]/.test(s) ? "'" + s : s; }
 // 활동 1시간에 약 100점이 모이도록 잡은 기본값. 관리 화면의 '점수 설정'에서 저장한 값이 있으면 그 값이 우선한다.
 // 프로그램별로 나눈 점수 항목. 옛 설정(problem, block)은 아래 pointsRates_ 에서 새 항목으로 이어받는다.
-function pointsDefaults_() { return {pythonProblem:12, cosproProblem:12, bebras:12, detective:12, farm:12, playground:3, games:3, pythonUnit:30, cosproUnit:30, entry:100, scratch:100, junior:100}; }
+function pointsDefaults_() { return {pythonProblem:12, cosproProblem:12, bebras:12, detective:12, farm:12, playground:3, games:3, pythonUnit:30, cosproUnit:30, entry:100, scratch:100, junior:100, algorithm:25, pythonLesson:100, codingLesson:100, roblox:100, robot:100, web:100, digital:100, adult:100, otherLesson:100}; }
 const POINT_LEGACY_ = { problem:['pythonProblem','cosproProblem','bebras','detective','farm'], block:['playground','games'], pythonUnit:['cosproUnit'] };
 function pointsRates_() {
   const defaults=pointsDefaults_(); let rates; try { rates=JSON.parse(PropertiesService.getScriptProperties().getProperty('POINT_RATES') || '{}'); } catch(e) { rates={}; }
@@ -584,9 +584,25 @@ function pointsRule_(kind, key) {
   if (kind === 'problem' && /^farm:(?:beginner-(?:0[1-9]|1[0-2])|(?:intermediate|advanced)-0[1-8])$/.test(key)) return 'farm';
   if (kind === 'python-unit' && /^python-basic-u(?:[1-9]|1[0-7])$/.test(key)) return 'pythonUnit';
   if (kind === 'python-unit' && /^cospro2-r[1-6]$/.test(key)) return 'cosproUnit';
-  if (kind === 'lesson' && /^entry\/[^/]+\/$/.test(key)) return 'entry';
-  if (kind === 'lesson' && /^scratch\/junior\/.+\/$/.test(key)) return 'junior';
-  if (kind === 'lesson' && /^scratch\/(?!junior\/).+\/$/.test(key)) return 'scratch';
+  // 수업 완료: 수업 폴더는 모두 점수를 받는다. 이미 문제·단계·단원 점수가 따로 있는 곳과 수업이 아닌 폴더만 뺀다.
+  // inject.js 의 lessonScored_ 와 같은 규칙이어야 한다(다르면 앱이 거절된 요청을 계속 다시 보낸다).
+  if (kind === 'lesson' && /\/$/.test(key)) {
+    if (/^(?:admin|assets|docs|downloads|gallery|work)\//.test(key)) return 0;
+    if (/^python\/(?:basic|cospro2|farm)\//.test(key) || /^coding\/(?:bebras|block-games|detective|vendor)\//.test(key)) return 0;
+    if (/^entry\/[^/]+\/$/.test(key)) return 'entry';
+    if (/^entry\//.test(key)) return 0;   // 엔트리는 수업 폴더 한 단계만 점수(그 아래 단계 페이지는 제외)
+    if (/^scratch\/junior\/.+\/$/.test(key)) return 'junior';
+    if (/^scratch\/(?!junior\/).+\/$/.test(key)) return 'scratch';
+    if (/^algorithm\/.+\/$/.test(key)) return 'algorithm';
+    if (/^python\/.+\/$/.test(key)) return 'pythonLesson';
+    if (/^coding\/.+\/$/.test(key)) return 'codingLesson';
+    if (/^roblox\/.+\/$/.test(key)) return 'roblox';
+    if (/^robot\/.+\/$/.test(key)) return 'robot';
+    if (/^web\/.+\/$/.test(key)) return 'web';
+    if (/^digital\/.+\/$/.test(key)) return 'digital';
+    if (/^adult\/.+\/$/.test(key)) return 'adult';
+    if (/^[^/]+\/.+\/$/.test(key)) return 'otherLesson';   // special 과 앞으로 생길 새 수업 폴더
+  }
   return 0;
 }
 function pointsProof_(studentId, kind, key) {

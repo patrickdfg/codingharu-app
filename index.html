@@ -533,7 +533,16 @@
       ['cosproUnit','COS Pro 회차 완료','회차의 10문제를 모두 풀었을 때 1번'],
       ['entry','엔트리 수업','수업 1회 완료할 때마다'],
       ['scratch','스크래치 수업','수업 1회 완료할 때마다'],
-      ['junior','스크래치주니어 수업','수업 1회 완료할 때마다']];
+      ['junior','스크래치주니어 수업','수업 1회 완료할 때마다'],
+      ['algorithm','알고리즘 수업','알고리즘 1개 완료할 때마다'],
+      ['pythonLesson','파이썬 수업(기초·COS Pro·농장 제외)','수업 1회 완료할 때마다'],
+      ['codingLesson','코딩 수업(비버·게임·탐정 제외)','수업 1회 완료할 때마다'],
+      ['roblox','로블록스 수업','수업 1회 완료할 때마다'],
+      ['robot','로봇 수업','수업 1회 완료할 때마다'],
+      ['web','웹 수업','수업 1회 완료할 때마다'],
+      ['digital','디지털 수업','수업 1회 완료할 때마다'],
+      ['adult','성인 수업','수업 1회 완료할 때마다'],
+      ['otherLesson','기타 수업(특강·새로 생긴 수업 폴더)','수업 1회 완료할 때마다']];
     box.appendChild(el('h3','자동 지급 점수 설정 (프로그램별)','sec'));
     rateDefs.forEach(function(row) { var label=el('label',row[1]+' '), input=el('input'), hint=el('span',' · '+row[2]); input.type='number'; input.min='0'; input.max='100000'; input.step='1'; input.required=true; input.value=(d.pointRates||{})[row[0]]; input.setAttribute('aria-label',row[1]+' 점수'); input.style.width='90px'; hint.style.cssText='font-size:.85em;opacity:.7'; label.appendChild(input); label.appendChild(document.createTextNode(' 점')); label.appendChild(hint); label.style.cssText='display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin:6px 0'; rateInputs[row[0]]=input; ratesForm.appendChild(label); });
     var saveRates=el('button','점수 설정 저장'); saveRates.type='submit'; ratesForm.appendChild(saveRates); box.appendChild(ratesForm);

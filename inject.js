@@ -244,7 +244,15 @@
           try { var tt = JSON.parse(localStorage.getItem(DKEY + '-t') || '{}') || {}; tt[key] = title; localStorage.setItem(DKEY + '-t', JSON.stringify(tt)); } catch (e) {}
           sync();
         }
-        document.getElementById('ch-done-btn').onclick = function () { if (!isDone(dget(), key)) { mark(true); if (/^(entry|scratch)\//.test(key)) document.dispatchEvent(new CustomEvent('codingharu:points',{detail:{kind:'lesson',key:key,label:document.title}})); status('완료로 표시했어요'); } };
+        // 서버 pointsRule_ 의 'lesson' 규칙과 같아야 한다. 모든 수업은 점수를 받고, 자체 점수가 있는 곳과 수업이 아닌 폴더만 뺀다.
+        function lessonScored_(k) {
+          if (!/\/$/.test(k)) return false;
+          if (/^(?:admin|assets|docs|downloads|gallery|work)\//.test(k)) return false;
+          if (/^python\/(?:basic|cospro2|farm)\//.test(k) || /^coding\/(?:bebras|block-games|detective|vendor)\//.test(k)) return false;
+          if (/^entry\//.test(k)) return /^entry\/[^/]+\/$/.test(k);
+          return /^[^/]+\/.+\/$/.test(k);
+        }
+        document.getElementById('ch-done-btn').onclick = function () { if (!isDone(dget(), key)) { mark(true); if (lessonScored_(key)) document.dispatchEvent(new CustomEvent('codingharu:points',{detail:{kind:'lesson',key:key,label:document.title}})); status('완료로 표시했어요'); } };
         document.getElementById('ch-done-undo').onclick = function () { if (confirm('완료 표시를 취소할까요?')) mark(false); };
       }
       paint(dget()); sync();
