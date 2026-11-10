@@ -521,9 +521,21 @@
       })));
     }
 
-    var ratesForm=el('form'), rateInputs={}, rateDefs=[['problem','문제 정답'],['block','블록 코딩 단계'],['pythonUnit','파이썬 단원 전체'],['entry','엔트리 수업'],['scratch','스크래치 수업'],['junior','스크래치주니어 수업']];
-    box.appendChild(el('h3','자동 지급 점수 설정','sec'));
-    rateDefs.forEach(function(pair) { var label=el('label',pair[1]+' '), input=el('input'); input.type='number'; input.min='0'; input.max='100000'; input.step='1'; input.required=true; input.value=(d.pointRates||{})[pair[0]]; input.setAttribute('aria-label',pair[1]+' 점수'); input.style.width='105px'; label.appendChild(input); label.style.cssText='display:inline-flex;align-items:center;gap:4px;margin:5px 12px 5px 0'; rateInputs[pair[0]]=input; ratesForm.appendChild(label); });
+    var ratesForm=el('form'), rateInputs={}, rateDefs=[
+      ['pythonProblem','파이썬 기초 문제','문제 1개를 맞출 때마다'],
+      ['cosproProblem','COS Pro 파이썬 문제','문제 1개를 맞출 때마다'],
+      ['bebras','비버 문제','문제 1개를 맞출 때마다'],
+      ['detective','코딩 탐정 문제','본문제·도전문제 1개마다'],
+      ['farm','파이썬 농장 문제','문제 1개를 맞출 때마다'],
+      ['playground','코딩 놀이터 단계','100단계 중 1단계를 깰 때마다'],
+      ['games','코딩 게임 단계','게임 1단계를 깰 때마다'],
+      ['pythonUnit','파이썬 기초 단원 완료','단원의 문제를 모두 풀었을 때 1번'],
+      ['cosproUnit','COS Pro 회차 완료','회차의 10문제를 모두 풀었을 때 1번'],
+      ['entry','엔트리 수업','수업 1회 완료할 때마다'],
+      ['scratch','스크래치 수업','수업 1회 완료할 때마다'],
+      ['junior','스크래치주니어 수업','수업 1회 완료할 때마다']];
+    box.appendChild(el('h3','자동 지급 점수 설정 (프로그램별)','sec'));
+    rateDefs.forEach(function(row) { var label=el('label',row[1]+' '), input=el('input'), hint=el('span',' · '+row[2]); input.type='number'; input.min='0'; input.max='100000'; input.step='1'; input.required=true; input.value=(d.pointRates||{})[row[0]]; input.setAttribute('aria-label',row[1]+' 점수'); input.style.width='90px'; hint.style.cssText='font-size:.85em;opacity:.7'; label.appendChild(input); label.appendChild(document.createTextNode(' 점')); label.appendChild(hint); label.style.cssText='display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin:6px 0'; rateInputs[row[0]]=input; ratesForm.appendChild(label); });
     var saveRates=el('button','점수 설정 저장'); saveRates.type='submit'; ratesForm.appendChild(saveRates); box.appendChild(ratesForm);
     box.appendChild(el('p','설정 저장 후 지급되는 점수부터 적용되며, 이미 지급한 점수는 바뀌지 않습니다.'));
     ratesForm.onsubmit=function(e) {e.preventDefault();var rates={};rateDefs.forEach(function(pair){rates[pair[0]]=Number(rateInputs[pair[0]].value);});saveRates.disabled=true;CHRecord.api('pointsSetRates',{auth:CHRecord.auth(),rates:rates}).then(function(){say('자동 지급 점수를 저장했어요.');loadStatus();},function(err){saveRates.disabled=false;say(err.message);});};

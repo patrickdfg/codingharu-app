@@ -563,14 +563,27 @@ function findWorkbook_(studentId, workbook) {
 
 function pointsTotal_(id) { return rows_('points').reduce((sum, r) => sum + (String(r[0]) === id ? (Number(r[4]) || 0) : 0), 0); }
 function pointsText_(s) { return /^[\s]*[=+\-@]/.test(s) ? "'" + s : s; }
-function pointsDefaults_() { return {problem:10, block:10, pythonUnit:500, entry:50, scratch:50, junior:100}; }
-function pointsRates_() { const defaults=pointsDefaults_(); let rates; try { rates=JSON.parse(PropertiesService.getScriptProperties().getProperty('POINT_RATES') || '{}'); } catch(e) { rates={}; } Object.keys(defaults).forEach(k => { const v=rates[k]; if (Number.isSafeInteger(v) && v>=0 && v<=100000) defaults[k]=v; }); return defaults; }
+// 활동 1시간에 약 100점이 모이도록 잡은 기본값. 관리 화면의 '점수 설정'에서 저장한 값이 있으면 그 값이 우선한다.
+// 프로그램별로 나눈 점수 항목. 옛 설정(problem, block)은 아래 pointsRates_ 에서 새 항목으로 이어받는다.
+function pointsDefaults_() { return {pythonProblem:12, cosproProblem:12, bebras:12, detective:12, farm:12, playground:3, games:3, pythonUnit:30, cosproUnit:30, entry:100, scratch:100, junior:100}; }
+const POINT_LEGACY_ = { problem:['pythonProblem','cosproProblem','bebras','detective','farm'], block:['playground','games'], pythonUnit:['cosproUnit'] };
+function pointsRates_() {
+  const defaults=pointsDefaults_(); let rates; try { rates=JSON.parse(PropertiesService.getScriptProperties().getProperty('POINT_RATES') || '{}'); } catch(e) { rates={}; }
+  const ok = v => Number.isSafeInteger(v) && v>=0 && v<=100000;
+  Object.keys(POINT_LEGACY_).forEach(old => { if (ok(rates[old])) POINT_LEGACY_[old].forEach(k => { if (!(k in rates)) defaults[k]=rates[old]; }); });
+  Object.keys(defaults).forEach(k => { if (ok(rates[k])) defaults[k]=rates[k]; });
+  return defaults;
+}
 function pointsRule_(kind, key) {
-  if (kind === 'block' && (/^(?:[1-9]|10)-(?:[1-9]|10)$/.test(key) || /^games:g(?:[1-9]|[1-5][0-9]|60)-[1-5][a-d]?$/.test(key))) return 'block';
-  if (kind === 'problem' && /^(python-basic-u(?:[1-9]|1[0-7]):(?:[0-9]|[1-9][0-9])|cospro2-r[1-6]:r[1-6]-p(?:0[1-9]|10)|bebras:p(?:0[1-9]|1[0-9]|20))$/.test(key)) return 'problem';
-  if (kind === 'problem' && /^detective:c(?:0[1-9]|1[0-9]|20):(main|challenge)$/.test(key)) return 'problem';
-  if (kind === 'problem' && /^farm:(?:beginner-(?:0[1-9]|1[0-2])|(?:intermediate|advanced)-0[1-8])$/.test(key)) return 'problem';
-  if (kind === 'python-unit' && /^(python-basic-u(?:[1-9]|1[0-7])|cospro2-r[1-6])$/.test(key)) return 'pythonUnit';
+  if (kind === 'block' && /^(?:[1-9]|10)-(?:[1-9]|10)$/.test(key)) return 'playground';
+  if (kind === 'block' && /^games:g(?:[1-9]|[1-5][0-9]|60)-[1-5][a-d]?$/.test(key)) return 'games';
+  if (kind === 'problem' && /^python-basic-u(?:[1-9]|1[0-7]):(?:[0-9]|[1-9][0-9])$/.test(key)) return 'pythonProblem';
+  if (kind === 'problem' && /^cospro2-r[1-6]:r[1-6]-p(?:0[1-9]|10)$/.test(key)) return 'cosproProblem';
+  if (kind === 'problem' && /^bebras:p(?:0[1-9]|1[0-9]|20)$/.test(key)) return 'bebras';
+  if (kind === 'problem' && /^detective:c(?:0[1-9]|1[0-9]|20):(main|challenge)$/.test(key)) return 'detective';
+  if (kind === 'problem' && /^farm:(?:beginner-(?:0[1-9]|1[0-2])|(?:intermediate|advanced)-0[1-8])$/.test(key)) return 'farm';
+  if (kind === 'python-unit' && /^python-basic-u(?:[1-9]|1[0-7])$/.test(key)) return 'pythonUnit';
+  if (kind === 'python-unit' && /^cospro2-r[1-6]$/.test(key)) return 'cosproUnit';
   if (kind === 'lesson' && /^entry\/[^/]+\/$/.test(key)) return 'entry';
   if (kind === 'lesson' && /^scratch\/junior\/.+\/$/.test(key)) return 'junior';
   if (kind === 'lesson' && /^scratch\/(?!junior\/).+\/$/.test(key)) return 'scratch';
