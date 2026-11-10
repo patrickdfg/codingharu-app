@@ -164,6 +164,8 @@ const ACTIONS_ = {
       const sh = sheet_('students');
       if (!String(sh.getRange(1, 6).getValue())) sh.getRange(1, 6).setValue('상태');
       sh.appendRow([id, name, pin, '', '가입 ' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd'), '대기']);
+      // appendRow 는 "0121" 을 숫자 121 로 바꿔 저장하므로, PIN 칸을 텍스트 형식으로 바꾸고 문자열을 다시 쓴다.
+      sh.getRange(sh.getLastRow(), 3).setNumberFormat('@').setValue(pin);
       student = { id: String(id), name: name };
     });
     return { pending: true, student: student };
@@ -473,7 +475,11 @@ function galleryFind_(id) {
 }
 
 const pending_ = r => String(r[5] || '').trim() === '대기';
-const pinOf_ = v => String(v == null ? '' : v).trim().replace(/^'/, '');
+// 시트 값이 숫자로 저장돼 앞의 0이 잘린 PIN(0121 → 121)도 4자리로 복구해서 비교한다.
+const pinOf_ = v => {
+  const s = String(v == null ? '' : v).trim().replace(/^'/, '');
+  return /^\d{1,3}$/.test(s) ? s.padStart(4, '0') : s;
+};
 const sameName_ = (a, b) => String(a).replace(/\s+/g, ' ').trim().toLowerCase() === String(b).replace(/\s+/g, ' ').trim().toLowerCase();
 
 // 구글 로그인(ID 토큰)이 유효하고 시트 '선생님' 탭에 있는 계정인지 확인
