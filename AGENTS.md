@@ -74,7 +74,8 @@ Codex(ChatGPT)는 `AGENTS.md`, Claude Code 는 `CLAUDE.md` 를 자동으로 읽�
   `test/points.test.cjs` 가 두 규칙을 같은 목록으로 비교하므로 규칙을 고치면 시험을 돌린다.
 - **점수 항목을 추가하면 `index.html` 관리 화면의 `rateDefs` 에도 같은 항목(입력 칸)을 추가한다.** 선생님이 관리자 로그인 후 프로그램별 점수를 보고 고칠 수 있어야 한다.
   항목 수가 `pointsDefaults_` 와 `rateDefs` 에서 어긋나면 저장이 실패한다.
-- **기본 점수는 활동 1시간에 약 100점이 되게 잡는다.** 수업 1회 100점, 문제 1개 12점, 코딩 놀이터·게임 1단계 3점, 알고리즘 1개 25점, 단원·회차 완료 30점이 현재 기본값이다.
+- **기본 점수는 1차시(50분) 분량에 100점이 되게 잡는다(원장님 기준).** 현재 기본값: 수업 1회 100, 2차시 분량 한 쪽 200(doubleLesson), 엔트리·스크래치 작품 1개 40(1차시에 2~3개), 농장 1차시(문제 1개) 100, 탐정 문제 50(차시당 2개), 코딩 놀이터 1단계 10(1수업 10단계), 게임 1단계 7, 비버 1문제 10, COS Pro 1문제 7 + 회차 30, 파이썬 기초 1문제 12 + 단원 30(단원 = 약 2차시), 알고리즘 워크북 1개 35.
+  엔트리 차시 안내 쪽(`entry/<책>-lesson#`, `book1-unit#`)은 같은 내용의 작품 쪽(`work-…`)이 점수를 받으므로 점수가 없다. 새 수업을 만들면 **1차시에 몇 번 완료를 누르게 되는지** 세어 100점 안팎이 되는 항목에 넣는다.
   관리 화면에서 바꾼 값이 기본값보다 우선한다. 실제 학습 시간을 보고 조정한다.
 - `record.gs` 를 고치면 Apps Script 에 다시 붙여 넣고 **배포 관리 → 기존 배포 수정 → 새 버전** 으로 배포해야 반영된다.
 - 점수 기능을 만들기 전에 끝낸 활동은 소급하지 않는다.
@@ -133,6 +134,7 @@ curl -s https://patrickdfg.github.io/codingharu-app/version.json
 - `CLASS_READ_TOKEN` 만료일을 확인해 둔다(만료되면 동기화가 멈춘다).
 
 ## 진행 메모 (도구가 바뀔 때마다 두세 줄로 갱신)
+- 2026-11-10 Claude: 점수를 '1차시 50분 = 100점'에 맞췄다. 기본값 변경(farm 12→100, detective 12→50, playground 3→10, games 3→7, bebras 12→10, cosproProblem 12→7, algorithm 25→35), 항목 3개 추가(entryWork 40, scratchWork 40, doubleLesson 200 — 모두 25개), 엔트리 차시 안내 쪽은 점수에서 뺌(서버 pointsRule_·inject.js lessonScored_ 같이). 시험 5종 통과. **record.gs 를 Apps Script 에 새 버전으로 배포해야 반영된다.** 관리 화면에서 이미 저장한 점수 값이 있으면 그 값이 기본값보다 우선하므로, 배포 뒤 관리 화면에서 위 값으로 한 번 저장해야 한다. 아직 차시별 점수가 없는 한 쪽 여러 차시 수업: python/easy-basic(17단원이 완료 1회 100점), python/high(6차시), ai-projects(12차시인데 맨 위 폴더라 0점), special/library-ai-6(6차시), robot/cubroid/lower/08(20차시), robot/cubroid/mission/02·03(미션 16·22개) — python/robot 처럼 차시별 완료 체크를 붙여야 한다.
 - 2026-11-10 Claude: 로드맵(roadmap.html)에 승급 미션 줄(v/cert/, CTAA 2급 → COS Pro 2급)과 새 과정 링크(컴퓨터 첫걸음, 스크래치 심화 창작, 엔트리 AI·데이터, 코드위즈 정규 15회, 정보 내신, 초5~6 파이썬 첫걸음 23회)를 넣었다. 점수 규칙은 그대로다 — 새 과정은 차시마다 쪽이 따로라 기존 항목(digital·scratch·coding·robot)으로, cert/ 는 기타 수업(otherLesson)으로 차시당 1회 받는다. record.gs 는 고치지 않아 Apps Script 재배포가 필요 없다. 목록 쪽에서 완료 점수가 들어가던 문제는 class 쪽에서 목록 표시(data-lessons)를 넣어 막았다(class AGENTS.md, work/points_audit.py). points 시험 통과.
 - 2026-11-10 Claude: 파이썬 로봇 코딩(python/robot, 12차시)을 차시마다 점수·완료 체크로 바꿨다. 한 차시의 미션 3 + 문제 3을 모두 통과하면 ✔ 완료 표시와 함께 pythonRobot 점수(기본 100)가 한 번 지급되고, 서버가 워크북 python-robot-v1 의 통과 기록을 다시 확인한다. 점수 항목 22개. robot/check·robot/arduino/editor 는 수업이 아니라 완료 점수에서 뺐다. 차시마다 페이지가 따로 있는 수업(웹 12·성인 AI 16·엑셀 8·바이브 8·로봇 cubroid/arduino·엔트리·스크래치)은 이미 차시당 완료 버튼 1회가 점수다. 시험 통과. 미확인: 실제 학생 계정으로 12차시 한 차시를 끝까지 풀어 본 것, Apps Script 새 버전 배포. **서버(record.gs)를 먼저 배포해야 로봇 차시 점수 요청이 처리된다.**
 - 2026-11-10 Claude: 모든 수업이 점수를 받게 했다(위 '포인트 규칙'). 점수 항목을 프로그램별 21개로 나누고 관리 화면 '자동 지급 점수 설정'에서 보고 고치게 했다. 기본값은 1시간 약 100점 기준(수업 100, 문제 12, 놀이터·게임 단계 3, 단원 30, 알고리즘 25). 수업 완료 점수는 python/basic·cospro2·farm 과 coding/bebras·block-games·detective 만 뺀 모든 수업 폴더에 붙는다. 학생 PIN 의 앞자리 0 이 사라지는 오류(0121 → 121)도 고쳤다(pinOf_ 가 4자리로 복구, 가입은 텍스트로 저장). 시험 5종 통과. 미확인: 관리 화면을 실제 로그인해 본 것, Apps Script 배포, 실물 태블릿. record.gs 는 Apps Script 에 다시 붙여 넣어 새 버전으로 배포해야 한다.

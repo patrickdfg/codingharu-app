@@ -565,7 +565,9 @@ function pointsTotal_(id) { return rows_('points').reduce((sum, r) => sum + (Str
 function pointsText_(s) { return /^[\s]*[=+\-@]/.test(s) ? "'" + s : s; }
 // 활동 1시간에 약 100점이 모이도록 잡은 기본값. 관리 화면의 '점수 설정'에서 저장한 값이 있으면 그 값이 우선한다.
 // 프로그램별로 나눈 점수 항목. 옛 설정(problem, block)은 아래 pointsRates_ 에서 새 항목으로 이어받는다.
-function pointsDefaults_() { return {pythonProblem:12, cosproProblem:12, bebras:12, detective:12, farm:12, playground:3, games:3, pythonUnit:30, cosproUnit:30, entry:100, scratch:100, junior:100, algorithm:25, pythonRobot:100, pythonLesson:100, codingLesson:100, roblox:100, robot:100, web:100, digital:100, adult:100, otherLesson:100}; }
+function pointsDefaults_() { return {pythonProblem:12, cosproProblem:7, bebras:10, detective:50, farm:100, playground:10, games:7, pythonUnit:30, cosproUnit:30, entry:100, scratch:100, junior:100, algorithm:35, pythonRobot:100, pythonLesson:100, codingLesson:100, roblox:100, robot:100, web:100, digital:100, adult:100, otherLesson:100, entryWork:40, scratchWork:40, doubleLesson:200}; }
+// 기준: 1차시(50분) = 100점. 농장 1문제 = 1차시(100), 탐정 1차시 = 문제 2개(50×2), 놀이터 1수업 = 10단계(10×10), 게임 1차시 ≈ 14단계(7), COS Pro 1회 = 10문제(7×10+30),
+// 비버 1차시 ≈ 10문제(10), 알고리즘 1차시 ≈ 워크북 3개(35), 엔트리·스크래치 작품 1차시 ≈ 2~3개(40), 2차시에 걸치는 한 쪽(200).
 const POINT_LEGACY_ = { problem:['pythonProblem','cosproProblem','bebras','detective','farm'], block:['playground','games'], pythonUnit:['cosproUnit'] };
 function pointsRates_() {
   const defaults=pointsDefaults_(); let rates; try { rates=JSON.parse(PropertiesService.getScriptProperties().getProperty('POINT_RATES') || '{}'); } catch(e) { rates={}; }
@@ -592,9 +594,15 @@ function pointsRule_(kind, key) {
     if (/^(?:admin|assets|docs|downloads|gallery|work)\//.test(key)) return 0;
     if (/^python\/(?:basic|cospro2|farm|robot)\//.test(key) || /^coding\/(?:bebras|block-games|detective|vendor)\//.test(key)) return 0;
     if (/^robot\/(?:check|arduino\/editor)\//.test(key)) return 0;   // 참여 확인 도구·편집기는 수업이 아니다
+    // 2차시 분량이 한 쪽에 있는 수업(로블록스 세트, 엔트리·스크래치 게임 작품 등)
+    if (/^(?:roblox\/vibe-12\/set[1-6]|roblox\/jump-map|robot\/cubroid\/lower\/0[45]|robot\/cubroid\/hub\/06|python\/bridge|special\/middle-vibe-6|entry\/work-game[12]-[^/]+|scratch\/project-game[12]-[^/]+)\/$/.test(key)) return 'doubleLesson';
+    // 엔트리 차시 안내 쪽(…-lesson#)은 같은 내용의 작품 쪽(work-…)이 점수를 받으므로 뺀다(겹쳐 받지 않게)
+    if (/^entry\/(?:[a-z0-9]+-lesson\d+|book1-unit\d+)\/$/.test(key)) return 0;
+    if (/^entry\/(?:work-|dict-block|project2-work|cos2-)[^/]*\/$/.test(key)) return 'entryWork';
     if (/^entry\/[^/]+\/$/.test(key)) return 'entry';
     if (/^entry\//.test(key)) return 0;   // 엔트리는 수업 폴더 한 단계만 점수(그 아래 단계 페이지는 제외)
     if (/^scratch\/junior\/.+\/$/.test(key)) return 'junior';
+    if (/^scratch\/project-[^/]+\/$/.test(key)) return 'scratchWork';
     if (/^scratch\/(?!junior\/).+\/$/.test(key)) return 'scratch';
     if (/^algorithm\/.+\/$/.test(key)) return 'algorithm';
     if (/^python\/.+\/$/.test(key)) return 'pythonLesson';
