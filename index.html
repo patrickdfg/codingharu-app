@@ -557,7 +557,10 @@
       ['otherLesson','기타 수업(특강·승급 미션·새로 생긴 수업 폴더)','수업 1회 완료할 때마다'],
       ['entryWork','엔트리 작품(블록사전·기초·프로젝트 2·COS 문제)','작품 1개 완료할 때마다 · 1차시에 2~3개'],
       ['scratchWork','스크래치 작품(블록사전·기초·애니메이션)','작품 1개 완료할 때마다 · 1차시에 2~3개'],
-      ['doubleLesson','2차시 분량 수업(로블록스 세트·게임 작품 등)','한 쪽이 2차시일 때 완료 1번']];
+      ['doubleLesson','2차시 분량 수업(로블록스 세트·게임 작품 등)','한 쪽이 2차시일 때 완료 1번'],
+      ['pythonHigh','파이썬 기초 융합 미션','차시(노트북) 1개를 완료할 때마다 · 6차시'],
+      ['easyUnit','천천히 배우는 파이썬 기본 단원','단원의 개념 연습 14단계를 모두 마칠 때마다 · 17단원'],
+      ['aiProject','AI와 함께 생각하고 만드는 12차시','차시 체크를 할 때마다 · 12차시']];
     box.appendChild(el('h3','자동 지급 점수 설정 (프로그램별)','sec'));
     rateDefs.forEach(function(row) { var label=el('label',row[1]+' '), input=el('input'), hint=el('span',' · '+row[2]); input.type='number'; input.min='0'; input.max='100000'; input.step='1'; input.required=true; input.value=(d.pointRates||{})[row[0]]; input.setAttribute('aria-label',row[1]+' 점수'); input.style.width='90px'; hint.style.cssText='font-size:.85em;opacity:.7'; label.appendChild(input); label.appendChild(document.createTextNode(' 점')); label.appendChild(hint); label.style.cssText='display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin:6px 0'; rateInputs[row[0]]=input; ratesForm.appendChild(label); });
     var saveRates=el('button','점수 설정 저장'); saveRates.type='submit'; ratesForm.appendChild(saveRates); box.appendChild(ratesForm);

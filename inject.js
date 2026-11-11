@@ -174,6 +174,8 @@
       '#ch-pt input{width:92px;font:700 18px sans-serif;padding:6px 8px;border:1px solid #b7791f;border-radius:8px;text-align:right}' +
       '#ch-pt button{margin-left:6px;border:0;border-radius:999px;background:#0056d2;color:#fff;font:700 14px sans-serif;padding:8px 14px;cursor:pointer}#ch-pt button.sub{background:#6b7a72}#ch-pt small{display:block;font-weight:500;opacity:.85}';
     document.head.appendChild(css);
+    // 한 쪽이 여러 차시를 여는 수업: 파이썬 기초 융합 미션 실습 쪽은 ?nb=2차시-… 의 차시 번호를 키 끝에 붙인다.
+    function subKey(k) { if (k === 'python/high/run/') { var m = /^(\d+)차시/.exec(new URLSearchParams(location.search).get('nb') || ''); if (m) return k + '@' + m[1]; } return k; }
     var sess = CHRecord.session();
     if (sess && sess.role === 'teacher') {
       tag.innerHTML = '<span></span><span class="st"></span><a>관리자 메뉴</a>';
@@ -181,16 +183,16 @@
       tag.querySelector('a').href = CHRecord.base + 'index.html';
       // 선생님: 이 수업의 완료 점수를 보고 고친다(서버 pointsLesson·pointsSetLesson). 목록 쪽에는 붙이지 않는다.
       (function () {
-        var key = page.replace(/index\.html$/, '');
+        var key = subKey(page.replace(/index\.html$/, ''));
         if (!key || document.querySelector('[data-lessons], a.category, a.row')) return;
-        var NAMES = {entry:'엔트리 수업', entryWork:'엔트리 작품', scratch:'스크래치 수업', scratchWork:'스크래치 작품', junior:'스크래치주니어 수업', algorithm:'알고리즘 수업', pythonLesson:'파이썬 수업',
+        var NAMES = {entry:'엔트리 수업', entryWork:'엔트리 작품', pythonHigh:'파이썬 기초 융합 미션', scratch:'스크래치 수업', scratchWork:'스크래치 작품', junior:'스크래치주니어 수업', algorithm:'알고리즘 수업', pythonLesson:'파이썬 수업',
           codingLesson:'코딩 수업', roblox:'로블록스 수업', robot:'로봇 수업', web:'웹 수업', digital:'디지털 수업', adult:'성인 수업', otherLesson:'기타 수업', doubleLesson:'2차시 분량 수업'};
         var box = document.createElement('div'); box.id = 'ch-pt'; box.setAttribute('data-ch-app', '');
         function line(t) { var s = document.createElement('small'); s.textContent = t; return s; }
         function render(out) {
           box.textContent = '';
           if (!out.item) {
-            var own = /^python\/(?:basic|cospro2|farm|robot)\//.test(key) || /^coding\/(?:bebras|block-games|detective)\//.test(key);
+            var own = /^python\/(?:basic|cospro2|farm|robot|easy-basic)\//.test(key) || /^coding\/(?:bebras|block-games|detective)\//.test(key) || key === 'ai-projects/';
             box.appendChild(document.createTextNode(own ? '🅿 이 수업은 문제·단계·차시마다 점수가 들어가요.' : '🅿 이 쪽은 완료 점수가 없어요.'));
             box.appendChild(line(own ? '값은 관리자 메뉴의 「자동 지급 점수 설정」에서 고쳐요.' : '차시 안내·도구 쪽이에요. 작품·수업 쪽에서 점수가 들어가요.'));
             return;
@@ -246,7 +248,7 @@
     // 완료 표시: 교안을 열었다고 기록하지 않는다. 맨 아래 '완료' 단추를 눌렀을 때만 남기고, 목록에서는 완료한 수업을 흐리게 보여 준다.
     (function () {
       var DKEY = 'codingharu-done-s' + stu.id, IDX = 'done-index';
-      var key = page.replace(/index\.html$/, '');
+      var key = subKey(page.replace(/index\.html$/, ''));
       function dget() { try { return JSON.parse(localStorage.getItem(DKEY) || '{}') || {}; } catch (e) { return {}; } }
       function dput(m) { try { localStorage.setItem(DKEY, JSON.stringify(m)); } catch (e) {} }
       function isDone(m, k) { return (m[k] || 0) > 0; }
@@ -303,7 +305,9 @@
         }
         // 서버 pointsRule_ 의 'lesson' 규칙과 같아야 한다. 모든 수업은 점수를 받고, 자체 점수가 있는 곳과 수업이 아닌 폴더만 뺀다.
         function lessonScored_(k) {
+          if (/^python\/high\/run\/@[1-6]$/.test(k)) return true;   // 파이썬 기초 융합 미션: 노트북(차시)마다
           if (!/\/$/.test(k)) return false;
+          if (/^python\/(?:high\/(?:run\/)?|easy-basic\/)$/.test(k)) return false;
           if (/^(?:admin|assets|docs|downloads|gallery|work)\//.test(k)) return false;
           if (/^python\/(?:basic|cospro2|farm|robot)\//.test(k) || /^coding\/(?:bebras|block-games|detective|vendor|typing)\//.test(k)) return false;
           if (/^robot\/(?:check|arduino\/editor)\//.test(k)) return false;

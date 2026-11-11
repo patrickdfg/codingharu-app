@@ -592,7 +592,7 @@ function pointsTotal_(id) { return rows_('points').reduce((sum, r) => sum + (Str
 function pointsText_(s) { return /^[\s]*[=+\-@]/.test(s) ? "'" + s : s; }
 // 활동 1시간에 약 100점이 모이도록 잡은 기본값. 관리 화면의 '점수 설정'에서 저장한 값이 있으면 그 값이 우선한다.
 // 프로그램별로 나눈 점수 항목. 옛 설정(problem, block)은 아래 pointsRates_ 에서 새 항목으로 이어받는다.
-function pointsDefaults_() { return {pythonProblem:12, cosproProblem:7, bebras:10, detective:50, farm:100, playground:10, games:7, pythonUnit:30, cosproUnit:30, entry:100, scratch:100, junior:100, algorithm:35, pythonRobot:100, pythonLesson:100, codingLesson:100, roblox:100, robot:100, web:100, digital:100, adult:100, otherLesson:100, entryWork:40, scratchWork:40, doubleLesson:200, typing:20, typingWord:40, typingSentence:50, koi:30}; }
+function pointsDefaults_() { return {pythonProblem:12, cosproProblem:7, bebras:10, detective:50, farm:100, playground:10, games:7, pythonUnit:30, cosproUnit:30, entry:100, scratch:100, junior:100, algorithm:35, pythonRobot:100, pythonLesson:100, codingLesson:100, roblox:100, robot:100, web:100, digital:100, adult:100, otherLesson:100, entryWork:40, scratchWork:40, doubleLesson:200, typing:20, typingWord:40, typingSentence:50, koi:30, pythonHigh:200, easyUnit:200, aiProject:100}; }
 // 기준: 1차시(50분) = 100점. 농장 1문제 = 1차시(100), 탐정 1차시 = 문제 2개(50×2), 놀이터 1수업 = 10단계(10×10), 게임 1차시 ≈ 14단계(7), COS Pro 1회 = 10문제(7×10+30),
 // 비버 1차시 ≈ 10문제(10), 알고리즘 1차시 ≈ 워크북 3개(35), 엔트리·스크래치 작품 1차시 ≈ 2~3개(40), 2차시에 걸치는 한 쪽(200).
 const POINT_LEGACY_ = { problem:['pythonProblem','cosproProblem','bebras','detective','farm'], block:['playground','games'], pythonUnit:['cosproUnit'] };
@@ -625,11 +625,18 @@ function pointsRule_(kind, key) {
   if (kind === 'problem' && /^koi:[pt]\d{3}$/.test(key)) return 'koi';   // 정보올림피아드 연습: 문제 1개마다
   if (kind === 'typing' && /^typing:word:[a-z0-9]{10,80}$/.test(key)) return 'typingWord';
   if (kind === 'typing' && /^typing:sentence:[a-z0-9]{10,80}$/.test(key)) return 'typingSentence';
+  // 천천히 배우는 파이썬 기본: 단원의 개념 연습 14단계를 모두 마치면 단원당 한 번(easyUnit).
+  if (kind === 'python-easy-unit' && /^easy-u(?:[1-9]|1[0-7])$/.test(key)) return 'easyUnit';
+  // AI와 함께 생각하고 만드는 12차시: 차시 체크칸(check-l01~l12)을 누를 때마다 차시당 한 번(aiProject).
+  if (kind === 'ai-lesson' && /^l(?:0[1-9]|1[0-2])$/.test(key)) return 'aiProject';
   // 파이썬 로봇 코딩: 한 페이지에 12차시가 있어서 차시마다(미션 3 + 문제 3 통과) 점수를 준다.
   if (kind === 'python-robot' && /^python-robot:L(?:[1-9]|1[0-2])$/.test(key)) return 'pythonRobot';
   // 수업 완료: 수업 폴더는 모두 점수를 받는다. 이미 문제·단계·단원 점수가 따로 있는 곳과 수업이 아닌 폴더만 뺀다.
   // inject.js 의 lessonScored_ 와 같은 규칙이어야 한다(다르면 앱이 거절된 요청을 계속 다시 보낸다).
+  // 파이썬 기초 융합 미션: 실습 쪽(run)이 노트북 6개를 ?nb= 로 열어서, 노트북(차시)마다 '완료'를 따로 받는다(키 python/high/run/@1~6).
+  if (kind === 'lesson' && /^python\/high\/run\/@[1-6]$/.test(key)) return 'pythonHigh';
   if (kind === 'lesson' && /\/$/.test(key)) {
+    if (/^python\/(?:high\/(?:run\/)?|easy-basic\/)$/.test(key)) return 0;   // 목록·단원 쪽 자체에는 완료 점수가 없다(차시·단원별 점수가 따로 있다)
     if (/^(?:admin|assets|docs|downloads|gallery|work)\//.test(key)) return 0;
     if (/^python\/(?:basic|cospro2|farm|robot)\//.test(key) || /^coding\/(?:bebras|block-games|detective|vendor|typing)\//.test(key)) return 0;
     if (/^robot\/(?:check|arduino\/editor)\//.test(key)) return 0;   // 참여 확인 도구·편집기는 수업이 아니다
@@ -673,6 +680,8 @@ function pointsProof_(studentId, kind, key) {
     const score=state['proof:'+key], minimum=/^typing:(?:word|sentence):/.test(key) ? 0 : 80;
     return typeof score === 'number' && Number.isFinite(score) && score >= minimum && score <= 100;
   }
+  if (kind === 'python-easy-unit') { const n=Number(key.slice(6)), state=workbook('python-basic-easy-v1'); return !!(state && Array.isArray(state.done) && Array.from({length:14},(_,j)=>state.done.includes((n-1)+':'+j)).every(Boolean)); }
+  if (kind === 'ai-lesson') { const state=workbook('ai-thinking-projects-v1'); return !!(state && state['check-'+key] === true); }
   if (kind === 'python-robot') { const n=Number(key.split(':L')[1]), state=workbook('python-robot-v1'), p=state && state.progress; return !!(p && ['m0','m1','m2','p0','p1','p2'].every(v => p['L'+n+'-'+v] === true)); }
   if (kind === 'block') { const games=key.startsWith('games:'), state=workbook(games ? 'coding-games-easy-v1' : 'coding-playground-v1'); return !!(state && Array.isArray(state.done) && state.done.includes(games ? key.slice(6) : key)); }
   if (kind === 'problem' && key.startsWith('farm:')) { const state=workbook('python-farm-'+key.slice(5)+'-v1'); return !!(state && state['check-success'] === true); }
