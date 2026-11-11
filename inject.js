@@ -65,6 +65,14 @@
       'border-radius:10px;background:rgba(255,255,255,.95);border:1px solid #dae1ed;box-shadow:0 2px 8px rgba(0,0,0,.2);zoom:1!important}' +
       '#ch-zoom button{width:36px;height:36px;border:1px solid #dae1ed;border-radius:8px;background:#fff;color:#0056d2;font:700 20px/1 sans-serif}' +
       '#ch-zoom span{min-width:44px;text-align:center;font:12px sans-serif;color:#0056d2}' +
+      // 머리줄 안(디자인 통일 2단계): 공통 머리줄의 글자 −/+ 와 같은 크기. 좁은 화면에서는 퍼센트 글자를 숨긴다.
+      '#ch-zoom.in-bar{position:static;box-shadow:none;border:0;background:none;border-radius:0;padding:0;gap:5px;flex:none;margin-left:4px}' +
+      '#ch-zoom.in-bar button{width:32px;height:32px;border-radius:7px;font:700 18px/1 sans-serif}#ch-zoom.in-bar button:disabled{opacity:.4}' +
+      '#ch-zoom.in-bar span{min-width:38px;font-size:11px}' +
+      '@media (max-width:1050px){.chtop>#ch-zoom.in-bar{order:1;margin-left:auto}.chtop>#ch-zoom.in-bar+#ch-student{margin-left:4px}}' +
+      '@media (max-width:1350px){#ch-zoom.in-bar span{display:none}}@media (max-width:560px){.chtop>#ch-zoom.in-bar{display:none}}' +   // 폰에서는 머리줄이 두꺼워지지 않게 글자 조절을 숨긴다(두 손가락 확대가 있다)
+      // 떠 있을 때(머리줄이 없는 쪽)는 아래 오른쪽에 두고, 겹치는 'AI 사고력 미션' 단추를 그 위로 올린다
+      'body:has(#ch-zoom:not(.in-bar)) .ch-thinking-launch{bottom:76px}' +
       '@media print{#ch-zoom{display:none!important}}';
     document.head.appendChild(st);
     var label = bar.querySelector('span'), btns = bar.querySelectorAll('button');
@@ -77,8 +85,15 @@
     }
     btns[0].onclick = function () { step = Math.max(-3, step - 1); applyZoom(); };
     btns[1].onclick = function () { step = Math.min(10, step + 1); applyZoom(); };
-    document.documentElement.appendChild(bar);
+    var zbar = document.querySelector('.chtop, header.top');   // 머리줄이 없으면 떠 있는 채로 둔다
+    if (zbar) { bar.className = 'in-bar'; zbar.appendChild(bar); } else document.documentElement.appendChild(bar);
     applyZoom();
+    // 머리줄이 문서가 다 읽힌 뒤에 생기는 쪽이면 그때 옮긴다(글자 막대 → 계정 라벨 순서로 맨 오른쪽에)
+    document.addEventListener('DOMContentLoaded', function () {
+      var b2 = document.querySelector('.chtop, header.top'); if (!b2) return;
+      var z2 = document.getElementById('ch-zoom'), t2 = document.getElementById('ch-student');
+      [z2, t2].forEach(function (el) { if (el && el.parentNode !== b2) { el.classList.add('in-bar'); b2.appendChild(el); } });
+    });
   }
 
   // ---- 파일 내려받기 ----
@@ -153,7 +168,7 @@
       '#ch-student>span{display:none!important}@media print{#ch-student,#ch-pt{display:none!important}}' +
       // 위쪽 머리줄(.chtop·header.top)이 있으면 그 안에 놓는다. 좁은 화면의 header.top 은 자리가 없어 머리줄 바로 아래 오른쪽에 둔다.
       '#ch-student.in-bar{position:static;box-shadow:none;flex:none;margin-left:4px;gap:4px;padding:2px 4px 2px 8px}' +
-      '@media (max-width:999px){.chtop>#ch-student.in-bar{order:1;margin-left:auto}.chtop:has(#ch-student) nav{order:2}}' +   // 좁은 화면: 라벨은 첫 줄 오른쪽, 메뉴는 아랫줄   // 좁으면 메뉴만 아랫줄로 내려가고 라벨은 첫 줄 오른쪽에 남는다
+      '@media (max-width:1050px){.chtop>#ch-student.in-bar{order:1;margin-left:auto}.chtop:has(#ch-student) nav{order:2}}' +   // 좁은 화면: 라벨은 첫 줄 오른쪽, 메뉴는 아랫줄   // 좁으면 메뉴만 아랫줄로 내려가고 라벨은 첫 줄 오른쪽에 남는다
       '@media (max-width:999px){header.top>#ch-student.in-bar{position:absolute;right:10px;top:calc(100% + 6px);box-shadow:0 2px 8px rgba(0,0,0,.18)}}' +
       '#ch-pt{max-width:560px;margin:36px auto 96px;padding:14px 16px;border:2px dashed #b7791f;border-radius:14px;background:#fffaf0;color:#5a3d0a;font:600 15px/1.6 sans-serif;text-align:center}' +
       '#ch-pt input{width:92px;font:700 18px sans-serif;padding:6px 8px;border:1px solid #b7791f;border-radius:8px;text-align:right}' +
