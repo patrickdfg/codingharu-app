@@ -152,8 +152,8 @@
       '#ch-student button,#ch-student a{border:0;border-radius:999px;background:#0056d2;color:#fff;font:700 13px sans-serif;padding:7px 12px;text-decoration:none;cursor:pointer}' +
       '#ch-student>span{display:none!important}@media print{#ch-student,#ch-pt{display:none!important}}' +
       // 위쪽 머리줄(.chtop·header.top)이 있으면 그 안에 놓는다. 좁은 화면의 header.top 은 자리가 없어 머리줄 바로 아래 오른쪽에 둔다.
-      '#ch-student.in-bar{position:static;box-shadow:none;flex:none;margin-left:8px}' +
-      '.chtop>#ch-student.in-bar{margin-left:auto}.chtop>#ch-student.in-bar+nav{margin-left:0}@media (max-width:1150px){.chtop:has(#ch-student) .brand small{display:none}}' +   // 좁으면 메뉴만 아랫줄로 내려가고 라벨은 첫 줄 오른쪽에 남는다
+      '#ch-student.in-bar{position:static;box-shadow:none;flex:none;margin-left:4px;gap:4px;padding:2px 4px 2px 8px}' +
+      '@media (max-width:999px){.chtop>#ch-student.in-bar{order:1;margin-left:auto}.chtop:has(#ch-student) nav{order:2}}' +   // 좁은 화면: 라벨은 첫 줄 오른쪽, 메뉴는 아랫줄   // 좁으면 메뉴만 아랫줄로 내려가고 라벨은 첫 줄 오른쪽에 남는다
       '@media (max-width:999px){header.top>#ch-student.in-bar{position:absolute;right:10px;top:calc(100% + 6px);box-shadow:0 2px 8px rgba(0,0,0,.18)}}' +
       '#ch-pt{max-width:560px;margin:36px auto 96px;padding:14px 16px;border:2px dashed #b7791f;border-radius:14px;background:#fffaf0;color:#5a3d0a;font:600 15px/1.6 sans-serif;text-align:center}' +
       '#ch-pt input{width:92px;font:700 18px sans-serif;padding:6px 8px;border:1px solid #b7791f;border-radius:8px;text-align:right}' +
@@ -205,7 +205,7 @@
       tag.querySelector('a').href = CHRecord.base + 'index.html';
     }
     var bar = document.querySelector('.chtop, header.top');   // 아래 왼쪽에 떠 있으면 실행 단추를 가려서 위로 올렸다
-    if (bar) { tag.className = 'in-bar'; var barNav = bar.classList.contains('chtop') && bar.querySelector('nav'); if (barNav) bar.insertBefore(tag, barNav); else bar.appendChild(tag); }
+    if (bar) { tag.className = 'in-bar'; bar.appendChild(tag); }   // 머리줄 맨 오른쪽(메뉴·글자 −/+ 뒤)
     else document.documentElement.appendChild(tag);
     var stEl = tag.querySelector('.st');
     function status(m) { if (stEl) stEl.textContent = m; var wb = window.CodingHaruWorkbook; if (wb && m) wb.setStatus(m); }
