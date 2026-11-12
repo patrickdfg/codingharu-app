@@ -50,4 +50,25 @@ assert.equal(run(`ACTIONS_.pointsAward({sid:'valid',studentId:'7',kind:'typing',
 assert.equal(run(`ACTIONS_.pointsAward({sid:'valid',studentId:'7',kind:'typing',key:'typing:ko-home'}).awarded`),false);
 assert.throws(()=>run(`ACTIONS_.pointsAward({sid:'valid',studentId:'8',kind:'typing',key:'typing:ko-home'})`));
 assert.throws(()=>run(`ACTIONS_.pointsAward({sid:'valid',studentId:'7',kind:'typing',key:'typing:unknown'})`));
-console.log('서버 지급, 중복 방지, 학생 분리, 교사 인증, 완료 검증, 모든 수업 점수, 로봇 차시별 점수, 수업별 점수 통과');
+// 자리마다 한국 날짜 기준 하루 한 번, 낱말·문장은 완료마다 한 번 지급한다.
+const day1='2026-11-12',day2='2026-11-13';
+const p1='typing:ko-home:'+day1,p2='typing:ko-home:'+day2,p3='typing:ko-top:'+day1;
+const w1='typing:word:abc123456789',w2='typing:word:abc123456780',s1='typing:sentence:abc123456781';
+ctx.keys={p1,p2,p3,w1,w2,s1};
+run(`books['10|coding-typing-v1']={best:{'ko-home':100},['proof:'+keys.p1]:79,['proof:'+keys.p2]:80,['proof:'+keys.p3]:100,['proof:'+keys.w1]:0,['proof:'+keys.w2]:99,['proof:'+keys.s1]:50}`);
+assert.throws(()=>run(`ACTIONS_.pointsAward({sid:'valid',studentId:'10',kind:'typing',key:keys.p1})`));
+run(`books['10|coding-typing-v1']['proof:'+keys.p1]=80`);
+const award=key=>run(`ACTIONS_.pointsAward({sid:'valid',studentId:'10',kind:'typing',key:keys.${key}})`);
+assert.equal(award('p1').awarded,true);assert.equal(award('p1').awarded,false);
+assert.equal(award('p2').awarded,true);assert.equal(award('p3').awarded,true);
+assert.equal(award('w1').awarded,true);assert.equal(award('w1').awarded,false);
+assert.equal(award('w2').awarded,true);assert.equal(award('s1').awarded,true);
+assert.equal(run(`pointsTotal_('10')`),120);
+assert.throws(()=>run(`ACTIONS_.pointsAward({sid:'valid',studentId:'11',kind:'typing',key:keys.w1})`));
+assert.throws(()=>run(`ACTIONS_.pointsAward({sid:'valid',studentId:'10',kind:'typing',key:'typing:word:unrecorded01'})`));
+const today=new Date(Date.now()+9*3600000).toISOString().slice(0,10);ctx.today=today;
+run(`books['12|coding-typing-v1']={best:{'ko-home':80},['proof:typing:ko-home:'+today]:80}`);
+assert.equal(run(`ACTIONS_.pointsAward({sid:'valid',studentId:'12',kind:'typing',key:'typing:ko-home'}).awarded`),true);
+assert.equal(run(`ACTIONS_.pointsAward({sid:'valid',studentId:'12',kind:'typing',key:'typing:ko-home:'+today}).awarded`),false);
+console.log('서버 지급, 날짜별·회차별 중복 방지, 기존 지급 호환, 학생별 기록 검증 통과');
+

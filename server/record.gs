@@ -110,7 +110,15 @@ const ACTIONS_ = {
     let total, awarded = false;
     withLock_(() => {
       const rows = rows_('points'), amount = pointsAmount_(kind, key, rateKey);
-      if (!rows.some(r => String(r[0]) === String(student[0]) && String(r[2]) === kind && String(r[3]) === key)) {
+      const dailyTyping = kind === 'typing' && /^(typing:(?:ko-(?:home-left|home-right|home|top|bottom|all)|en-(?:home|top|bottom))):(\d{4}-\d{2}-\d{2})$/.exec(key);
+      const duplicate = rows.some(r => {
+        if (String(r[0]) !== String(student[0]) || String(r[2]) !== kind) return false;
+        if (String(r[3]) === key) return true;
+        if (!dailyTyping || String(r[3]) !== dailyTyping[1]) return false;
+        const timestamp = new Date(r[1]).getTime();
+        return Number.isFinite(timestamp) && new Date(timestamp + 9 * 60 * 60 * 1000).toISOString().slice(0, 10) === dailyTyping[2];
+      });
+      if (!duplicate) {
         if (!pointsProof_(String(student[0]), kind, key)) throw new Error('완료 기록을 저장한 뒤 포인트를 지급합니다.');
         sheet_('points').appendRow([String(student[0]), new Date(), kind, key, amount, pointsText_(String(req.label || '').slice(0, 120)), '자동']); awarded = true;
       }
@@ -612,6 +620,7 @@ function pointsRule_(kind, key) {
   if (kind === 'python-unit' && /^python-basic-u(?:[1-9]|1[0-7])$/.test(key)) return 'pythonUnit';
   if (kind === 'python-unit' && /^cospro2-r[1-6]$/.test(key)) return 'cosproUnit';
   if (kind === 'typing' && /^typing:(?:ko-(?:home-left|home-right|home|top|bottom|all)|en-(?:home|top|bottom))$/.test(key)) return 'typing';
+  if (kind === 'typing' && /^typing:(?:(?:ko-(?:home-left|home-right|home|top|bottom|all)|en-(?:home|top|bottom)):\d{4}-\d{2}-\d{2}|(?:word|sentence):[a-z0-9]{10,80})$/.test(key)) return 'typing';
   // 파이썬 로봇 코딩: 한 페이지에 12차시가 있어서 차시마다(미션 3 + 문제 3 통과) 점수를 준다.
   if (kind === 'python-robot' && /^python-robot:L(?:[1-9]|1[0-2])$/.test(key)) return 'pythonRobot';
   // 수업 완료: 수업 폴더는 모두 점수를 받는다. 이미 문제·단계·단원 점수가 따로 있는 곳과 수업이 아닌 폴더만 뺀다.
@@ -651,7 +660,15 @@ function pointsProof_(studentId, kind, key) {
     return state;
   }
   if (kind === 'lesson') { const state=workbook('done:'+key); return !!(state && state.done === true); }
-  if (kind === 'typing') { const state=workbook('coding-typing-v1'), score=state && state.best && state.best[key.slice(7)]; return typeof score === 'number' && score >= 80 && score <= 100; }
+  if (kind === 'typing') {
+    const state=workbook('coding-typing-v1');
+    if (!state) return false;
+    if (/^typing:(?:ko-(?:home-left|home-right|home|top|bottom|all)|en-(?:home|top|bottom))$/.test(key)) {
+      const oldScore=state.best && state.best[key.slice(7)]; return typeof oldScore === 'number' && oldScore >= 80 && oldScore <= 100;
+    }
+    const score=state['proof:'+key], minimum=/^typing:(?:word|sentence):/.test(key) ? 0 : 80;
+    return typeof score === 'number' && Number.isFinite(score) && score >= minimum && score <= 100;
+  }
   if (kind === 'python-robot') { const n=Number(key.split(':L')[1]), state=workbook('python-robot-v1'), p=state && state.progress; return !!(p && ['m0','m1','m2','p0','p1','p2'].every(v => p['L'+n+'-'+v] === true)); }
   if (kind === 'block') { const games=key.startsWith('games:'), state=workbook(games ? 'coding-games-easy-v1' : 'coding-playground-v1'); return !!(state && Array.isArray(state.done) && state.done.includes(games ? key.slice(6) : key)); }
   if (kind === 'problem' && key.startsWith('farm:')) { const state=workbook('python-farm-'+key.slice(5)+'-v1'); return !!(state && state['check-success'] === true); }
@@ -852,3 +869,4 @@ Object.assign(ACTIONS_, {
     return { saved: saved };
   }
 });
+
