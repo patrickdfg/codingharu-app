@@ -1,13 +1,13 @@
 const fs=require('fs'),vm=require('vm'),assert=require('assert');const src=fs.readFileSync('server/record.gs','utf8');const ctx=vm.createContext({console,Date,JSON,Number,String,Array,Object,Error,Math});vm.runInContext(src,ctx);vm.runInContext(`
 var led=[], books={}, props={}; PropertiesService={getScriptProperties:()=>({getProperty:k=>props[k]||'',setProperty:(k,v)=>props[k]=v})};
-student_ = id => [String(id),'�л�']; checkSid_ = (sid,id)=>{if(sid !== 'valid')throw Error('����');}; teacher_ = a=>{if(a!=='teacher')throw Error('����'); return {email:'teacher@example.test'};};
-auth_ = req=>({email:'�л�'}); rows_ = k=> k==='points' ? led : []; sheet_= k=>({appendRow: row=>led.push(row)}); withLock_=fn=>fn(); findWorkbook_=(id,key)=>books[id+'|'+key]?{row:[null,null,null,null,null,null,null,null,null,null,JSON.stringify(books[id+'|'+key])]}:null;
+student_ = id => [String(id),'학생']; checkSid_ = (sid,id)=>{if(sid !== 'valid')throw Error('인증');}; teacher_ = a=>{if(a!=='teacher')throw Error('권한'); return {email:'teacher@example.test'};};
+auth_ = req=>({email:'학생'}); rows_ = k=> k==='points' ? led : []; sheet_= k=>({appendRow: row=>led.push(row)}); withLock_=fn=>fn(); findWorkbook_=(id,key)=>books[id+'|'+key]?{row:[null,null,null,null,null,null,null,null,null,null,JSON.stringify(books[id+'|'+key])]}:null;
 `,ctx);
 function run(x){return vm.runInContext(x,ctx)}
 assert.throws(()=>run(`ACTIONS_.pointsAward({sid:'valid',studentId:'1',kind:'block',key:'1-1'})`));
 run(`books['1|coding-playground-v1']={done:['1-1']}`);assert.equal(run(`ACTIONS_.pointsAward({sid:'valid',studentId:'1',kind:'block',key:'1-1'}).awarded`),true);assert.equal(run(`ACTIONS_.pointsAward({sid:'valid',studentId:'1',kind:'block',key:'1-1'}).awarded`),false);
-assert.throws(()=>run(`ACTIONS_.pointsGrant({auth:'student',studentId:'1',amount:50,reason:'Ī��',requestId:'1234567890123456'})`));
-assert.equal(run(`ACTIONS_.pointsGrant({auth:'teacher',studentId:'1',amount:50,reason:'Ī��',requestId:'1234567890123456'}).points`),60);assert.equal(run(`ACTIONS_.pointsGrant({auth:'teacher',studentId:'1',amount:50,reason:'Ī��',requestId:'1234567890123456'}).points`),60);
+assert.throws(()=>run(`ACTIONS_.pointsGrant({auth:'student',studentId:'1',amount:50,reason:'칭찬',requestId:'1234567890123456'})`));
+assert.equal(run(`ACTIONS_.pointsGrant({auth:'teacher',studentId:'1',amount:50,reason:'칭찬',requestId:'1234567890123456'}).points`),60);assert.equal(run(`ACTIONS_.pointsGrant({auth:'teacher',studentId:'1',amount:50,reason:'칭찬',requestId:'1234567890123456'}).points`),60);
 run(`books['1|python-basic-u5-v1']=Object.fromEntries(Array.from({length:8},(_,i)=>['ok-'+i,true]))`);assert.equal(run(`ACTIONS_.pointsAward({sid:'valid',studentId:'1',kind:'python-unit',key:'python-basic-u5'}).awarded`),true);
 assert.throws(()=>run(`ACTIONS_.pointsAward({sid:'valid',studentId:'2',kind:'python-unit',key:'python-basic-u5'})`));
 assert.equal(run(`pointsRule_('lesson','scratch/junior/m1-1/')`),'junior');assert.equal(run(`pointsRule_('lesson','scratch/foo/')`),'scratch');assert.equal(run(`pointsRule_('lesson','entry/foo/')`),'entry');run(`books['2|coding-games-easy-v1']={done:['g60-5a']}; books['2|coding-bebras-original-v1']={done:['p01']}; books['2|python-farm-beginner-01-v1']={'check-success':true}; books['2|coding-detective-start-v1']={lessons:{c01:{mainSolved:true}}}; books['2|done:entry/race/']={done:true}`);
@@ -15,26 +15,26 @@ for (const [kind,key] of [['block','games:g60-5a'],['problem','bebras:p01'],['pr
 assert.equal(run(`pointsTotal_('2')`),267);
 assert.equal(run(`pointsRates_().games`),7);assert.equal(run(`pointsRates_().cosproUnit`),30);
 run(`props.POINT_RATES='{"problem":20,"block":7,"pythonUnit":40,"bebras":15}'`);assert.equal(run(`pointsRates_().pythonProblem`),20);assert.equal(run(`pointsRates_().farm`),20);assert.equal(run(`pointsRates_().bebras`),15);assert.equal(run(`pointsRates_().playground`),7);assert.equal(run(`pointsRates_().games`),7);assert.equal(run(`pointsRates_().cosproUnit`),40);assert.equal(run(`pointsRates_().entry`),100);run(`props.POINT_RATES=''`);
-assert.equal(run(`ACTIONS_.pointsSetRates({auth:'teacher',rates:{pythonProblem:20,cosproProblem:21,bebras:22,detective:23,farm:24,playground:25,games:26,pythonUnit:400,cosproUnit:410,entry:60,scratch:70,junior:80,algorithm:30,pythonRobot:39,pythonLesson:31,codingLesson:32,roblox:33,robot:34,web:35,digital:36,adult:37,otherLesson:38,entryWork:41,scratchWork:42,doubleLesson:43,typing:20}}).rates.playground`),25);assert.equal(run(`pointsRates_().detective`),23);assert.throws(()=>run(`ACTIONS_.pointsSetRates({auth:'teacher',rates:{problem:20,block:25}})`)); assert.equal(run(`ACTIONS_.pointsBalance({sid:'valid',studentId:'1'}).points`),90); assert.equal(run(`ACTIONS_.pointsGrant({auth:'teacher',studentId:'1',amount:-20,reason:'����',requestId:'2234567890123456'}).points`),70);assert.throws(()=>run(`ACTIONS_.pointsGrant({auth:'teacher',studentId:'1',amount:-1000,reason:'����',requestId:'3234567890123456'})`));
-// ��� ������ ������ �޴´�: ���� ��Ģ(pointsRule_)�� ��(inject.js lessonScored_)�� ���� ���� ���� �Ѵ�.
-const injectSrc=fs.readFileSync('inject.js','utf8'),m=injectSrc.match(/function lessonScored_\(k\) \{[\s\S]*?\n        \}/);assert.ok(m,'inject.js �� lessonScored_ �� �־�� �Ѵ�');
+assert.equal(run(`ACTIONS_.pointsSetRates({auth:'teacher',rates:{pythonProblem:20,cosproProblem:21,bebras:22,detective:23,farm:24,playground:25,games:26,pythonUnit:400,cosproUnit:410,entry:60,scratch:70,junior:80,algorithm:30,pythonRobot:39,pythonLesson:31,codingLesson:32,roblox:33,robot:34,web:35,digital:36,adult:37,otherLesson:38,entryWork:41,scratchWork:42,doubleLesson:43,typing:20}}).rates.playground`),25);assert.equal(run(`pointsRates_().detective`),23);assert.throws(()=>run(`ACTIONS_.pointsSetRates({auth:'teacher',rates:{problem:20,block:25}})`)); assert.equal(run(`ACTIONS_.pointsBalance({sid:'valid',studentId:'1'}).points`),90); assert.equal(run(`ACTIONS_.pointsGrant({auth:'teacher',studentId:'1',amount:-20,reason:'정정',requestId:'2234567890123456'}).points`),70);assert.throws(()=>run(`ACTIONS_.pointsGrant({auth:'teacher',studentId:'1',amount:-1000,reason:'정정',requestId:'3234567890123456'})`));
+// 모든 수업은 점수를 받는다: 서버 규칙(pointsRule_)과 앱(inject.js lessonScored_)이 같은 답을 내야 한다.
+const injectSrc=fs.readFileSync('inject.js','utf8'),m=injectSrc.match(/function lessonScored_\(k\) \{[\s\S]*?\n        \}/);assert.ok(m,'inject.js 에 lessonScored_ 가 있어야 한다');
 const lessonScored_=new Function(m[0]+'; return lessonScored_;')();
 const lessonCases=[['entry/race/','entry',true],['entry/work-basic2-0a1b2c3d4e5f/','entryWork',true],['entry/dict-block1-0e5529b46929/','entryWork',true],['entry/cos2-02-snowball/','entryWork',true],['entry/project2-work3/','entryWork',true],['entry/basic2-lesson1/','',false],['entry/book1-unit2/','',false],['entry/work-game1-035cccac0fb8/','doubleLesson',true],['scratch/project-basic2-085af43bf505/','scratchWork',true],['scratch/project-game1-1da078e088a1/','doubleLesson',true],['scratch/advanced/l01/','scratch',true],['roblox/vibe-12/set3/','doubleLesson',true],['python/bridge/','doubleLesson',true],['cert/cos2/','otherLesson',true],['entry/a/b/','',false],['scratch/foo/','scratch',true],['scratch/junior/m1-1/','junior',true],['algorithm/bubble-sort/','algorithm',true],['python/turtle/lesson1/','pythonLesson',true],['python/easy-basic/u1/','pythonLesson',true],['coding/bounceball/','codingLesson',true],['roblox/obby/','roblox',true],['robot/line/','robot',true],['web/html1/','web',true],['digital/ppt/','digital',true],['adult/ai-16/','adult',true],['special/library-ai-6/','otherLesson',true],['newclass/lesson1/','otherLesson',true],
  ['robot/arduino/lesson-01/','robot',true],['robot/cubroid/advanced/01/','robot',true],['python/robot/','',false],['robot/check/','',false],['robot/arduino/editor/','',false],
  ['python/basic/unit1/','',false],['python/cospro2/r1/','',false],['python/farm/beginner-01/','',false],['coding/bebras/','',false],['coding/block-games/','',false],['coding/detective/','',false],['coding/typing/','',false],['work/x/','',false],['admin/x/','',false],['gallery/x/','',false],['algorithm/','',false],['coding/blocks.html','',false],['entry/','',false]];
-for (const [k,rate,scored] of lessonCases) { assert.equal(run(`pointsRule_('lesson',${JSON.stringify(k)})`)||'',rate,'���� '+k); assert.equal(lessonScored_(k),scored,'�� '+k); assert.equal(!!run(`pointsRule_('lesson',${JSON.stringify(k)})`),scored,'�������� ��ġ '+k); }
-run(`books['4|done:algorithm/bubble-sort/']={done:true}`);assert.equal(run(`ACTIONS_.pointsAward({sid:'valid',studentId:'4',kind:'lesson',key:'algorithm/bubble-sort/'}).awarded`),true);assert.equal(run(`pointsTotal_('4')`),30);   // �տ��� �����ڰ� �˰����� ������ 30 ���� ������ �� ����
+for (const [k,rate,scored] of lessonCases) { assert.equal(run(`pointsRule_('lesson',${JSON.stringify(k)})`)||'',rate,'서버 '+k); assert.equal(lessonScored_(k),scored,'앱 '+k); assert.equal(!!run(`pointsRule_('lesson',${JSON.stringify(k)})`),scored,'서버·앱 일치 '+k); }
+run(`books['4|done:algorithm/bubble-sort/']={done:true}`);assert.equal(run(`ACTIONS_.pointsAward({sid:'valid',studentId:'4',kind:'lesson',key:'algorithm/bubble-sort/'}).awarded`),true);assert.equal(run(`pointsTotal_('4')`),30);   // 앞에서 관리자가 알고리즘 점수를 30 으로 저장해 둔 상태
 assert.equal(run(`ACTIONS_.pointsAward({sid:'valid',studentId:'4',kind:'lesson',key:'algorithm/bubble-sort/'}).awarded`),false);assert.throws(()=>run(`ACTIONS_.pointsAward({sid:'valid',studentId:'4',kind:'lesson',key:'python/basic/unit1/'})`));
-// ���̽� �κ� �ڵ�: 12���ø� ���ø���(�̼� 3 + ���� 3 ���) �����Ѵ�.
+// 파이썬 로봇 코딩: 12차시를 차시마다(미션 3 + 문제 3 통과) 지급한다.
 const full=n=>Object.fromEntries(['m0','m1','m2','p0','p1','p2'].map(v=>['L'+n+'-'+v,true]));
 run(`books['5|python-robot-v1']={progress:Object.assign(${JSON.stringify(full(1))},{'L2-m0':true,'L2-m1':true})}`);
 assert.equal(run(`pointsRule_('python-robot','python-robot:L12')`),'pythonRobot');assert.equal(run(`pointsRule_('python-robot','python-robot:L13')`),0);assert.equal(run(`pointsRule_('python-robot','L1')`),0);
 assert.equal(run(`ACTIONS_.pointsAward({sid:'valid',studentId:'5',kind:'python-robot',key:'python-robot:L1'}).awarded`),true);assert.equal(run(`pointsTotal_('5')`),39);
-assert.equal(run(`ACTIONS_.pointsAward({sid:'valid',studentId:'5',kind:'python-robot',key:'python-robot:L1'}).awarded`),false);   // ���� ���ô� �� ����
-assert.throws(()=>run(`ACTIONS_.pointsAward({sid:'valid',studentId:'5',kind:'python-robot',key:'python-robot:L2'})`));   // 6���� �� ������� ���� ����
-assert.throws(()=>run(`ACTIONS_.pointsAward({sid:'valid',studentId:'5',kind:'python-robot',key:'python-robot:L3'})`));   // ��� ���� ����
+assert.equal(run(`ACTIONS_.pointsAward({sid:'valid',studentId:'5',kind:'python-robot',key:'python-robot:L1'}).awarded`),false);   // 같은 차시는 한 번만
+assert.throws(()=>run(`ACTIONS_.pointsAward({sid:'valid',studentId:'5',kind:'python-robot',key:'python-robot:L2'})`));   // 6개를 다 통과하지 못한 차시
+assert.throws(()=>run(`ACTIONS_.pointsAward({sid:'valid',studentId:'5',kind:'python-robot',key:'python-robot:L3'})`));   // 기록 없는 차시
 run(`books['5|python-robot-v1'].progress=Object.assign(books['5|python-robot-v1'].progress,${JSON.stringify(full(2))})`);assert.equal(run(`ACTIONS_.pointsAward({sid:'valid',studentId:'5',kind:'python-robot',key:'python-robot:L2'}).awarded`),true);assert.equal(run(`pointsTotal_('5')`),78);
-// ������ ����: �����Ը� ���� ��ġ��, ���� ���� ���� ���� �������� ������. ���� ���� ������ ���ư���.
+// 수업별 점수: 선생님만 보고 고치고, 따로 정한 값이 묶음 점수보다 먼저다. 비우면 묶음 점수로 돌아간다.
 const webRate=run(`pointsRates_().web`);assert.throws(()=>run(`ACTIONS_.pointsLesson({auth:'student',key:'web/l01/'})`));assert.equal(run(`ACTIONS_.pointsLesson({auth:'teacher',key:'web/l01/'}).points`),webRate);assert.equal(run(`ACTIONS_.pointsLesson({auth:'teacher',key:'web/l01/'}).override`),null);
 assert.equal(run(`ACTIONS_.pointsLesson({auth:'teacher',key:'python/farm/lesson-beginner-01/'}).item`),'');assert.throws(()=>run(`ACTIONS_.pointsSetLesson({auth:'teacher',key:'python/farm/lesson-beginner-01/',points:50})`));
 assert.throws(()=>run(`ACTIONS_.pointsSetLesson({auth:'teacher',key:'web/l01/',points:-1})`));assert.throws(()=>run(`ACTIONS_.pointsSetLesson({auth:'student',key:'web/l01/',points:150})`));
@@ -42,7 +42,12 @@ assert.equal(run(`ACTIONS_.pointsSetLesson({auth:'teacher',key:'web/l01/',points
 run(`books['5|done:web/l01/']={done:true}; books['5|done:web/l02/']={done:true}`);const before5=run(`pointsTotal_('5')`);
 assert.equal(run(`ACTIONS_.pointsAward({sid:'valid',studentId:'5',kind:'lesson',key:'web/l01/'}).points`),before5+150);assert.equal(run(`ACTIONS_.pointsAward({sid:'valid',studentId:'5',kind:'lesson',key:'web/l02/'}).points`),before5+150+webRate);
 assert.equal(run(`ACTIONS_.pointsSetLesson({auth:'teacher',key:'web/l01/',points:null}).override`),null);assert.equal(run(`ACTIONS_.pointsLesson({auth:'teacher',key:'web/l01/'}).points`),webRate);
-console.log('���� ����, �ߺ� ����, �л� �и�, ���� ����, �Ϸ� ����, ��� ���� ����, �κ� ���ú� ����, ������ ���� ���');
-
-
-
+// 타자 자리연습은 80% 이상인 단계마다 한 번 지급한다.
+run(`books['7|coding-typing-v1']={best:{'ko-home':79}}`);
+assert.throws(()=>run(`ACTIONS_.pointsAward({sid:'valid',studentId:'7',kind:'typing',key:'typing:ko-home'})`));
+run(`books['7|coding-typing-v1'].best['ko-home']=80`);
+assert.equal(run(`ACTIONS_.pointsAward({sid:'valid',studentId:'7',kind:'typing',key:'typing:ko-home'}).points`),20);
+assert.equal(run(`ACTIONS_.pointsAward({sid:'valid',studentId:'7',kind:'typing',key:'typing:ko-home'}).awarded`),false);
+assert.throws(()=>run(`ACTIONS_.pointsAward({sid:'valid',studentId:'8',kind:'typing',key:'typing:ko-home'})`));
+assert.throws(()=>run(`ACTIONS_.pointsAward({sid:'valid',studentId:'7',kind:'typing',key:'typing:unknown'})`));
+console.log('서버 지급, 중복 방지, 학생 분리, 교사 인증, 완료 검증, 모든 수업 점수, 로봇 차시별 점수, 수업별 점수 통과');
