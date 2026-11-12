@@ -45,3 +45,4 @@ assert.equal(run(`ACTIONS_.pointsSetLesson({auth:'teacher',key:'web/l01/',points
 console.log('���� ����, �ߺ� ����, �л� �и�, ���� ����, �Ϸ� ����, ��� ���� ����, �κ� ���ú� ����, ������ ���� ���');
 
 
+
