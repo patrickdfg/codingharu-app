@@ -361,3 +361,4 @@ curl -s https://patrickdfg.github.io/codingharu-app/version.json
 
 - 2026-11-10 Claude: class 스크래치 주니어 11개월차(m11-1~4)를 교재 11권 게임 4개로 교체 후 sync.yml 실행(성공). 남은 일 없음. 앱 iframe·태블릿 실기기 화면은 확인 못 함.
 - 2026-11-10 Claude: class 스크래치 주니어 11권 워크북(book11, 펼친면 사진·스티커 끌기) 추가 후 sync.yml 성공. 앱 주소는 v/scratch/junior/book11/. 앱 iframe·태블릿 실기기에서 스티커 끌기는 확인 못 함.
+- 2026-11-12 Claude: 맞춤 도메인 codemaru.kr 연결 완료. DNS(아이티이지 웹DNS: A 185.199.109~111.153, www CNAME patrickdfg.github.io)와 GitHub Pages 맞춤 도메인 저장(CNAME 자동 생성)은 사용자가 함. OAuth 클라이언트(codingharu-record) 승인된 JavaScript 원본에 https://codemaru.kr·https://www.codemaru.kr 추가. index·roadmap 의 canonical/og 주소를 https://codemaru.kr/ 로 변경. server/record.gs 의 APP_URL_DEFAULT_ 는 규칙상 안 고침(옛 주소도 새 주소로 넘어감). Enforce HTTPS 는 DNS 확인 뒤 설정 화면에서 켜야 함.
