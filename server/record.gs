@@ -584,7 +584,7 @@ function pointsTotal_(id) { return rows_('points').reduce((sum, r) => sum + (Str
 function pointsText_(s) { return /^[\s]*[=+\-@]/.test(s) ? "'" + s : s; }
 // 활동 1시간에 약 100점이 모이도록 잡은 기본값. 관리 화면의 '점수 설정'에서 저장한 값이 있으면 그 값이 우선한다.
 // 프로그램별로 나눈 점수 항목. 옛 설정(problem, block)은 아래 pointsRates_ 에서 새 항목으로 이어받는다.
-function pointsDefaults_() { return {pythonProblem:12, cosproProblem:7, bebras:10, detective:50, farm:100, playground:10, games:7, pythonUnit:30, cosproUnit:30, entry:100, scratch:100, junior:100, algorithm:35, pythonRobot:100, pythonLesson:100, codingLesson:100, roblox:100, robot:100, web:100, digital:100, adult:100, otherLesson:100, entryWork:40, scratchWork:40, doubleLesson:200}; }
+function pointsDefaults_() { return {pythonProblem:12, cosproProblem:7, bebras:10, detective:50, farm:100, playground:10, games:7, pythonUnit:30, cosproUnit:30, entry:100, scratch:100, junior:100, algorithm:35, pythonRobot:100, pythonLesson:100, codingLesson:100, roblox:100, robot:100, web:100, digital:100, adult:100, otherLesson:100, entryWork:40, scratchWork:40, doubleLesson:200, typing:20}; }
 // 기준: 1차시(50분) = 100점. 농장 1문제 = 1차시(100), 탐정 1차시 = 문제 2개(50×2), 놀이터 1수업 = 10단계(10×10), 게임 1차시 ≈ 14단계(7), COS Pro 1회 = 10문제(7×10+30),
 // 비버 1차시 ≈ 10문제(10), 알고리즘 1차시 ≈ 워크북 3개(35), 엔트리·스크래치 작품 1차시 ≈ 2~3개(40), 2차시에 걸치는 한 쪽(200).
 const POINT_LEGACY_ = { problem:['pythonProblem','cosproProblem','bebras','detective','farm'], block:['playground','games'], pythonUnit:['cosproUnit'] };
@@ -611,13 +611,14 @@ function pointsRule_(kind, key) {
   if (kind === 'problem' && /^farm:(?:beginner-(?:0[1-9]|1[0-2])|(?:intermediate|advanced)-0[1-8])$/.test(key)) return 'farm';
   if (kind === 'python-unit' && /^python-basic-u(?:[1-9]|1[0-7])$/.test(key)) return 'pythonUnit';
   if (kind === 'python-unit' && /^cospro2-r[1-6]$/.test(key)) return 'cosproUnit';
+  if (kind === 'typing' && /^typing:(?:ko-(?:home-left|home-right|home|top|bottom|all)|en-(?:home|top|bottom))$/.test(key)) return 'typing';
   // 파이썬 로봇 코딩: 한 페이지에 12차시가 있어서 차시마다(미션 3 + 문제 3 통과) 점수를 준다.
   if (kind === 'python-robot' && /^python-robot:L(?:[1-9]|1[0-2])$/.test(key)) return 'pythonRobot';
   // 수업 완료: 수업 폴더는 모두 점수를 받는다. 이미 문제·단계·단원 점수가 따로 있는 곳과 수업이 아닌 폴더만 뺀다.
   // inject.js 의 lessonScored_ 와 같은 규칙이어야 한다(다르면 앱이 거절된 요청을 계속 다시 보낸다).
   if (kind === 'lesson' && /\/$/.test(key)) {
     if (/^(?:admin|assets|docs|downloads|gallery|work)\//.test(key)) return 0;
-    if (/^python\/(?:basic|cospro2|farm|robot)\//.test(key) || /^coding\/(?:bebras|block-games|detective|vendor)\//.test(key)) return 0;
+    if (/^python\/(?:basic|cospro2|farm|robot)\//.test(key) || /^coding\/(?:bebras|block-games|detective|vendor|typing)\//.test(key)) return 0;
     if (/^robot\/(?:check|arduino\/editor)\//.test(key)) return 0;   // 참여 확인 도구·편집기는 수업이 아니다
     // 2차시 분량이 한 쪽에 있는 수업(로블록스 세트, 엔트리·스크래치 게임 작품 등)
     if (/^(?:roblox\/vibe-12\/set[1-6]|roblox\/jump-map|robot\/cubroid\/lower\/0[45]|robot\/cubroid\/hub\/06|python\/bridge|special\/middle-vibe-6|entry\/work-game[12]-[^/]+|scratch\/project-game[12]-[^/]+)\/$/.test(key)) return 'doubleLesson';
@@ -650,6 +651,7 @@ function pointsProof_(studentId, kind, key) {
     return state;
   }
   if (kind === 'lesson') { const state=workbook('done:'+key); return !!(state && state.done === true); }
+  if (kind === 'typing') { const state=workbook('coding-typing-v1'), score=state && state.best && state.best[key.slice(7)]; return typeof score === 'number' && score >= 80 && score <= 100; }
   if (kind === 'python-robot') { const n=Number(key.split(':L')[1]), state=workbook('python-robot-v1'), p=state && state.progress; return !!(p && ['m0','m1','m2','p0','p1','p2'].every(v => p['L'+n+'-'+v] === true)); }
   if (kind === 'block') { const games=key.startsWith('games:'), state=workbook(games ? 'coding-games-easy-v1' : 'coding-playground-v1'); return !!(state && Array.isArray(state.done) && state.done.includes(games ? key.slice(6) : key)); }
   if (kind === 'problem' && key.startsWith('farm:')) { const state=workbook('python-farm-'+key.slice(5)+'-v1'); return !!(state && state['check-success'] === true); }
