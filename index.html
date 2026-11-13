@@ -181,7 +181,7 @@
     <form id="tkeyForm" class="tkey-box">
       <b>선생님 정답 열쇠</b> <span id="tkeyState"></span>
       <div class="bar">
-        <input id="tkeyPass" type="password" aria-label="선생님 정답 비밀번호" placeholder="선생님 정답 비밀번호" autocomplete="off" required>
+        <input id="tkeyPass" type="password" aria-label="선생님 정답 비밀번호" placeholder="사이트 비밀번호 (교안에 들어갈 때 사용한 비밀번호)" autocomplete="off" required>
         <button type="submit" id="tkeyGo">넣기</button>
         <button type="button" id="tkeyForget" class="ghost" hidden>지우기</button>
       </div>
@@ -469,10 +469,10 @@
     $('phoneAuto').checked = phoneAutoEnabled();
     say(''); loadStatus(); tkeyShow();
   }
-  // 선생님 정답 열쇠: 정답 파일은 학생 비밀번호가 아니라 선생님 정답 비밀번호(GitHub 비밀값 TEACHER_PASS)로 잠겨 있다
+  // 선생님 정답 열쇠: 정답 파일은 SITE_PASS와 같은 비밀번호로 잠겨 있다. 선생님 로그인 후 이 기기에만 열쇠를 등록한다
   async function tkeyShow() {
     var k = await CHCore.loadTeacherKey().catch(function () { return null; });
-    $('tkeyState').textContent = k ? '이 기기에 있어요. 12시간이 지나거나 로그아웃하면 지워져요.' : '없어요. 넣으면 정답 보기가 켜져요.';
+    $('tkeyState').textContent = k ? '이 기기에 있어요. 12시간이 지나거나 로그아웃하면 지워져요.' : '없어요. 사이트 비밀번호를 입력하면 정답 보기가 켜져요.';
     $('tkeyForget').hidden = !k;
   }
   $('tkeyForm').addEventListener('submit', async function (e) {
@@ -482,7 +482,7 @@
       var meta = await CHCore.getJSON(BASE, 'crypt.json');
       var buf;
       try { buf = await CHCore.getBuf(BASE, 'teacher-check.enc'); }
-      catch (err) { say(err.status === 404 ? '아직 선생님 정답 비밀번호(TEACHER_PASS)가 설정되지 않았어요.' : '교안 서버에 연결하지 못했어요.'); b.disabled = false; return; }
+      catch (err) { say(err.status === 404 ? '선생님 정답 파일이 아직 배포되지 않았어요. 교안 동기화를 확인해 주세요.' : '교안 서버에 연결하지 못했어요.'); b.disabled = false; return; }
       var k = await CHCore.deriveKey($('tkeyPass').value, meta);
       try { await CHCore.decrypt(k, buf); }
       catch (err) { say('선생님 정답 비밀번호가 맞지 않아요.'); b.disabled = false; $('tkeyPass').select(); return; }
