@@ -29,16 +29,11 @@ if (!meta || meta.iter !== ITER) meta = { v: 1, salt: randomBytes(16).toString('
 const key = pbkdf2Sync(pass, Buffer.from(meta.salt, 'base64'), meta.iter, 32, 'sha256');
 const ivKey = createHmac('sha256', key).update('iv').digest();
 
-// 선생님 전용 정답 파일: 이름이 answers.js·solutions.js 로 끝나는 파일은 학생 비밀번호가 아니라
-// 선생님 비밀번호(TEACHER_PASS)로 잠그고 'teacher/' 를 붙인 이름으로 둔다. 학생 열쇠로는 받을 수도 풀 수도 없다.
-// TEACHER_PASS 가 없으면 정답 파일은 아예 넣지 않는다(학생에게 새지 않는 쪽이 기본).
+// 선생님 정답 파일은 일반 교안과 별도 teacher/ 경로에 두되, 사이트 비밀번호(SITE_PASS)로 잠근다.
+// 같은 비밀번호를 쓰므로 파일 암호 자체는 학생과 구분되지 않는다. 화면 표시 권한은 선생님 모드가 검사한다.
 const TEACHER_ONLY = /(?:^|[/-])(?:answers|solutions)\.js$/;
-// 선생님 비밀번호가 짧거나 학생 비밀번호와 같으면 정답을 학생이 풀 수 있게 되므로, 동기화는 멈추지 않고 정답 파일만 뺀다
-let tpass = process.env.TEACHER_PASS || '';
-if (tpass && tpass.length < MIN_PASS) { console.warn(`::warning::TEACHER_PASS 가 ${MIN_PASS}자보다 짧아 정답 파일을 넣지 않습니다.`); tpass = ''; }
-if (tpass && tpass === pass) { console.warn('::warning::TEACHER_PASS 가 SITE_PASS 와 같아 정답 파일을 넣지 않습니다. 다른 비밀번호로 바꿔 주세요.'); tpass = ''; }
-const tkey = tpass ? pbkdf2Sync(tpass, Buffer.from(meta.salt, 'base64'), meta.iter, 32, 'sha256') : null;
-const tivKey = tkey ? createHmac('sha256', tkey).update('iv').digest() : null;
+const tkey = key;
+const tivKey = ivKey;
 
 function seal(plain, label, k = key, ik = ivKey) {
   const iv = createHmac('sha256', ik).update(label + '\0').update(plain).digest().subarray(0, 12);
@@ -68,7 +63,7 @@ fs.rmSync(contentDir, { recursive: true, force: true });
 fs.mkdirSync(contentDir, { recursive: true });
 
 const sum = createHash('sha256');
-let n = 0, nTeacher = 0, nSkipped = 0;
+let n = 0, nTeacher = 0;
 const all = [];
 for (const [prefix, dir] of sources) {
   for (const r of walk(dir)) all.push([prefix ? prefix + '/' + r : r, path.join(dir, r)]);
@@ -82,7 +77,6 @@ for (const [rel, file] of all) {
     data = Buffer.from(t, 'utf8');
   }
   if (TEACHER_ONLY.test(rel)) {
-    if (!tkey) { nSkipped++; continue; }
     const tblob = seal(data, 'teacher/' + rel, tkey, tivKey);
     fs.writeFileSync(path.join(contentDir, nameFor('teacher/' + rel)), tblob);
     sum.update('teacher/' + rel).update(tblob);
@@ -98,8 +92,7 @@ if (n === 0) { console.error('잠글 파일이 없습니다. class 폴더 경로
 
 fs.writeFileSync(path.join(out, 'check.enc'), seal(Buffer.from('codingharu'), 'check'));
 const tcheck = path.join(out, 'teacher-check.enc');
-if (tkey) fs.writeFileSync(tcheck, seal(Buffer.from('codingharu-teacher'), 'teacher-check', tkey, tivKey));
-else fs.rmSync(tcheck, { force: true });
+fs.writeFileSync(tcheck, seal(Buffer.from('codingharu-teacher'), 'teacher-check', tkey, tivKey));
 fs.writeFileSync(metaPath, JSON.stringify(meta, null, 1));
 fs.writeFileSync(path.join(out, 'version.json'), JSON.stringify({ v: sum.digest('hex').slice(0, 16), n }));
-console.log(`${n}개 파일을 잠갔습니다. 선생님 정답 ${nTeacher}개` + (nSkipped ? `, TEACHER_PASS 가 없어 정답 ${nSkipped}개는 넣지 않았습니다.` : '.'));
+console.log(`${n}개 파일을 잠갔습니다. 선생님 정답 ${nTeacher}개.`);
