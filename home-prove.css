@@ -1,0 +1,25 @@
+/* 공개 홈 '탐구로 증명' 구역: 탐구 포트폴리오 소개, 마루 5봉 인증, 공개 동의한 학생 탐구 카드 */
+.home-prove{background:#211935;color:#f4f0fb}
+.home-prove .section-heading h2{color:#fff}.home-prove .section-heading>p{color:#c9bfdc}.home-prove .home-eyebrow{color:#d6ff83!important}
+.prove-flow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin:0 0 46px;padding:0;list-style:none}
+.prove-flow li{border:1px solid #453a63;border-radius:18px;padding:26px 24px;background:#2b2145}
+.prove-flow b{display:block;font:11px/1.6 Consolas,monospace;letter-spacing:2px;color:#d6ff83;margin-bottom:12px}
+.prove-flow h3{margin:0 0 10px;font-size:21px;letter-spacing:-.6px;color:#fff}.prove-flow p{margin:0;font-size:14px;line-height:1.8;color:#c9bfdc}
+.prove-peaks{border:1px solid #453a63;border-radius:22px;padding:30px 28px;margin:0 0 46px;background:linear-gradient(180deg,#2b2145,#241b3b)}
+.prove-peaks h3{margin:0 0 6px;font-size:22px;color:#fff;letter-spacing:-.6px}.prove-peaks>p{margin:0 0 20px;font-size:14px;color:#c9bfdc;line-height:1.8}
+.peak-row{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin:0;padding:0;list-style:none}
+.peak-row li{border-radius:14px;padding:16px 14px;background:#3a2f58;min-width:0}
+.peak-row strong{display:block;color:#d6ff83;font-size:15px;margin-bottom:4px}.peak-row span{font-size:12.5px;color:#d9d1e8;line-height:1.6;word-break:keep-all}
+.prove-works-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+.prove-works-head h3{margin:0;font-size:22px;color:#fff;letter-spacing:-.6px}.prove-works-head p{margin:0;font-size:12.5px;color:#b8acd6}
+.prove-works{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-bottom:38px}
+.prove-card{background:#fff;color:#211935;border-radius:18px;padding:22px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.prove-card .who{font:11px/1.6 Consolas,monospace;letter-spacing:1px;color:#6e5f90}
+.prove-card h4{margin:0;font-size:17px;line-height:1.45;letter-spacing:-.4px;overflow-wrap:anywhere}
+.prove-card p{margin:0;font-size:13.5px;line-height:1.75;color:#5f586b;overflow-wrap:anywhere}
+.prove-card .tools{display:flex;flex-wrap:wrap;gap:6px}.prove-card .tools span{font-size:11.5px;border-radius:999px;padding:2px 10px;background:#efe9fb;color:#4b3a78;font-weight:700}
+.prove-card .sample{align-self:flex-start;font-size:11px;font-weight:700;border-radius:6px;padding:2px 8px;background:#d6ff83;color:#243016}
+.prove-actions{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.prove-actions small{color:#b8acd6;font-size:12px}
+@media(max-width:980px){.prove-flow,.prove-works{grid-template-columns:1fr}.peak-row{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:780px){.prove-peaks{padding:24px 20px}.prove-flow li{padding:22px 20px}}
