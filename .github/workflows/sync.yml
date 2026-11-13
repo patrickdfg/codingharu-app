@@ -53,8 +53,7 @@ jobs:
       - name: 잠그기
         env:
           SITE_PASS: ${{ secrets.SITE_PASS }}
-          # 선생님 정답 파일(…answers.js·…solutions.js)용 별도 비밀번호. 없으면 정답 파일은 앱에 넣지 않는다
-          TEACHER_PASS: ${{ secrets.TEACHER_PASS }}
+          # 선생님 정답 파일도 SITE_PASS로 암호화하므로 추가 비밀번호는 사용하지 않는다.
         run: node tools/build.mjs class-src . roblox/treasure=roblox-src
 
       - name: 바뀐 것만 올리기
