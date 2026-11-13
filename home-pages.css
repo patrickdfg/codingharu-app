@@ -1,0 +1,21 @@
+/* 공개 홈을 메뉴별 화면으로 나눈다: html[data-page] 값에 맞는 구역만 보이고, 소식·실적 목록과 둘러보기 타일 모양을 정한다. */
+html[data-page="home"] .home-main section[data-page]:not([data-page="home"]):not([data-page="all"]),html[data-page="about"] .home-main section[data-page]:not([data-page="about"]):not([data-page="all"]),html[data-page="courses"] .home-main section[data-page]:not([data-page="courses"]):not([data-page="all"]),html[data-page="inquiry"] .home-main section[data-page]:not([data-page="inquiry"]):not([data-page="all"]),html[data-page="works"] .home-main section[data-page]:not([data-page="works"]):not([data-page="all"]),html[data-page="news"] .home-main section[data-page]:not([data-page="news"]):not([data-page="all"]),html[data-page="results"] .home-main section[data-page]:not([data-page="results"]):not([data-page="all"]),html[data-page="admission"] .home-main section[data-page]:not([data-page="admission"]):not([data-page="all"]){display:none}
+.home-nav a[hidden],.tile-grid a[hidden]{display:none}
+.home-nav a[aria-current="page"]{color:var(--lime);font-weight:700}
+.page-tiles,.page-list{background:var(--home-paper);color:var(--home-ink)}
+.tile-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px}
+.tile-grid a{display:flex;flex-direction:column;gap:8px;padding:26px 24px;border-radius:18px;background:#fff;border:1px solid #e4e0ee;color:var(--home-ink);text-decoration:none;transition:transform .2s,border-color .2s}
+.tile-grid a:hover{transform:translateY(-3px);border-color:#a383ff}
+.tile-grid b{font-size:19px;letter-spacing:-.4px}
+.tile-grid span{font-size:13px;color:#6f6880;line-height:1.7}
+.tile-grid a::after{content:"→";margin-top:auto;font-weight:700;color:#6a4bd0}
+.list-box{display:grid;gap:12px;max-width:860px}
+.list-item{padding:22px 24px;border-radius:16px;background:#fff;border:1px solid #e4e0ee}
+.list-item .meta{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:12px;color:#6f6880;margin-bottom:6px}
+.list-item .tag{padding:2px 10px;border-radius:99px;background:#ece7ff;color:#4b3396;font-weight:700}
+.list-item h3{margin:0 0 6px;font-size:18px;letter-spacing:-.3px}
+.list-item p{margin:0;font-size:14px;line-height:1.8;color:#4a4458;white-space:pre-line}
+@media(max-width:780px){.home-header{flex-wrap:wrap;height:auto;padding-top:14px;padding-bottom:0;row-gap:8px}
+.home-nav{display:flex;order:3;width:100%;gap:20px;overflow-x:auto;padding:6px 0 12px;scrollbar-width:none;white-space:nowrap}
+.home-nav::-webkit-scrollbar{display:none}.home-nav a{flex:none;padding:6px 0}}
+@media(prefers-reduced-motion:reduce){.tile-grid a{transition:none}}
