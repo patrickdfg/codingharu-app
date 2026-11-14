@@ -81,7 +81,7 @@ const ACTIONS_ = {
     let pointRows; withLock_(() => { pointRows = rows_('points'); });
     const totals = {}; pointRows.forEach(r => { const id = String(r[0]); totals[id] = (totals[id] || 0) + (Number(r[4]) || 0); });
     const students = rows_('students').filter(r => r[0] !== '' && r[1] !== '')
-      .map(r => ({ id: String(r[0]), name: String(r[1]), group: String(r[3] || ''), pending: pending_(r), points: totals[String(r[0])] || 0 }));
+      .map(r => ({ id: String(r[0]), name: String(r[1]), group: String(r[3] || ''), memo: String(r[4] || ''), status: String(r[5] || '').trim(), pending: pending_(r), points: totals[String(r[0])] || 0 }));
     const workbooks = rows_('workbooks').map(r => ({
       studentId: String(r[0]), workbook: String(r[2]), title: String(r[3]), page: String(r[4]),
       done: Number(r[5]) || 0, total: Number(r[6]) || 0, updatedAt: ms(r[8])
@@ -92,7 +92,7 @@ const ACTIONS_ = {
       studentId: String(r[1]), page: String(r[3]), title: String(r[4]), last: ms(r[6]), count: Number(r[7]) || 0
     }));
     const pointHistory = pointRows.slice(-200).reverse().map(r => ({studentId:String(r[0]), at:ms(r[1]), kind:String(r[2]), amount:Number(r[4]) || 0, reason:String(r[5] || ''), by:String(r[6] || '')}));
-    return { students: students, workbooks: workbooks, visits: visits, now: Date.now(), pointRates: pointsRates_(), pointHistory: pointHistory };
+    return { students: students, workbooks: workbooks, visits: visits, now: Date.now(), pointRates: pointsRates_(), pointDefaults: pointsDefaults_(), pointHistory: pointHistory };
   },
   // 포인트 장부: 자동 지급은 학생·활동 식별자별 한 번만 기록한다.
   pointsBalance(req) {
@@ -198,6 +198,61 @@ const ACTIONS_ = {
     return { pending: true, student: student };
   },
   // 선생님이 가입 신청을 승인하거나 거절(거절하면 행을 지운다)
+  // 관리자 페이지 회원 관리: 이름·반·메모·번호(PIN)·상태(승인/휴원)를 고친다. 보낸 칸만 바꾼다.
+  studentUpdate(req) {
+    teacher_(req.auth);
+    const id = String(req.id || '');
+    const has = k => Object.prototype.hasOwnProperty.call(req, k) && req[k] !== null && req[k] !== undefined;
+    const name = has('name') ? String(req.name).replace(/\s+/g, ' ').trim() : null;
+    const group = has('group') ? String(req.group).trim() : null;
+    const memo = has('memo') ? String(req.memo).trim() : null;
+    const pin = has('pin') && String(req.pin).trim() !== '' ? String(req.pin).trim() : null;
+    const status = has('status') ? String(req.status).trim() : null;
+    if (name !== null && (name.length < 1 || name.length > 20)) throw new Error('이름은 1~20자로 써 주세요.');
+    if (group !== null && group.length > 20) throw new Error('반 이름은 20자까지예요.');
+    if (memo !== null && memo.length > 200) throw new Error('메모는 200자까지예요.');
+    if (pin !== null && !/^\d{4}$/.test(pin)) throw new Error('번호는 숫자 4자리여야 해요.');
+    if (status !== null && ['승인', '휴원'].indexOf(status) < 0) throw new Error('상태는 승인 또는 휴원만 고를 수 있어요.');
+    let out;
+    withLock_(() => {
+      const sh = sheet_('students');
+      const n = sh.getLastRow() - 1;
+      if (n < 1) throw new Error('학생 목록이 비어 있어요.');
+      const data = sh.getRange(2, 1, n, 6).getValues();
+      const i = data.findIndex(r => String(r[0]) === id);
+      if (i < 0) throw new Error('학생 목록에 없는 학생입니다.');
+      if (pending_(data[i])) throw new Error('가입 승인을 먼저 해 주세요.');
+      const nextName = name !== null ? name : String(data[i][1]), nextPin = pin !== null ? pin : pinOf_(data[i][2]);
+      if (data.some((r, k) => k !== i && r[0] !== '' && sameName_(r[1], nextName) && pinOf_(r[2]) === nextPin)) throw new Error('같은 이름과 번호를 쓰는 학생이 있어요. 번호를 바꿔 주세요.');
+      if (name !== null) sh.getRange(i + 2, 2).setValue(name);
+      if (pin !== null) sh.getRange(i + 2, 3).setNumberFormat('@').setValue(pin);
+      if (group !== null) sh.getRange(i + 2, 4).setValue(group);
+      if (memo !== null) sh.getRange(i + 2, 5).setValue(memo);
+      if (status !== null) sh.getRange(i + 2, 6).setValue(status);
+      out = { id: id, name: nextName, group: group !== null ? group : String(data[i][3] || ''), memo: memo !== null ? memo : String(data[i][4] || ''), status: status !== null ? status : String(data[i][5] || '').trim() };
+    });
+    return { student: out };
+  },
+  // 월말 학생 기록표: 그 달에 학원(앱)에 온 날 수, 받은·쓴 포인트를 학생별로 센다(관리자 화면의 방문 600줄·포인트 200줄 제한 없이).
+  monthStats(req) {
+    teacher_(req.auth);
+    const month = String(req.month || '');
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) throw new Error('달은 2026-11 모양으로 보내 주세요.');
+    const tz = Session.getScriptTimeZone(), stats = {};
+    const st = id => (stats[id] = stats[id] || { days: {}, earned: 0, spent: 0 });
+    const ymOf = v => v instanceof Date ? Utilities.formatDate(v, tz, 'yyyy-MM') : String(v || '').slice(0, 7);
+    const dayOf = v => v instanceof Date ? Utilities.formatDate(v, tz, 'yyyy-MM-dd') : String(v || '').slice(0, 10);
+    rows_('visits').forEach(r => { if (r[1] !== '' && ymOf(r[0]) === month) st(String(r[1])).days[dayOf(r[0])] = 1; });
+    let pointRows; withLock_(() => { pointRows = rows_('points'); });
+    pointRows.forEach(r => {
+      if (r[0] === '' || ymOf(r[1]) !== month) return;
+      const a = Number(r[4]) || 0, s = st(String(r[0]));
+      if (a > 0) s.earned += a; else s.spent += -a;
+    });
+    const out = {};
+    Object.keys(stats).forEach(id => { out[id] = { days: Object.keys(stats[id].days).length, earned: stats[id].earned, spent: stats[id].spent }; });
+    return { month: month, stats: out };
+  },
   approve(req) {
     teacher_(req.auth);
     const id = String(req.id || '');
@@ -226,6 +281,7 @@ const ACTIONS_ = {
     if (!r) { cache.put(fk, String(Number(cache.get(fk) || 0) + 1), 600); throw new Error('이름이나 번호가 맞지 않아요.'); }
     cache.remove(fk);
     if (pending_(r)) throw new Error('아직 선생님이 승인하지 않았어요. 선생님께 말씀드려 주세요.');
+    if (resting_(r)) throw new Error('지금은 쉬는 중인 계정이에요. 선생님께 말씀드려 주세요.');
     return { student: { id: String(r[0]), name: String(r[1]) }, sid: sign_(String(r[0]), Date.now() + SESSION_DAYS_ * 86400000) };
   },
   // 워크북 기록 불러오기
@@ -502,6 +558,7 @@ function galleryFind_(id) {
 }
 
 const pending_ = r => String(r[5] || '').trim() === '대기';
+const resting_ = r => String(r[5] || '').trim() === '휴원';
 // 시트 값이 숫자로 저장돼 앞의 0이 잘린 PIN(0121 → 121)도 4자리로 복구해서 비교한다.
 const pinOf_ = v => {
   const s = String(v == null ? '' : v).trim().replace(/^'/, '');

@@ -180,7 +180,7 @@
     if (sess && sess.role === 'teacher') {
       tag.innerHTML = '<span></span><span class="st"></span><a>관리자 메뉴</a>';
       tag.firstChild.textContent = '선생님';
-      tag.querySelector('a').href = CHRecord.base + 'index.html';
+      tag.querySelector('a').href = CHRecord.base + 'admin.html';
       // 선생님: 이 수업의 완료 점수를 보고 고친다(서버 pointsLesson·pointsSetLesson). 목록 쪽에는 붙이지 않는다.
       (function () {
         var key = subKey(page.replace(/index\.html$/, ''));
@@ -194,7 +194,7 @@
           if (!out.item) {
             var own = /^python\/(?:basic|cospro2|farm|robot|easy-basic)\//.test(key) || /^coding\/(?:bebras|block-games|detective)\//.test(key) || key === 'ai-projects/';
             box.appendChild(document.createTextNode(own ? '🅿 이 수업은 문제·단계·차시마다 점수가 들어가요.' : '🅿 이 쪽은 완료 점수가 없어요.'));
-            box.appendChild(line(own ? '값은 관리자 메뉴의 「자동 지급 점수 설정」에서 고쳐요.' : '차시 안내·도구 쪽이에요. 작품·수업 쪽에서 점수가 들어가요.'));
+            box.appendChild(line(own ? '값은 관리자 메뉴의 「점수 기본값」에서 고쳐요.' : '차시 안내·도구 쪽이에요. 작품·수업 쪽에서 점수가 들어가요.'));
             return;
           }
           var inp = document.createElement('input'), save = document.createElement('button'), reset = document.createElement('button'), msg = line('');

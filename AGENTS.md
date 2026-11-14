@@ -43,7 +43,8 @@ Codex(ChatGPT)는 `AGENTS.md`, Claude Code 는 `CLAUDE.md` 를 자동으로 읽�
 
 | 파일 | 역할 |
 | --- | --- |
-| `index.html` | 처음 화면. 수업 기록이 꺼져 있으면 비밀번호 확인 → 열쇠 저장 → `v/index.html`. 켜져 있으면 로그인/가입하기 탭(학생 이름+4자리, 선생님 구글)·관리자 메뉴(학생 현황) |
+| `index.html` | 처음 화면. 수업 기록이 꺼져 있으면 비밀번호 확인 → 열쇠 저장 → `v/index.html`. 켜져 있으면 로그인/가입하기 탭(학생 이름+4자리, 선생님 구글). 선생님 로그인 뒤에는 `admin.html` 로 간다(옛 팝업 관리 화면 `showAdminOld` 는 안 쓴다) |
+| `admin.html` · `admin.js` · `admin.css` | 선생님 관리자 페이지(전용 페이지): 한눈에 보기 · 회원 관리(승인·이름/반/메모/번호/휴원) · 학생 작품(게시판 학생별 모아 보기) · 포인트 주기(여러 명) · 점수 기본값 · 월말 기록표(A4 인쇄/PDF) · 학부모 리포트 · 설정 |
 | `core.js` | 열쇠 만들기·풀기·IndexedDB 보관. 화면·서비스워커·시험이 같이 쓴다 |
 | `sw.js` | `/v/` 아래 주소를 잠긴 파일에서 풀어 돌려준다. 교안은 저장하지 않는다 |
 | `inject.js` | 교안 화면마다 끼워 넣는 스크립트: 새 교안 알림, 글자 −/+ 막대, 파일 내려받기, 설치 단추 |
@@ -51,7 +52,7 @@ Codex(ChatGPT)는 `AGENTS.md`, Claude Code 는 `CLAUDE.md` 를 자동으로 읽�
 | `.github/workflows/sync.yml` | 받기 → 잠그기 → 바뀐 것만 커밋 |
 | `test/interop.test.mjs` | 잠금·풀기 호환 시험 (`node test/interop.test.mjs`) |
 | `SETUP.md` | 처음 설정 순서(비밀값 넣는 법 등) |
-| `record.js` · `login.html` · `record-config.json` | 수업 기록: 기기 등록 열쇠·로그인 상태 보관, 기록 서버 호출. 로그인·가입·관리자 메뉴는 `index.html` 에 있고 `login.html` 은 옛 주소를 index 로 넘기는 껍데기 |
+| `record.js` · `login.html` · `record-config.json` | 수업 기록: 기기 등록 열쇠·로그인 상태 보관, 기록 서버 호출. 로그인·가입·관리자 페이지는 `admin.html` 에 있고 `login.html` 은 옛 주소를 index 로 넘기는 껍데기 |
 | `server/record.gs` | 수업 기록 서버(구글 시트에 붙인 Apps Script). 이 저장소에서는 배포되지 않는다 — 시트의 Apps Script 에 붙여 넣는다 |
 
 `content/`·`crypt.json`·`check.enc`·`version.json` 은 **봇이 만드는 파일**이다. 손으로 고치지 않는다.
@@ -72,8 +73,8 @@ Codex(ChatGPT)는 `AGENTS.md`, Claude Code 는 `CLAUDE.md` 를 자동으로 읽�
 - **수업이 아닌 도구 페이지**(`robot/check`, `robot/arduino/editor` 등)는 완료 점수에서 제외한다.
 - **`pointsRule_` 의 'lesson' 규칙(`record.gs`)과 `inject.js` 의 `lessonScored_` 는 항상 같아야 한다.** 다르면 앱이 서버가 거절한 요청을 계속 다시 보낸다.
   `test/points.test.cjs` 가 두 규칙을 같은 목록으로 비교하므로 규칙을 고치면 시험을 돌린다.
-- **점수 항목을 추가하면 `index.html` 관리 화면의 `rateDefs` 에도 같은 항목(입력 칸)을 추가한다.** 선생님이 관리자 로그인 후 프로그램별 점수를 보고 고칠 수 있어야 한다.
-  항목 수가 `pointsDefaults_` 와 `rateDefs` 에서 어긋나면 저장이 실패한다.
+- **점수 항목을 추가하면 `admin.js` 의 `RATES`(묶음·이름·설명)에도 같은 키를 추가한다.** 선생님이 관리자 페이지 「점수 기본값」에서 보고 고칠 수 있어야 한다.
+  빠진 키는 화면 아래에 경고로 나오고, 저장할 때는 서버 기본값으로 채워 32개 전부 보낸다(서버 pointsSetRates 는 모든 키가 필요).
 - **기본 점수는 1차시(50분) 분량에 100점이 되게 잡는다(원장님 기준).** 현재 기본값: 수업 1회 100, 2차시 분량 한 쪽 200(doubleLesson), 엔트리·스크래치 작품 1개 40(1차시에 2~3개), 농장 1차시(문제 1개) 100, 탐정 문제 50(차시당 2개), 코딩 놀이터 1단계 10(1수업 10단계), 게임 1단계 7, 비버 1문제 10, COS Pro 1문제 7 + 회차 30, 파이썬 기초 1문제 12 + 단원 30(단원 = 약 2차시), 알고리즘 워크북 1개 35.
   엔트리 차시 안내 쪽(`entry/<책>-lesson#`, `book1-unit#`)은 같은 내용의 작품 쪽(`work-…`)이 점수를 받으므로 점수가 없다.
   **한 쪽에 여러 차시가 든 수업(원장님 지정 2026-11-11)**: 파이썬 기초 융합 미션 6차시 = 차시(노트북)당 200점(`pythonHigh`, 완료 키 `python/high/run/@N`, 실습 쪽의 `?nb=N차시-…` 에서 inject.js `subKey` 가 만든다), 천천히 배우는 파이썬 기본 17단원 = 단원당 200점(`easyUnit`, 개념 연습 14단계를 모두 마치면 앱 쪽 `python-easy-unit`/`easy-uN`, 서버가 워크북 `python-basic-easy-v1` 의 done 으로 확인), AI와 함께 생각하고 만드는 12차시 = 차시당 100점(`aiProject`, 체크칸을 켜면 `ai-lesson`/`lNN`, 서버가 워크북 `ai-thinking-projects-v1` 의 `check-lNN` 으로 확인). 큐브로이드 미션 2종(`robot/cubroid/mission/02·03`)은 쪽 하나가 한 차시라 그대로 100점, `lower/08`(20차시 차시표)은 교안이 차시표 한 쪽뿐이라 그대로 100점(차시별 교안이 생기면 쪽을 나눈다). 새 수업을 만들면 **1차시에 몇 번 완료를 누르게 되는지** 세어 100점 안팎이 되는 항목에 넣는다.
@@ -149,6 +150,7 @@ curl -s https://patrickdfg.github.io/codingharu-app/version.json
 - `CLASS_READ_TOKEN` 만료일을 확인해 둔다(만료되면 동기화가 멈춘다).
 
 ## 진행 메모 (도구가 바뀔 때마다 두세 줄로 갱신)
+- 2026-11-14 Claude: 관리자 메뉴를 팝업에서 전용 페이지 `admin.html` 로 옮겼다(원장님 요청). 화면 8개: 한눈에 보기·회원 관리·학생 작품·포인트 주기·점수 기본값·월말 기록표·학부모 리포트·설정. 서버 `record.gs` 에 `studentUpdate`(이름·반·메모·새 번호·휴원; 휴원이면 학생 로그인 막음)와 `monthStats`(그 달 온 날·받은/쓴 포인트, 시트 전체 기준)를 더하고 admin 응답에 memo·status·pointDefaults 를 넣었다. index 의 선생님 로그인은 admin.html 로, 수업 쪽 「관리자 메뉴」 링크도 admin.html 로 바꿨다. test/admin.test.cjs 포함 시험 통과, 가짜 데이터로 화면 확인(월말 기록표는 수업 많은 학생도 A4 한 장 높이 안). **record.gs 새 버전 배포 필요.** 미확인: 실제 서버 왕복, 실제 인쇄 미리보기, 휴대폰 화면.
 - 2026-11-14 Claude: 선생님 정답이 사이트 비밀번호로 잠기도록 바뀐 것(2026-11-13, patrickdfg 계정 커밋 0fa71e55·5ffaeede·ab59fcf1)을 원장님이 확인했다(직접 바꾼 적은 없음, 같은 비밀번호는 허용, 구글 선생님 로그인한 경우만 보이면 됨). 관리 화면에 `autoTeacherKey`(로그인하면 정답 열쇠 자동 등록)를 넣고, interop 시험 8번을 새 방식(teacher/ 이름에만, 사이트 열쇠로 풀림)으로 바꿨다. 시험 통과. 실제 구글 로그인 기기에서 자동 등록·로봇 정답 표시는 미확인.
 - 2026-11-12 Codex: 타자 점수는 자리연습 단계별 한국 날짜 기준 1일 1회(80% 이상), 낱말·문장은 완료 회차마다 지급한다. 서버 기록과 중복 요청을 검사하며 모의 테스트를 통과했다. 실제 Apps Script 배포는 기존 코드의 관련 부분만 적용해 버전 14로 갱신했다. 실제 학생 계정 적립은 미확인.
 - 2026-11-12 Codex: 타자 자리연습 9단계 정확도 80% 이상을 학생·단계별 20점으로 추가했다. 기존 테스트와 79%·80%·중복 지급 검사를 통과했다. 실제 기록 서버의 Apps Script 재배포 및 학생 계정 왕복 확인이 필요하다.

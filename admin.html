@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>관리자 · 코드마루</title>
+<link rel="icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap">
+<link rel="stylesheet" href="admin.css">
+</head>
+<body>
+<!-- 선생님 관리자 페이지(팝업이 아닌 전용 페이지). 로그인은 index.html 에서 하고, 선생님 로그인 뒤 여기로 온다.
+     화면: 한눈에 보기 · 회원 관리 · 학생 작품 · 포인트 주기 · 점수 기본값 · 월말 기록표 · 학부모 리포트 · 설정. 코드는 admin.js, 서버는 server/record.gs -->
+<header class="ad-top">
+  <a class="ad-brand" href="admin.html#home"><img src="icons/icon-192.png" alt="" width="34" height="34">코드마루 <small>관리자</small></a>
+  <span class="ad-who" id="who"></span>
+  <a class="ad-btn ghost" href="v/index.html">교안 열기</a>
+  <button type="button" class="ad-btn ghost" id="reload">새로고침</button>
+  <button type="button" class="ad-btn" id="logout">로그아웃</button>
+</header>
+<div class="ad-wrap">
+  <nav class="ad-nav" aria-label="관리자 메뉴">
+    <a href="#home" data-view="home">📊 한눈에 보기</a>
+    <a href="#members" data-view="members">👥 회원 관리 <b id="pendingBadge" hidden></b></a>
+    <a href="#works" data-view="works">🎨 학생 작품</a>
+    <a href="#points" data-view="points">🎁 포인트 주기</a>
+    <a href="#rates" data-view="rates">⚙️ 점수 기본값</a>
+    <a href="#monthly" data-view="monthly">🗂 월말 기록표</a>
+    <a href="#report" data-view="report">💌 학부모 리포트</a>
+    <a href="#settings" data-view="settings">🔐 설정</a>
+  </nav>
+  <main id="view" class="ad-main" tabindex="-1"><p class="ad-note">불러오는 중…</p></main>
+</div>
+<p id="toast" class="ad-toast" role="status" aria-live="polite" hidden></p>
+<script src="core.js"></script>
+<script src="record.js"></script>
+<script src="report.js"></script>
+<script src="admin.js"></script>
+</body>
+</html>
