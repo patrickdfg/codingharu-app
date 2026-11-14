@@ -9,7 +9,7 @@
 
 const TABS_ = {
   teachers: ['선생님 이메일', '이름', '메모'],
-  students: ['번호', '이름', 'PIN(4자리)', '반', '메모', '상태'],
+  students: ['번호', '이름', 'PIN(4자리)', '반', '메모', '상태', '포트폴리오 주소'],
   devices: ['기기 열쇠(암호화)', '선생님 이메일', '등록 시각', '마지막 사용', '기기 정보'],
   workbooks: ['학생 번호', '학생 이름', '워크북 ID', '제목', '페이지', '완료', '전체', '처음 저장', '마지막 저장', '선생님', '기록(JSON)'],
   visits: ['날짜', '학생 번호', '학생 이름', '페이지', '제목', '처음 연 시각', '마지막 연 시각', '연 횟수'],
@@ -76,13 +76,15 @@ const ACTIONS_ = {
   // 관리자 화면: 학생별 진행과 최근 수업 기록. 기록 내용(JSON)·PIN 은 보내지 않는다. 로그인을 매번 확인한다.
   admin(req) {
     teacher_(req.auth);
+    pfEnsureSlugs_();
     const tz = Session.getScriptTimeZone();
     const ms = d => (d instanceof Date ? d.getTime() : 0);
     let pointRows; withLock_(() => { pointRows = rows_('points'); });
     const totals = {}; pointRows.forEach(r => { const id = String(r[0]); totals[id] = (totals[id] || 0) + (Number(r[4]) || 0); });
     const students = rows_('students').filter(r => r[0] !== '' && r[1] !== '')
-      .map(r => ({ id: String(r[0]), name: String(r[1]), group: String(r[3] || ''), memo: String(r[4] || ''), status: String(r[5] || '').trim(), pending: pending_(r), points: totals[String(r[0])] || 0 }));
-    const workbooks = rows_('workbooks').map(r => ({
+      .map(r => ({ id: String(r[0]), name: String(r[1]), group: String(r[3] || ''), memo: String(r[4] || ''), status: String(r[5] || '').trim(), pending: pending_(r), slug: String(r[6] || ''), points: totals[String(r[0])] || 0 }));
+    const wbRows = rows_('workbooks');
+    const workbooks = wbRows.map(r => ({
       studentId: String(r[0]), workbook: String(r[2]), title: String(r[3]), page: String(r[4]),
       done: Number(r[5]) || 0, total: Number(r[6]) || 0, updatedAt: ms(r[8])
     }));
@@ -91,8 +93,9 @@ const ACTIONS_ = {
       day: r[0] instanceof Date ? Utilities.formatDate(r[0], tz, 'yyyy-MM-dd') : String(r[0]),
       studentId: String(r[1]), page: String(r[3]), title: String(r[4]), last: ms(r[6]), count: Number(r[7]) || 0
     }));
+    const typing = typingAll_(wbRows);
     const pointHistory = pointRows.slice(-200).reverse().map(r => ({studentId:String(r[0]), at:ms(r[1]), kind:String(r[2]), amount:Number(r[4]) || 0, reason:String(r[5] || ''), by:String(r[6] || '')}));
-    return { students: students, workbooks: workbooks, visits: visits, now: Date.now(), pointRates: pointsRates_(), pointDefaults: pointsDefaults_(), pointHistory: pointHistory };
+    return { students: students, workbooks: workbooks, visits: visits, now: Date.now(), pointRates: pointsRates_(), pointDefaults: pointsDefaults_(), pointHistory: pointHistory, typing: typing };
   },
   // 포인트 장부: 자동 지급은 학생·활동 식별자별 한 번만 기록한다.
   pointsBalance(req) {
@@ -208,6 +211,8 @@ const ACTIONS_ = {
     const memo = has('memo') ? String(req.memo).trim() : null;
     const pin = has('pin') && String(req.pin).trim() !== '' ? String(req.pin).trim() : null;
     const status = has('status') ? String(req.status).trim() : null;
+    const slug = has('slug') && String(req.slug).trim() !== '' ? String(req.slug).trim().toLowerCase() : null;
+    if (slug !== null && !pfSlugOk_(slug)) throw new Error('포트폴리오 주소는 영어 소문자 1~6자 뒤에 숫자 0~3자리예요(예: lhr, lhr2). 사이트에서 쓰는 이름은 쓸 수 없어요.');
     if (name !== null && (name.length < 1 || name.length > 20)) throw new Error('이름은 1~20자로 써 주세요.');
     if (group !== null && group.length > 20) throw new Error('반 이름은 20자까지예요.');
     if (memo !== null && memo.length > 200) throw new Error('메모는 200자까지예요.');
@@ -218,9 +223,10 @@ const ACTIONS_ = {
       const sh = sheet_('students');
       const n = sh.getLastRow() - 1;
       if (n < 1) throw new Error('학생 목록이 비어 있어요.');
-      const data = sh.getRange(2, 1, n, 6).getValues();
+      const data = sh.getRange(2, 1, n, 7).getValues();
       const i = data.findIndex(r => String(r[0]) === id);
       if (i < 0) throw new Error('학생 목록에 없는 학생입니다.');
+      if (slug !== null && data.some((r, k) => k !== i && String(r[6] || '').toLowerCase() === slug)) throw new Error('다른 학생이 이미 쓰는 포트폴리오 주소예요.');
       if (pending_(data[i])) throw new Error('가입 승인을 먼저 해 주세요.');
       const nextName = name !== null ? name : String(data[i][1]), nextPin = pin !== null ? pin : pinOf_(data[i][2]);
       if (data.some((r, k) => k !== i && r[0] !== '' && sameName_(r[1], nextName) && pinOf_(r[2]) === nextPin)) throw new Error('같은 이름과 번호를 쓰는 학생이 있어요. 번호를 바꿔 주세요.');
@@ -229,7 +235,8 @@ const ACTIONS_ = {
       if (group !== null) sh.getRange(i + 2, 4).setValue(group);
       if (memo !== null) sh.getRange(i + 2, 5).setValue(memo);
       if (status !== null) sh.getRange(i + 2, 6).setValue(status);
-      out = { id: id, name: nextName, group: group !== null ? group : String(data[i][3] || ''), memo: memo !== null ? memo : String(data[i][4] || ''), status: status !== null ? status : String(data[i][5] || '').trim() };
+      if (slug !== null) { if (!String(sh.getRange(1, 7).getValue())) sh.getRange(1, 7).setValue(TABS_.students[6]); sh.getRange(i + 2, 7).setValue(slug); }
+      out = { id: id, name: nextName, group: group !== null ? group : String(data[i][3] || ''), memo: memo !== null ? memo : String(data[i][4] || ''), status: status !== null ? status : String(data[i][5] || '').trim(), slug: slug !== null ? slug : String(data[i][6] || '') };
     });
     return { student: out };
   },
@@ -265,9 +272,10 @@ const ACTIONS_ = {
         if (String(data[i][0]) !== id || !pending_(data[i])) continue;
         if (req.ok) sh.getRange(i + 2, 6).setValue('승인');
         else sh.deleteRow(i + 2);
-        return;
+        break;
       }
     });
+    if (req.ok) pfEnsureSlugs_();
     return {};
   },
   // 학생 로그인: 이름과 4자리 번호. 같은 이름으로 5번 틀리면 10분 쉰다.
@@ -282,7 +290,7 @@ const ACTIONS_ = {
     cache.remove(fk);
     if (pending_(r)) throw new Error('아직 선생님이 승인하지 않았어요. 선생님께 말씀드려 주세요.');
     if (resting_(r)) throw new Error('지금은 쉬는 중인 계정이에요. 선생님께 말씀드려 주세요.');
-    return { student: { id: String(r[0]), name: String(r[1]) }, sid: sign_(String(r[0]), Date.now() + SESSION_DAYS_ * 86400000) };
+    return { student: { id: String(r[0]), name: String(r[1]), slug: String(r[6] || '') }, sid: sign_(String(r[0]), Date.now() + SESSION_DAYS_ * 86400000) };
   },
   // 워크북 기록 불러오기
   load(req) {
@@ -453,6 +461,45 @@ const ACTIONS_ = {
     });
     return { likes: count, liked: liked };
   },
+  // 학생 포트폴리오(codemaru.kr/<주소>): 로그인 없이 주소 + 학생 4자리 번호로 그 학생 한 명의 기록만 본다.
+  // 숨긴 작품은 빼고, 나만 보기·승인 대기 작품은 본인 것이라 보여 준다. 번호를 틀리면 주소마다 한 시간 5번, 하루 15번까지.
+  portfolio(req) {
+    const r = pfStudent_(req), id = String(r[0]);
+    const tz = Session.getScriptTimeZone(), ms = d => (d instanceof Date ? d.getTime() : 0);
+    const dayOf = v => v instanceof Date ? Utilities.formatDate(v, tz, 'yyyy-MM-dd') : String(v || '').slice(0, 10);
+    const lessons = [], progress = [];
+    rows_('workbooks').forEach(w => {
+      if (String(w[0]) !== id) return;
+      const wb = String(w[2]);
+      if (wb.indexOf('done:') === 0) { if ((Number(w[5]) || 0) > 0) lessons.push({ title: String(w[3]), at: ms(w[8]) }); return; }
+      if (wb === 'done-index' || /~\d+$/.test(wb)) return;
+      const done = Number(w[5]) || 0, total = Number(w[6]) || 0;
+      if (total > 0) progress.push({ title: String(w[3]), done: done, total: total, at: ms(w[8]) });
+    });
+    const days = {};
+    rows_('visits').forEach(v => { if (String(v[1]) === id && v[0] !== '') days[dayOf(v[0])] = 1; });
+    const works = rows_('gallery').filter(g => g[0] !== '' && String(g[1]) === id && String(g[9] || '') !== '숨김').map(g => {
+      const it = galleryItem_(g);
+      return { id: it.id, title: it.title, url: /^https:\/\//i.test(it.url) ? it.url : '', kind: it.kind, desc: it.desc,
+        file: it.fileId ? { name: it.fileName, ext: galleryExt_(it.fileName), size: it.fileSize } : null, at: ms(g[11]), day: dayOf(g[11]) };
+    });
+    lessons.sort((a, b) => b.at - a.at); progress.sort((a, b) => b.at - a.at); works.sort((a, b) => b.at - a.at);
+    const typing = typingAll_(rows_('workbooks').filter(w => String(w[0]) === id))[id] || null;
+    return { student: { name: String(r[1]), slug: String(r[6] || '') }, points: pointsTotal_(id), lessons: lessons, progress: progress, works: works, days: Object.keys(days).sort(), typing: typing };
+  },
+  // 포트폴리오의 작품 파일 받기(그 학생 본인 작품, 숨김 제외)
+  portfolioFile(req) {
+    const r = pfStudent_(req), id = String(r[0]);
+    const cache = CacheService.getScriptCache(), ck = 'pffile:' + id + ':' + Utilities.formatDate(new Date(), 'UTC', 'yyyyMMddHH');
+    if (Number(cache.get(ck) || 0) >= 60) throw new Error('파일을 너무 많이 열었어요. 잠시 뒤에 다시 해 주세요.');
+    cache.put(ck, String(Number(cache.get(ck) || 0) + 1), 3700);
+    const f = galleryFind_(req.id);
+    if (!f) throw new Error('작품을 찾지 못했어요.');
+    const it = galleryItem_(f.row);
+    if (it.studentId !== id || it.status === '숨김' || !it.fileId) throw new Error('이 작품의 파일은 열 수 없어요.');
+    const blob = DriveApp.getFileById(it.fileId).getBlob();
+    return { name: it.fileName, mime: GALLERY_TYPES_[galleryExt_(it.fileName)].mime, data: Utilities.base64Encode(blob.getBytes()) };
+  },
   // 파일 받기: 볼 수 있는 작품의 파일만. {name, mime, data(base64)}
   galleryFile(req) {
     const v = galleryViewer_(req);
@@ -557,6 +604,87 @@ function galleryFind_(id) {
   return null;
 }
 
+// ---- 타자 기록(타자연습 class coding/typing/app.js 의 워크북 coding-typing-v1) ----
+// 기록 JSON 의 runs(최근 연습: d 날짜, m 자리·단어·문장, l ko·en, s 분당 타수, a 정확도)와 top(정확도 80% 이상 최고 타수)을 학생별로 모은다.
+function typingAll_(wbRows) {
+  const out = {};
+  wbRows.forEach(w => {
+    if (!/^coding-typing-v1(?:~\d+)?$/.test(String(w[2]))) return;
+    let st = null; try { st = JSON.parse(w[10] || 'null'); } catch (e) {}
+    if (!st || typeof st !== 'object') return;
+    const id = String(w[0]), t = out[id] = out[id] || { top: {}, runs: [] };
+    if (st.top && typeof st.top === 'object') Object.keys(st.top).forEach(k => {
+      const v = Number(st.top[k]);
+      if (/^(?:자리|단어|문장)-(?:ko|en)$/.test(k) && v > 0 && v < 2000 && !(t.top[k] >= v)) t.top[k] = Math.round(v);
+    });
+    if (Array.isArray(st.runs)) st.runs.forEach(x => {
+      if (!x || !/^\d{4}-\d{2}-\d{2}$/.test(String(x.d)) || !/^(?:자리|단어|문장)$/.test(String(x.m)) || !/^(?:ko|en)$/.test(String(x.l))) return;
+      const sp = Number(x.s), ac = Number(x.a);
+      if (sp > 0 && sp < 2000 && ac >= 0 && ac <= 100) t.runs.push({ d: String(x.d), m: String(x.m), l: String(x.l), s: Math.round(sp), a: Math.round(ac) });
+    });
+  });
+  Object.keys(out).forEach(id => { out[id].runs.sort((a, b) => a.d < b.d ? -1 : a.d > b.d ? 1 : 0); out[id].runs = out[id].runs.slice(-60); });
+  return out;
+}
+
+// ---- 학생 포트폴리오 주소(학생 시트 7번째 칸) ----
+// 이름 첫 세 글자의 첫소리로 만든다: 이하루 → lhr(성 이·리·임·림은 l, ㅇ으로 시작하면 모음 첫 글자). 겹치면 lhr2, lhr3 …
+// 사이트에 실제로 있는 파일·폴더 이름과 겹치는 주소는 쓰지 않는다(그쪽이 먼저 열려 포트폴리오가 안 나온다).
+const PF_RESERVED_ = ['v', 'ox', 'icons', 'content', 'server', 'test', 'tools', 'util', 'vendor', 'admin', 'index', 'login', 'parent', 'report', 'record', 'core', 'inject', 'home', 'news', 'notes', 'sw', 'p', 'api', 'www', 'readme', 'setup', 'skill', 'claude', 'agents', 'cname', 'robots', 'level', 'roadmap', 'gallery', 'assets', 'docs'];
+function pfSlugOk_(slug) { return /^[a-z]{1,6}\d{0,3}$/.test(slug) && PF_RESERVED_.indexOf(slug) < 0; }
+function pfInitials_(name) {
+  const cho = 'g k n d t r m b p s s _ j j c k t p h'.split(' '), jung = 'a a y y e e y y o w w o y u w w w y e u i'.split(' ');
+  let out = '';
+  Array.from(String(name || '').replace(/\s+/g, '')).forEach((ch, i) => {
+    if (out.length >= 3) return;
+    const c = ch.charCodeAt(0);
+    if (c >= 0xAC00 && c <= 0xD7A3) {
+      if (i === 0 && '이리임림'.indexOf(ch) >= 0) { out += 'l'; return; }
+      const k = c - 0xAC00, ci = Math.floor(k / 588), ji = Math.floor((k % 588) / 28);
+      out += cho[ci] === '_' ? jung[ji] : cho[ci];
+    } else if (/[a-z]/i.test(ch)) out += ch.toLowerCase();
+  });
+  return out || 'st';
+}
+function pfNewSlug_(name, taken) {
+  const base = pfInitials_(name);
+  if (PF_RESERVED_.indexOf(base) < 0 && !taken[base]) return base;
+  for (let n = 2; n < 1000; n++) if (!taken[base + n]) return base + n;
+  throw new Error('포트폴리오 주소를 만들지 못했어요.');
+}
+// 승인된 학생 가운데 주소가 없는 학생에게 주소를 붙인다(관리자 화면을 열 때·승인할 때).
+function pfEnsureSlugs_() {
+  withLock_(() => {
+    const sh = sheet_('students'), n = sh.getLastRow() - 1;
+    if (n < 1) return;
+    const data = sh.getRange(2, 1, n, 7).getValues(), taken = {};
+    data.forEach(r => { const v = String(r[6] || '').toLowerCase(); if (v) taken[v] = 1; });
+    let changed = false;
+    const col = data.map(r => {
+      let v = String(r[6] || '').toLowerCase();
+      if (!v && r[0] !== '' && r[1] !== '' && !pending_(r)) { v = pfNewSlug_(r[1], taken); taken[v] = 1; changed = true; }
+      return [v];
+    });
+    if (!changed) return;
+    if (!String(sh.getRange(1, 7).getValue())) sh.getRange(1, 7).setValue(TABS_.students[6]);
+    sh.getRange(2, 7, n, 1).setValues(col);
+  });
+}
+// 포트폴리오 주소 + 학생 번호 확인. 틀리면 주소마다 한 시간 5번 · 하루 15번에서 막는다.
+function pfStudent_(req) {
+  const slug = String(req.slug || '').trim().toLowerCase(), pin = String(req.pin || '').trim();
+  if (!/^[a-z]{1,6}\d{0,3}$/.test(slug)) throw new Error('없는 포트폴리오 주소예요.');
+  const cache = CacheService.getScriptCache(), hk = 'pfail:' + slug, dk = 'pfday:' + slug + ':' + Utilities.formatDate(new Date(), 'UTC', 'yyyyMMdd');
+  if (Number(cache.get(hk) || 0) >= 5) throw new Error('번호를 여러 번 틀렸어요. 한 시간 뒤에 다시 해 주세요.');
+  if (Number(cache.get(dk) || 0) >= 15) throw new Error('오늘은 번호를 너무 많이 틀렸어요. 내일 다시 해 주세요.');
+  const r = rows_('students').find(x => x[0] !== '' && String(x[6] || '').toLowerCase() === slug && !pending_(x));
+  if (!r || !/^\d{4}$/.test(pin) || pinOf_(r[2]) !== pin) {
+    cache.put(hk, String(Number(cache.get(hk) || 0) + 1), 3600);
+    cache.put(dk, String(Number(cache.get(dk) || 0) + 1), 86400);
+    throw new Error('주소나 번호가 맞지 않아요.');
+  }
+  return r;
+}
 const pending_ = r => String(r[5] || '').trim() === '대기';
 const resting_ = r => String(r[5] || '').trim() === '휴원';
 // 시트 값이 숫자로 저장돼 앞의 0이 잘린 PIN(0121 → 121)도 4자리로 복구해서 비교한다.

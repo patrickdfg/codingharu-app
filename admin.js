@@ -63,6 +63,12 @@
   function students(all) { return (D ? D.students : []).filter(function (s) { return all || !s.pending; }); }
   function groupsOf() { var g = {}; students().forEach(function (s) { if (s.group) g[s.group] = 1; }); return Object.keys(g).sort(); }
   function byId(id) { return (D.students.filter(function (s) { return s.id === id; })[0]) || { name: id }; }
+  var SITE = location.origin + '/';
+  function pfUrl(s) { return s && s.slug ? SITE.replace(/^https?:\/\//, '') + s.slug : ''; }
+  function typingTop(id) { var t = D.typing && D.typing[id]; return t && t.top ? (t.top['자리-ko'] > (t.top['단어-ko'] || 0) ? t.top['자리-ko'] : t.top['단어-ko'] || t.top['문장-ko'] || 0) : 0; }
+  function copy(text) {
+    (navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject()).then(function () { toast('복사했어요: ' + text); }, function () { prompt('아래 주소를 복사해 주세요.', text); });
+  }
   function lastActive(id) {
     var last = 0;
     D.workbooks.forEach(function (w) { if (w.studentId === id && w.updatedAt > last) last = w.updatedAt; });
@@ -174,8 +180,8 @@
       }).sort(function (a, b) { return (a.group || '힣').localeCompare(b.group || '힣') || a.name.localeCompare(b.name); });
       listBox.textContent = '';
       listBox.appendChild(el('p', list.length + '명', 'ad-note'));
-      listBox.appendChild(table(['이름', '반', '상태', '포인트', '이번 달 완료', '마지막 활동', ''], list.map(function (s) {
-        return [s.name, s.group || '-', pill(s), (s.points || 0).toLocaleString() + ' P', doneIn(s.id, month).length + '개', fmt(lastActive(s.id)), btn('관리', 'small ghost', function () { memberState.pick = s.id; detail(); })];
+      listBox.appendChild(table(['이름', '반', '상태', '포인트', '타자', '이번 달 완료', '마지막 활동', '포트폴리오', ''], list.map(function (s) {
+        return [s.name, s.group || '-', pill(s), (s.points || 0).toLocaleString() + ' P', typingTop(s.id) ? typingTop(s.id) + '타' : '-', doneIn(s.id, month).length + '개', fmt(lastActive(s.id)), s.slug ? '/' + s.slug : '-', btn('관리', 'small ghost', function () { memberState.pick = s.id; detail(); })];
       }), function (row, i) { if (list[i].id === memberState.pick) row.className = 'pick'; }));
     }
     function detail() {
@@ -191,18 +197,28 @@
       var dl = el('datalist'); dl.id = 'groupList'; groupsOf().forEach(function (x) { var o = el('option'); o.value = x; dl.appendChild(o); }); group.setAttribute('list', 'groupList'); form.appendChild(dl);
       var memo = field('메모', el('textarea'), '학부모 연락 시간, 특이 사항 등(학생에게는 보이지 않아요)'); memo.value = s.memo || ''; memo.maxLength = 200; memo.rows = 2;
       var pin = field('새 번호(4자리)', el('input'), '번호를 잊었을 때만 써요. 비워 두면 그대로예요.'); pin.inputMode = 'numeric'; pin.pattern = '\\d{4}'; pin.maxLength = 4; pin.placeholder = '예) 2580';
+      var slug = field('포트폴리오 주소', el('input'), '학생이 codemaru.kr/주소 에서 로그인 번호로 자기 기록을 봐요. 영어 소문자 1~6자 + 숫자(예: lhr, lhr2)');
+      slug.value = s.slug || ''; slug.maxLength = 9; slug.pattern = '[a-zA-Z]{1,6}[0-9]{0,3}'; slug.placeholder = '예) lhr'; slug.autocapitalize = 'off'; slug.spellcheck = false;
       var status = field('상태', el('select')); [['승인', '수업 중'], ['휴원', '휴원(로그인 막기)']].forEach(function (x) { var o = el('option', x[1]); o.value = x[0]; status.appendChild(o); }); status.value = s.status === '휴원' ? '휴원' : '승인';
       var save = btn('저장', ''); save.type = 'submit'; var close = btn('닫기', 'ghost', function () { memberState.pick = null; detailBox.textContent = ''; draw(); });
       var bar = el('div', null, 'ad-bar'); bar.append(save, close); form.appendChild(bar);
       form.onsubmit = function (e) {
         e.preventDefault();
         var body = { id: s.id, name: name.value.trim(), group: group.value.trim(), memo: memo.value.trim(), status: status.value };
+        var sl = slug.value.trim().toLowerCase();
+        if (sl && sl !== s.slug) { if (!/^[a-z]{1,6}\d{0,3}$/.test(sl)) { toast('주소는 영어 소문자 1~6자 뒤에 숫자 0~3자리예요.', true); return; } body.slug = sl; }
         if (pin.value.trim()) { if (!/^\d{4}$/.test(pin.value.trim())) { toast('번호는 숫자 4자리예요.', true); return; } body.pin = pin.value.trim(); }
         save.disabled = true;
         api('studentUpdate', body).then(function () { toast('저장했어요.'); load(true); }, function (err) { toast(err.message, true); save.disabled = false; });
       };
       var right = el('div');
-      right.append(el('h3', '누적 ' + (s.points || 0).toLocaleString() + ' P'));
+      right.append(el('h3', '누적 ' + (s.points || 0).toLocaleString() + ' P' + (typingTop(s.id) ? ' · 한글 타자 최고 ' + typingTop(s.id) + '타' : '')));
+      if (s.slug) {
+        var pfb = el('div', null, 'ad-pf'), pfa = el('a', pfUrl(s)); pfa.href = SITE + s.slug; pfa.target = '_blank'; pfa.rel = 'noopener';
+        pfb.append(el('span', '포트폴리오 '), pfa, btn('주소 복사', 'small ghost', function () { copy(pfUrl(s)); }),
+          btn('안내문 복사', 'small ghost', function () { copy(s.name + ' 학생의 코딩 포트폴리오\n' + pfUrl(s) + '\n비밀번호: 학생이 로그인할 때 쓰는 4자리 번호\n(완료한 수업·만든 작품·타자 기록을 볼 수 있어요)'); }));
+        right.appendChild(pfb);
+      } else right.appendChild(el('p', '포트폴리오 주소는 승인한 뒤 관리자 페이지를 새로 열면 자동으로 생겨요.', 'ad-note'));
       var give = el('form', null, 'ad-tools'), amt = el('input'), why = el('input'), go = btn('포인트 반영', 'small'); go.type = 'submit';
       amt.type = 'number'; amt.placeholder = '+지급 / -차감'; amt.required = true; amt.style.width = '130px'; why.placeholder = '이유'; why.required = true; why.maxLength = 120;
       give.append(amt, why, go);
@@ -458,6 +474,11 @@
     if (!done.length) { var tr0 = el('tr'), td0 = el('td', '이번 달 완료 기록이 없어요.'); td0.colSpan = cols; tr0.appendChild(td0); lt.appendChild(tr0); }
     if (done.length > MAX) { var trm = el('tr'), tdm = el('td', '외 ' + (done.length - MAX) + '개'); tdm.colSpan = cols; trm.appendChild(tdm); lt.appendChild(trm); }
     page.appendChild(lt);
+    var trun = ((D.typing && D.typing[s.id] && D.typing[s.id].runs) || []).filter(function (r) { return r.d.slice(0, 7) === month && r.l === 'ko' && r.a >= 80; });
+    if (trun.length) {
+      var tb = Math.max.apply(null, trun.map(function (r) { return r.s; }));
+      page.appendChild(el('p', '⌨️ 이번 달 한글 타자 연습 ' + trun.length + '번 · 최고 분당 ' + tb + '타 · 평균 ' + Math.round(trun.reduce(function (a, r) { return a + r.s; }, 0) / trun.length) + '타', 'mr-works'));
+    }
     var myWorks = (gallery || []).filter(function (it) { return it.studentId === s.id && it.day.slice(0, 7) === month && it.status !== '숨김'; });
     if (myWorks.length) {
       page.appendChild(el('h4', '이번 달 올린 작품 ' + myWorks.length + '개'));
@@ -481,6 +502,7 @@
     note('선생님 의견', 'comment', '');
     note('다음 달 계획', 'plan', '');
     var sign = el('div', null, 'mr-sign'); sign.append(el('div', '담당 선생님 확인'), el('div', '학부모 확인')); page.appendChild(sign);
+    if (s.slug) page.appendChild(el('p', '📁 학생 포트폴리오 ' + pfUrl(s) + ' — 비밀번호는 학생 로그인 번호 4자리예요. 완료한 수업·작품·타자 기록을 언제든 볼 수 있어요.', 'mr-pf'));
     page.appendChild(el('p', '코드마루 코딩·AI 탐구학원 · 010-9855-1322', 'mr-foot'));
     return page;
   }

@@ -217,6 +217,12 @@
         if (!confirm(stu.name + ' 학생 기록을 마치고 로그아웃할까요?')) return;
         flush(); CHRecord.endSession(); location.href = CHRecord.base + 'index.html';
       };
+      // 내 포트폴리오(codemaru.kr/<주소>, 로그인 번호로 연다). 주소는 로그인할 때 서버가 알려 준다(예전 로그인이면 다음 로그인부터).
+      if (stu.slug && /^[a-z]{1,6}\d{0,3}$/.test(stu.slug)) {
+        var pf = document.createElement('a'); pf.textContent = '포트폴리오'; pf.title = '내 포트폴리오 codemaru.kr/' + stu.slug;
+        pf.href = new URL('/' + stu.slug, CHRecord.base).href; pf.target = '_blank'; pf.rel = 'noopener';
+        tag.insertBefore(pf, tag.querySelector('button'));
+      }
     } else {
       tag.innerHTML = '<span>기록이 이 기기에만 남아요</span><a>로그인</a>';
       tag.querySelector('a').href = CHRecord.base + 'index.html';
