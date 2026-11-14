@@ -473,13 +473,21 @@
     $('adminWho').textContent = (me ? me.email : '') + ' · 선생님';
     $('phoneAutoWrap').hidden = !isPhone();
     $('phoneAuto').checked = phoneAutoEnabled();
-    say(''); loadStatus(); tkeyShow();
+    say(''); loadStatus(); autoTeacherKey();
   }
-  // 선생님 정답 열쇠: 정답 파일은 SITE_PASS와 같은 비밀번호로 잠겨 있다. 선생님 로그인 후 이 기기에만 열쇠를 등록한다
+  // 선생님 정답 열쇠: 정답 파일은 SITE_PASS와 같은 비밀번호로 잠겨 있다(원장님 결정 2026-11-14: 비밀번호는 같아도 되고, 구글 계정으로 선생님 로그인한 경우만 보이면 된다).
+  // 관리 화면은 구글 선생님 로그인 뒤에만 열리므로, 여기서 이 기기의 사이트 열쇠가 정답 확인 파일을 푸는지 보고 정답 열쇠로 등록한다. 12시간이 지나거나 로그아웃하면 지워진다.
+  async function autoTeacherKey() {
+    try {
+      var k = await CHCore.loadKey(), had = await CHCore.loadTeacherKey().catch(function () { return null; });
+      if (k && !had) { await CHCore.decrypt(k, await CHCore.getBuf(BASE, 'teacher-check.enc')); await CHCore.saveTeacherKey(k); }
+    } catch (err) { /* 정답 파일이 아직 없거나 열쇠가 다르면 아래 칸에서 직접 넣는다 */ }
+    tkeyShow();
+  }
   async function tkeyShow() {
     var k = await CHCore.loadTeacherKey().catch(function () { return null; });
-    $('tkeyState').textContent = k ? '이 기기에 있어요. 12시간이 지나거나 로그아웃하면 지워져요.' : '없어요. 사이트 비밀번호를 입력하면 정답 보기가 켜져요.';
-    $('tkeyForget').hidden = !k;
+    $('tkeyState').textContent = k ? '켜져 있어요(구글 계정 선생님 로그인으로 자동). 12시간이 지나거나 로그아웃하면 꺼져요.' : '꺼져 있어요. 자동으로 켜지지 않으면 사이트 비밀번호를 넣어 주세요.';
+    $('tkeyForget').hidden = !k; $('tkeyForm').querySelector('.bar input').hidden = !!k; $('tkeyGo').hidden = !!k;
   }
   $('tkeyForm').addEventListener('submit', async function (e) {
     e.preventDefault();

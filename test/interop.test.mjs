@@ -59,33 +59,21 @@ await assert.rejects(CHCore.decrypt(key, buf('check.enc')));
 // 7) 짧은 비밀번호는 거절한다
 assert.throws(() => run('short'), /./, '짧은 비밀번호는 실패해야 한다');
 
-// 8) 선생님 정답 파일(…answers.js·…solutions.js)은 학생 열쇠로 받을 수도 풀 수도 없다
+// 8) 선생님 정답 파일(…answers.js·…solutions.js): 원장님 결정(2026-11-14)으로 사이트 비밀번호(SITE_PASS)로 잠근다.
+//    대신 일반 교안 이름(학생이 여는 경로)으로는 넣지 않고 teacher/ 이름으로만 넣는다. 앱은 구글 계정으로 선생님 로그인한 기기에서만
+//    정답 열쇠를 켜서(index.html autoTeacherKey) 서비스 워커가 teacher/ 파일을 받는다. 학생 기기에는 정답 열쇠가 없어 화면에 나오지 않는다.
 fs.mkdirSync(path.join(src, 'python/robot'), { recursive: true });
 fs.writeFileSync(path.join(src, 'python/robot/robot-answers.js'), 'window.RobotAnswers=["정답"]');
-const runT = (pass, tpass) => execFileSync('node', ['tools/build.mjs', src, out], { env: { ...process.env, SITE_PASS: pass, TEACHER_PASS: tpass }, encoding: 'utf8' });
-const TPASS = 'teacher only passphrase';
-runT(PASS, '');                                  // TEACHER_PASS 가 없으면 정답 파일을 아예 넣지 않는다
+run(PASS);
 const meta2 = JSON.parse(fs.readFileSync(path.join(out, 'crypt.json'), 'utf8'));
-const skey = await CHCore.deriveKey(PASS, meta2), tkey = await CHCore.deriveKey(TPASS, meta2);
+const skey = await CHCore.deriveKey(PASS, meta2);
 const plainName = await CHCore.nameFor('python/robot/robot-answers.js', meta2);
 const teacherName = await CHCore.nameFor('teacher/python/robot/robot-answers.js', meta2);
-assert.ok(!fs.existsSync(path.join(out, 'content', plainName)));
-assert.ok(!fs.existsSync(path.join(out, 'content', teacherName)));
-assert.ok(!fs.existsSync(path.join(out, 'teacher-check.enc')));
-runT(PASS, TPASS);
-assert.ok(!fs.existsSync(path.join(out, 'content', plainName)), '학생 이름으로는 정답 파일이 없어야 한다');
-assert.equal(new TextDecoder().decode(await CHCore.decrypt(tkey, buf('content/' + teacherName))), 'window.RobotAnswers=["정답"]');
-await assert.rejects(CHCore.decrypt(skey, buf('content/' + teacherName)), '학생 열쇠로는 풀리지 않아야 한다');
-assert.equal(new TextDecoder().decode(await CHCore.decrypt(tkey, buf('teacher-check.enc'))), 'codingharu-teacher');
-await assert.rejects(CHCore.decrypt(skey, buf('teacher-check.enc')));
-assert.ok(!buf('content/' + teacherName).includes('정답'));
-// 선생님 비밀번호가 학생 비밀번호와 같거나 짧으면 동기화는 계속하되 정답 파일은 빼야 한다
-for (const bad of [PASS, 'short']) {
-  runT(PASS, bad);
-  assert.ok(!fs.existsSync(path.join(out, 'content', teacherName)), '정답 파일이 빠져야 한다');
-  assert.ok(!fs.existsSync(path.join(out, 'content', plainName)), '학생 이름으로도 없어야 한다');
-  assert.ok(!fs.existsSync(path.join(out, 'teacher-check.enc')));
-}
+assert.ok(!fs.existsSync(path.join(out, 'content', plainName)), '학생이 여는 경로 이름으로는 정답 파일이 없어야 한다');
+assert.ok(fs.existsSync(path.join(out, 'content', teacherName)), 'teacher/ 이름으로 정답 파일이 있어야 한다');
+assert.equal(new TextDecoder().decode(await CHCore.decrypt(skey, buf('content/' + teacherName))), 'window.RobotAnswers=["정답"]');
+assert.equal(new TextDecoder().decode(await CHCore.decrypt(skey, buf('teacher-check.enc'))), 'codingharu-teacher');
+assert.ok(!buf('content/' + teacherName).includes('정답'), '평문이 드러나면 안 된다');
 
 console.log('모든 시험 통과');
 fs.rmSync(tmp, { recursive: true, force: true });
