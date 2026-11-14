@@ -82,6 +82,10 @@ Codex(ChatGPT)는 `AGENTS.md`, Claude Code 는 `CLAUDE.md` 를 자동으로 읽�
   편집기: https://script.google.com/u/0/home/projects/1kalF06ONHxkea4xASFeicYvqYTo_8E2kGm-bfztjJtx5-vqHh3ltGHqR/edit (새 배포를 만들면 주소가 바뀌니 기존 배포 수정만 쓴다)
 - 점수 기능을 만들기 전에 끝낸 활동은 소급하지 않는다.
 
+## 원장님께 부탁할 때
+
+- **원장님께 무엇을 해 달라고 부탁할 때는 누르면 바로 그 화면으로 가는 링크(전체 주소)를 꼭 함께 준다.** 예) 교안 동기화: https://github.com/patrickdfg/codingharu-app/actions/workflows/sync.yml , Apps Script: 기록 서버 편집기 주소(앱 AGENTS.md), 복사할 파일: https://raw.githubusercontent.com/patrickdfg/codingharu-app/main/server/record.gs . 어디로 가서 무엇을 누르는지도 한 줄로 적는다(원장님 지침 2026-11-14).
+
 ## 디자인
 
 - 교안 쪽 모양은 `class` 저장소의 `docs/design-guidelines.md` 를 따른다. 앱이 교안 위에 붙이는 것(`inject.js`: 계정 라벨·글자 크기 막대·완료 단추·선생님 점수 칸·점수 알림)도 같은 지침을 따른다 —
