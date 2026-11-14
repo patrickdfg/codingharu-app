@@ -190,7 +190,8 @@ const ACTIONS_ = {
     withLock_(() => {
       const list = rows_('students').filter(r => r[0] !== '' && r[1] !== '');
       if (list.some(r => sameName_(r[1], name) && pinOf_(r[2]) === pin)) throw new Error('같은 이름과 번호가 이미 있어요. 다른 번호를 골라 주세요.');
-      const id = list.reduce((m, r) => Math.max(m, Number(r[0]) || 0), 0) + 1;
+      // 지운 학생의 번호는 다시 쓰지 않는다(LAST_STUDENT_ID). 같은 번호를 받은 새 학생에게 옛 기록·기기의 남은 요청이 붙지 않게.
+      const id = Math.max(list.reduce((m, r) => Math.max(m, Number(r[0]) || 0), 0), Number(PropertiesService.getScriptProperties().getProperty('LAST_STUDENT_ID')) || 0) + 1;
       const sh = sheet_('students');
       if (!String(sh.getRange(1, 6).getValue())) sh.getRange(1, 6).setValue('상태');
       sh.appendRow([id, name, pin, '', '가입 ' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd'), '대기']);
@@ -239,6 +240,31 @@ const ACTIONS_ = {
       out = { id: id, name: nextName, group: group !== null ? group : String(data[i][3] || ''), memo: memo !== null ? memo : String(data[i][4] || ''), status: status !== null ? status : String(data[i][5] || '').trim(), slug: slug !== null ? slug : String(data[i][6] || '') };
     });
     return { student: out };
+  },
+  // 관리자 페이지 회원 관리: 학생을 완전히 지운다. 확인용으로 학생 이름을 똑같이 보내야 한다.
+  // 학생 줄과 그 학생의 워크북·수업 기록·포인트·월간 리포트·학부모·작품 게시판 줄을 지우고, 작품 파일은 Drive 휴지통으로 보낸다(30일 안에는 Drive 에서 되살릴 수 있음).
+  // 되돌릴 수 없으므로, 잠깐 쉬는 학생은 '휴원'을 쓴다.
+  studentDelete(req) {
+    const t = teacher_(req.auth);
+    const id = String(req.id || ''), confirmName = String(req.confirmName || '');
+    let out;
+    withLock_(() => {
+      const sh = sheet_('students'), n = sh.getLastRow() - 1;
+      if (n < 1) throw new Error('학생 목록이 비어 있어요.');
+      const data = sh.getRange(2, 1, n, 7).getValues();
+      const i = data.findIndex(r => r[0] !== '' && String(r[0]) === id);
+      if (i < 0) throw new Error('학생 목록에 없는 학생입니다.');
+      if (!confirmName || !sameName_(data[i][1], confirmName)) throw new Error('확인용 이름이 학생 이름과 달라요. 이름을 똑같이 써 주세요.');
+      const pr = PropertiesService.getScriptProperties();
+      pr.setProperty('LAST_STUDENT_ID', String(Math.max(Number(pr.getProperty('LAST_STUDENT_ID')) || 0, Number(id) || 0)));
+      sh.deleteRow(i + 2);
+      const removed = {};
+      [['workbooks', 0], ['visits', 1], ['points', 0], ['reports', 0], ['parents', 0], ['gallery', 1]].forEach(x => {
+        removed[x[0]] = pruneRows_(x[0], x[1], id, x[0] === 'gallery' ? galleryTrash_ : null);
+      });
+      out = { id: id, name: String(data[i][1]), removed: removed, by: t.email };
+    });
+    return { deleted: out };
   },
   // 월말 학생 기록표: 그 달에 학원(앱)에 온 날 수, 받은·쓴 포인트를 학생별로 센다(관리자 화면의 방문 600줄·포인트 200줄 제한 없이).
   monthStats(req) {
@@ -602,6 +628,22 @@ function galleryFind_(id) {
   const data = sh.getRange(2, 1, sh.getLastRow() - 1, TABS_.gallery.length).getValues();
   for (let i = 0; i < data.length; i++) if (String(data[i][0]) === String(id)) return { index: i + 2, row: data[i] };
   return null;
+}
+
+// 한 탭에서 그 학생(id)의 줄을 모두 지운다: 남길 줄만 위로 다시 쓰고 아래는 비운다(줄을 하나씩 지우면 느리다). 지운 줄 수를 돌려준다.
+function pruneRows_(k, col, id, onRemove) {
+  let sh;
+  try { sh = sheet_(k); } catch (e) { return 0; }
+  const n = sh.getLastRow() - 1;
+  if (n < 1) return 0;
+  const w = Math.max(TABS_[k].length, sh.getLastColumn ? sh.getLastColumn() : 0);
+  const data = sh.getRange(2, 1, n, w).getValues();
+  const keep = data.filter(r => String(r[col]) !== id);
+  if (keep.length === n) return 0;
+  if (onRemove) data.forEach(r => { if (String(r[col]) === id) onRemove(r); });
+  sh.getRange(2, 1, n, w).clearContent();
+  if (keep.length) sh.getRange(2, 1, keep.length, w).setValues(keep);
+  return n - keep.length;
 }
 
 // ---- 타자 기록(타자연습 class coding/typing/app.js 의 워크북 coding-typing-v1) ----

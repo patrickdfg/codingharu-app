@@ -233,7 +233,26 @@
       var wl = el('a', '🎨 이 학생 작품 모아 보기', 'ad-btn small ghost'); wl.href = '#works'; wl.onclick = function () { worksState.sid = s.id; };
       var link = el('a', '🗂 이 학생 월말 기록표', 'ad-btn small ghost'); link.href = '#monthly'; link.onclick = function () { monthlyState.ids = [s.id]; };
       links.append(wl, link); right.appendChild(links);
-      grid.append(form, right); card.appendChild(grid); detailBox.appendChild(card);
+      grid.append(form, right); card.appendChild(grid);
+      // 학생 삭제(되돌릴 수 없음): 이름을 똑같이 써야 단추가 켜진다. 잠깐 쉬는 학생은 휴원으로.
+      var danger = el('details', null, 'ad-danger'), dsum = el('summary', '학생 삭제');
+      var dtext = el('p', s.name + ' 학생의 계정과 모든 기록(완료한 수업·수업 기록·포인트·월간 리포트·학부모 연락처·작품 게시판 글)을 지워요. 작품 파일은 Drive 휴지통으로 가요. 되돌릴 수 없어요. 잠깐 쉬는 학생이면 위의 상태를 「휴원」으로 바꿔 주세요.');
+      var dform = el('form', null, 'ad-tools'), dname = el('input'), dgo = btn('영구 삭제', 'bad'); dgo.type = 'submit'; dgo.disabled = true;
+      dname.placeholder = '확인: ' + s.name + ' 이라고 써 주세요'; dname.setAttribute('aria-label', '삭제 확인용 학생 이름'); dname.autocomplete = 'off'; dname.style.minWidth = '240px';
+      dname.oninput = function () { dgo.disabled = dname.value.replace(/\s+/g, ' ').trim() !== s.name.replace(/\s+/g, ' ').trim(); };
+      dform.append(dname, dgo);
+      dform.onsubmit = function (e) {
+        e.preventDefault();
+        if (dgo.disabled || !confirm(s.name + ' 학생을 정말 지울까요? 되돌릴 수 없어요.')) return;
+        dgo.disabled = true; dgo.textContent = '지우는 중…';
+        api('studentDelete', { id: s.id, confirmName: dname.value.trim() }).then(function (o) {
+          var r = (o.deleted && o.deleted.removed) || {};
+          toast(s.name + ' 학생을 지웠어요(워크북 ' + (r.workbooks || 0) + '줄 · 수업 기록 ' + (r.visits || 0) + '줄 · 포인트 ' + (r.points || 0) + '줄 · 작품 ' + (r.gallery || 0) + '개).');
+          memberState.pick = null; gallery = null; load(true);
+        }, function (err) { toast(err.message, true); dgo.textContent = '영구 삭제'; dgo.disabled = false; });
+      };
+      danger.append(dsum, dtext, dform); card.appendChild(danger);
+      detailBox.appendChild(card);
       card.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
     q.oninput = draw; g.onchange = draw; st.onchange = draw;
