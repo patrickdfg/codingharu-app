@@ -78,6 +78,7 @@ Codex(ChatGPT)는 `AGENTS.md`, Claude Code 는 `CLAUDE.md` 를 자동으로 읽�
   엔트리 차시 안내 쪽(`entry/<책>-lesson#`, `book1-unit#`)은 같은 내용의 작품 쪽(`work-…`)이 점수를 받으므로 점수가 없다. 새 수업을 만들면 **1차시에 몇 번 완료를 누르게 되는지** 세어 100점 안팎이 되는 항목에 넣는다.
   관리 화면에서 바꾼 값이 기본값보다 우선한다. 실제 학습 시간을 보고 조정한다.
 - `record.gs` 를 고치면 Apps Script 에 다시 붙여 넣고 **배포 관리 → 기존 배포 수정 → 새 버전** 으로 배포해야 반영된다.
+  편집기: https://script.google.com/u/0/home/projects/1kalF06ONHxkea4xASFeicYvqYTo_8E2kGm-bfztjJtx5-vqHh3ltGHqR/edit (새 배포를 만들면 주소가 바뀌니 기존 배포 수정만 쓴다)
 - 점수 기능을 만들기 전에 끝낸 활동은 소급하지 않는다.
 
 ## 지켜야 할 것 (보안)
