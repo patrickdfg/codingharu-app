@@ -15,7 +15,7 @@ for (const [kind,key] of [['block','games:g60-5a'],['problem','bebras:p01'],['pr
 assert.equal(run(`pointsTotal_('2')`),267);
 assert.equal(run(`pointsRates_().games`),7);assert.equal(run(`pointsRates_().cosproUnit`),30);
 run(`props.POINT_RATES='{"problem":20,"block":7,"pythonUnit":40,"bebras":15}'`);assert.equal(run(`pointsRates_().pythonProblem`),20);assert.equal(run(`pointsRates_().farm`),20);assert.equal(run(`pointsRates_().bebras`),15);assert.equal(run(`pointsRates_().playground`),7);assert.equal(run(`pointsRates_().games`),7);assert.equal(run(`pointsRates_().cosproUnit`),40);assert.equal(run(`pointsRates_().entry`),100);run(`props.POINT_RATES=''`);
-assert.equal(run(`ACTIONS_.pointsSetRates({auth:'teacher',rates:{pythonProblem:20,cosproProblem:21,bebras:22,detective:23,farm:24,playground:25,games:26,pythonUnit:400,cosproUnit:410,entry:60,scratch:70,junior:80,algorithm:30,pythonRobot:39,pythonLesson:31,codingLesson:32,roblox:33,robot:34,web:35,digital:36,adult:37,otherLesson:38,entryWork:41,scratchWork:42,doubleLesson:43,typing:20,typingWord:40,typingSentence:50,koi:30,pythonHigh:44,easyUnit:45,aiProject:46}}).rates.playground`),25);assert.equal(run(`pointsRates_().detective`),23);assert.throws(()=>run(`ACTIONS_.pointsSetRates({auth:'teacher',rates:{problem:20,block:25}})`)); assert.equal(run(`ACTIONS_.pointsBalance({sid:'valid',studentId:'1'}).points`),90); assert.equal(run(`ACTIONS_.pointsGrant({auth:'teacher',studentId:'1',amount:-20,reason:'정정',requestId:'2234567890123456'}).points`),70);assert.throws(()=>run(`ACTIONS_.pointsGrant({auth:'teacher',studentId:'1',amount:-1000,reason:'정정',requestId:'3234567890123456'})`));
+assert.equal(run(`ACTIONS_.pointsSetRates({auth:'teacher',rates:{pythonProblem:20,cosproProblem:21,bebras:22,detective:23,farm:24,playground:25,games:26,pythonUnit:400,cosproUnit:410,entry:60,scratch:70,junior:80,algorithm:30,pythonRobot:39,pythonLesson:31,codingLesson:32,roblox:33,robot:34,web:35,digital:36,adult:37,otherLesson:38,entryWork:41,scratchWork:42,doubleLesson:43,typing:20,typingWord:40,typingSentence:50,koi:30,pythonHigh:44,easyUnit:45,aiProject:46,iot:30}}).rates.playground`),25);assert.equal(run(`pointsRates_().detective`),23);assert.throws(()=>run(`ACTIONS_.pointsSetRates({auth:'teacher',rates:{problem:20,block:25}})`)); assert.equal(run(`ACTIONS_.pointsBalance({sid:'valid',studentId:'1'}).points`),90); assert.equal(run(`ACTIONS_.pointsGrant({auth:'teacher',studentId:'1',amount:-20,reason:'정정',requestId:'2234567890123456'}).points`),70);assert.throws(()=>run(`ACTIONS_.pointsGrant({auth:'teacher',studentId:'1',amount:-1000,reason:'정정',requestId:'3234567890123456'})`));
 // 모든 수업은 점수를 받는다: 서버 규칙(pointsRule_)과 앱(inject.js lessonScored_)이 같은 답을 내야 한다.
 const injectSrc=fs.readFileSync('inject.js','utf8'),m=injectSrc.match(/function lessonScored_\(k\) \{[\s\S]*?\n        \}/);assert.ok(m,'inject.js 에 lessonScored_ 가 있어야 한다');
 const lessonScored_=new Function(m[0]+'; return lessonScored_;')();
@@ -73,6 +73,14 @@ assert.equal(run(`ACTIONS_.pointsAward({sid:'valid',studentId:'10',kind:'problem
 assert.throws(()=>run(`ACTIONS_.pointsAward({sid:'valid',studentId:'10',kind:'problem',key:'koi:p002'})`));
 assert.throws(()=>run(`ACTIONS_.pointsAward({sid:'valid',studentId:'10',kind:'problem',key:'koi:x001'})`));
 assert.equal(run(`pointsTotal_('10')`),250);
+// 파이썬 스마트홈 IoT: 미션 1개마다 30점, 저장된 통과 표시가 있어야 한다
+run(`books['10|python-iot-v1']={'ok:L03a':1,'ok:N15b':1,'code:L01a':'def loop(): pass'}`);
+assert.equal(run(`ACTIONS_.pointsAward({sid:'valid',studentId:'10',kind:'problem',key:'iot:L03a'}).awarded`),true);
+assert.equal(run(`ACTIONS_.pointsAward({sid:'valid',studentId:'10',kind:'problem',key:'iot:L03a'}).awarded`),false);
+assert.equal(run(`ACTIONS_.pointsAward({sid:'valid',studentId:'10',kind:'problem',key:'iot:N15b'}).awarded`),true);
+assert.throws(()=>run(`ACTIONS_.pointsAward({sid:'valid',studentId:'10',kind:'problem',key:'iot:L01a'})`));
+assert.throws(()=>run(`ACTIONS_.pointsAward({sid:'valid',studentId:'10',kind:'problem',key:'iot:../x'})`));
+assert.equal(run(`pointsTotal_('10')`),310);
 assert.throws(()=>run(`ACTIONS_.pointsAward({sid:'valid',studentId:'11',kind:'typing',key:keys.w1})`));
 assert.throws(()=>run(`ACTIONS_.pointsAward({sid:'valid',studentId:'10',kind:'typing',key:'typing:word:unrecorded01'})`));
 const today=new Date(Date.now()+9*3600000).toISOString().slice(0,10);ctx.today=today;
