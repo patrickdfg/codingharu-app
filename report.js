@@ -86,6 +86,22 @@
       section('이번 달 완료한 수업', info.data.done.slice(0, 12).map(function (x) { return x.title; }).concat(info.data.done.length > 12 ? ['그 밖에 ' + (info.data.done.length - 12) + '개'] : []), '이번 달에는 완료로 표시한 수업이 없어요.');
       section('진행 중인 워크북', info.data.progress.slice(0, 6).map(function (x) { return x.title + (x.total ? '  (' + x.done + ' / ' + x.total + ')' : ''); }), '이번 달에 저장된 워크북 기록이 없어요.');
       if (info.plan) section('다음 달 계획', [info.plan], '');
+      // 이번 달 수업 사진: 1장이면 넓게, 2장 이상이면 두 칸씩. 칸에 맞게 가운데를 잘라 채운다
+      var photos = (info.photos || []).filter(function (im) { return im && (im.naturalWidth || im.width); });
+      if (photos.length) {
+        text('이번 달 수업 사진', PAD, 34, C.ink, 800); y += 22;
+        if (real) { ctx.fillStyle = C.lime; ctx.fillRect(PAD, y, 64, 6); }
+        y += 30;
+        var cols = photos.length === 1 ? 1 : 2, gap = 16, cw = (inner - gap * (cols - 1)) / cols, ch = Math.round(cw * (cols === 1 ? 0.66 : 0.75));
+        photos.forEach(function (im, i) {
+          if (!real) return;
+          var x = PAD + (i % cols) * (cw + gap), yy = y + Math.floor(i / cols) * (ch + gap);
+          var iw = im.naturalWidth || im.width, ih = im.naturalHeight || im.height, sc = Math.max(cw / iw, ch / ih), sw = cw / sc, sh = ch / sc;
+          ctx.save(); roundRect(ctx, x, yy, cw, ch, 18); ctx.clip();
+          ctx.drawImage(im, (iw - sw) / 2, (ih - sh) / 2, sw, sh, x, yy, cw, ch); ctx.restore();
+        });
+        y += Math.ceil(photos.length / cols) * (ch + gap) - gap + 56;
+      }
       // 선생님 한마디
       text('선생님 한마디', PAD, 34, C.ink, 800); y += 22;
       if (real) { ctx.fillStyle = C.lime; ctx.fillRect(PAD, y, 64, 6); }
@@ -119,14 +135,52 @@
     plan.type = 'text'; plan.maxLength = 120; plan.placeholder = '다음 달 계획 (선택)'; plan.setAttribute('aria-label', '다음 달 계획');
     comment.maxLength = 400; comment.rows = 3; comment.placeholder = '선생님 한마디 (학부모님께 전할 말)'; comment.setAttribute('aria-label', '선생님 한마디'); comment.required = true;
     make.type = 'submit';
-    form.append(who, month, plan, comment, make);
+    // 수업 사진(선택, 4장까지): 기기에서 가로·세로 1280 이하 JPEG 로 줄여 둔다. 리포트 그림·학부모 링크·이메일에 함께 들어간다
+    var photoBox = el('div', null, 'report-photos'), pick = el('input'), thumbs = el('div', null, 'report-thumbs');
+    var photos = [], photosChanged = false, MAXP = 4;
+    pick.type = 'file'; pick.accept = 'image/*'; pick.multiple = true; pick.setAttribute('aria-label', '수업 사진 고르기 (4장까지)');
+    var pickLabel = el('label', '수업 사진 (선택 · 4장까지) ', 'report-pick'); pickLabel.appendChild(pick);
+    photoBox.append(pickLabel, thumbs);
+    function shrink(file) {
+      return new Promise(function (resolve) {
+        var url = URL.createObjectURL(file), im = new Image();
+        im.onload = function () {
+          var sc = Math.min(1, 1280 / Math.max(im.naturalWidth, im.naturalHeight)), cv = document.createElement('canvas');
+          cv.width = Math.round(im.naturalWidth * sc); cv.height = Math.round(im.naturalHeight * sc);
+          var cx = cv.getContext('2d'); cx.fillStyle = '#fff'; cx.fillRect(0, 0, cv.width, cv.height); cx.drawImage(im, 0, 0, cv.width, cv.height);
+          URL.revokeObjectURL(url);
+          var data = cv.toDataURL('image/jpeg', 0.82); if (data.length > 1900000) data = cv.toDataURL('image/jpeg', 0.6);
+          var out = new Image(); out.onload = function () { resolve({ url: data, img: out }); }; out.onerror = function () { resolve(null); }; out.src = data;
+        };
+        im.onerror = function () { URL.revokeObjectURL(url); resolve(null); };
+        im.src = url;
+      });
+    }
+    function drawThumbs() {
+      thumbs.textContent = '';
+      photos.forEach(function (p, i) {
+        var f = el('figure'), im = el('img'), x = el('button', '✕');
+        im.src = p.url; im.alt = '수업 사진 ' + (i + 1); x.type = 'button'; x.setAttribute('aria-label', '사진 ' + (i + 1) + ' 빼기');
+        x.onclick = function () { photos.splice(i, 1); photosChanged = true; drawThumbs(); };
+        f.append(im, x); thumbs.appendChild(f);
+      });
+      pick.disabled = photos.length >= MAXP;
+    }
+    pick.onchange = function () {
+      var files = Array.prototype.slice.call(pick.files || []).filter(function (f) { return /^image\//.test(f.type); });
+      if (photos.length + files.length > MAXP) say('사진은 ' + MAXP + '장까지예요. 앞의 ' + (MAXP - photos.length) + '장만 넣었어요.');
+      files = files.slice(0, MAXP - photos.length); pick.value = '';
+      Promise.all(files.map(shrink)).then(function (list) { list.forEach(function (p) { if (p) photos.push(p); }); photosChanged = true; drawThumbs(); });
+    };
+    who.onchange = function () { photos = []; photosChanged = false; drawThumbs(); };
+    form.append(who, month, plan, comment, photoBox, make);
     var out = el('div', null, 'report-out');
     wrapEl.append(form, out);
     box.appendChild(wrapEl);
     form.onsubmit = function (e) {
       e.preventDefault();
       var s = students.filter(function (x) { return x.id === who.value; })[0]; if (!s) return;
-      var info = { name: s.name, group: s.group, month: month.value, plan: plan.value.trim(), comment: comment.value.trim(), data: collect(d, s, month.value) };
+      var info = { name: s.name, group: s.group, month: month.value, plan: plan.value.trim(), comment: comment.value.trim(), data: collect(d, s, month.value), photos: photos.map(function (p) { return p.img; }) };
       var canvas = draw(info);
       out.textContent = '';
       var img = el('img'); img.alt = s.name + ' 학생 ' + monthLabel(month.value) + ' 리포트'; img.src = canvas.toDataURL('image/png'); out.appendChild(img);
@@ -164,7 +218,10 @@
       var bar2 = el('div', null, 'bar'), mailBtn = el('button', '학부모 이메일로도 보내기'), nextBtn = el('button', '다음 학생 →');
       mailBtn.type = nextBtn.type = 'button'; mailBtn.className = nextBtn.className = 'ghost';
       function saveReport(email) {
-        return CHRecord.api('reportSave', { auth: CHRecord.auth(), studentId: s.id, month: info.month, plan: info.plan, comment: info.comment, email: !!email })
+        var req = { auth: CHRecord.auth(), studentId: s.id, month: info.month, plan: info.plan, comment: info.comment, email: !!email };
+        var sending = photosChanged ? photos.slice() : null;
+        if (sending) req.photos = sending.map(function (p) { return p.url; });   // 사진을 바꿨을 때만 보낸다(안 보내면 서버가 전에 올린 사진을 그대로 둔다)
+        return CHRecord.api('reportSave', req).then(function (r) { if (sending) photosChanged = false; return r; })
           .catch(function (err) { throw new Error(/알 수 없는 요청/.test(err.message) ? '기록 서버(Apps Script)를 새 버전으로 배포해야 학부모 링크·이메일을 쓸 수 있어요. 그림은 지금도 보낼 수 있어요.' : err.message); });
       }
       mailBtn.onclick = function () {
@@ -175,7 +232,7 @@
       var idx = who.selectedIndex, last = idx >= who.options.length - 1;
       nextBtn.disabled = last; if (last) nextBtn.textContent = '마지막 학생이에요';
       nextBtn.onclick = function () {   // 달·계획은 그대로 두고 학생과 한마디만 바꾼다
-        who.selectedIndex = idx + 1; comment.value = ''; out.textContent = ''; say('');
+        who.selectedIndex = idx + 1; comment.value = ''; out.textContent = ''; say(''); photos = []; photosChanged = false; drawThumbs();
         comment.focus(); wrapEl.scrollIntoView({ block: 'start', behavior: 'smooth' });
       };
       bar2.append(mailBtn, nextBtn);

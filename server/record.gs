@@ -14,7 +14,7 @@ const TABS_ = {
   workbooks: ['학생 번호', '학생 이름', '워크북 ID', '제목', '페이지', '완료', '전체', '처음 저장', '마지막 저장', '선생님', '기록(JSON)'],
   visits: ['날짜', '학생 번호', '학생 이름', '페이지', '제목', '처음 연 시각', '마지막 연 시각', '연 횟수'],
   points: ['학생 번호', '시각', '종류', '식별자', '점수', '사유', '지급자'],
-  reports: ['학생 번호', '달', '다음 달 계획', '선생님 한마디', '저장 시각', '선생님'],
+  reports: ['학생 번호', '달', '다음 달 계획', '선생님 한마디', '저장 시각', '선생님', '사진'],
   parents: ['학생 번호', '학생 이름', '학부모 이메일', '수신 동의(Y)', '메모'],
   gallery: ['ID', '학생 번호', '학생 이름', '반', '제목', '주소', '종류', '소개', '공개 범위', '상태', '좋아요(학생 번호)', '올린 시각', '바꾼 시각', '파일 ID', '파일 이름', '파일 크기']
 };
@@ -979,10 +979,11 @@ function reportData_(student, month) {
   const pointHistory = mine.filter(r => ymOf_(r[1]) === month).map(r => ({ studentId: id, at: r[1] instanceof Date ? r[1].getTime() : 0, amount: Number(r[4]) || 0 }));
   const points = mine.reduce((s, r) => s + (Number(r[4]) || 0), 0);
   const rep = rows_('reports').filter(r => String(r[0]) === id && String(r[1]) === month).pop();
+  const photos = rep ? reportPhotoIds_(rep).map(fid => { try { return 'data:image/jpeg;base64,' + Utilities.base64Encode(DriveApp.getFileById(fid).getBlob().getBytes()); } catch (e) { return ''; } }).filter(Boolean) : [];
   return {
     student: { id: id, name: String(student[1]), group: String(student[3] || ''), points: points },
     workbooks: workbooks, pointHistory: pointHistory, month: month, now: Date.now(),
-    report: rep ? { plan: String(rep[2] || ''), comment: String(rep[3] || '') } : null
+    report: rep ? { plan: String(rep[2] || ''), comment: String(rep[3] || ''), photos: photos } : null
   };
 }
 function reportEmail_(student, month) {
@@ -993,14 +994,18 @@ function reportEmail_(student, month) {
   const done = d.workbooks.filter(w => w.workbook.indexOf('done:') === 0 && w.done > 0).length;
   const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const link = parentLink_(id, month);
+  const inline = {}, ids = d.report ? reportPhotoIds_(rows_('reports').filter(r => String(r[0]) === id && String(r[1]) === month).pop() || []) : [];
+  ids.forEach((fid, i) => { try { inline['p' + i] = DriveApp.getFileById(fid).getBlob().setName('photo' + (i + 1) + '.jpg'); } catch (e) {} });
+  const pics = Object.keys(inline).map(k => '<img src="cid:' + k + '" alt="수업 사진" style="width:100%;max-width:520px;border-radius:10px;margin:6px 0;display:block">').join('');
   const html = '<div style="font-family:sans-serif;line-height:1.7;color:#231d38">' +
     '<h2 style="margin:0 0 8px">' + esc(d.student.name) + ' 학생 ' + p[0] + '년 ' + Number(p[1]) + '월 리포트</h2>' +
     '<p>이번 달 완료한 수업 <b>' + done + '개</b> · 누적 포인트 <b>' + d.student.points + '</b></p>' +
     (d.report && d.report.comment ? '<p style="background:#efeaff;padding:12px 14px;border-radius:10px"><b>선생님 한마디</b><br>' + esc(d.report.comment).replace(/\n/g, '<br>') + '</p>' : '') +
     (d.report && d.report.plan ? '<p><b>다음 달 계획</b> ' + esc(d.report.plan) + '</p>' : '') +
+    (pics ? '<p><b>이번 달 수업 사진</b></p>' + pics : '') +
     '<p><a href="' + link + '" style="display:inline-block;background:#5b3fa0;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none">리포트 자세히 보기</a></p>' +
     '<p style="color:#5f586b;font-size:13px">코드마루 코딩·AI 탐구학원 · 010-9855-1322<br>이 메일을 받지 않으시려면 학원으로 알려 주세요.</p></div>';
-  MailApp.sendEmail({ to: to.join(','), subject: '[코드마루] ' + d.student.name + ' 학생 ' + Number(p[1]) + '월 리포트', htmlBody: html, name: '코드마루' });
+  MailApp.sendEmail({ to: to.join(','), subject: '[코드마루] ' + d.student.name + ' 학생 ' + Number(p[1]) + '월 리포트', htmlBody: html, name: '코드마루', inlineImages: inline });
   return to.length;
 }
 Object.assign(ACTIONS_, {
@@ -1008,11 +1013,20 @@ Object.assign(ACTIONS_, {
   reportSave(req) {
     const t = teacher_(req.auth), student = student_(req.studentId), month = month_(req.month);
     const plan = pointsText_(String(req.plan || '').slice(0, 120)), comment = pointsText_(String(req.comment || '').slice(0, 400));
+    // 사진: req.photos 가 배열이면 이 달 사진을 그것으로 바꾼다(빈 배열이면 지움), 없으면 전에 올린 사진을 그대로 둔다
+    const newPhotos = Array.isArray(req.photos) ? reportPhotoCheck_(req.photos) : null;
     withLock_(() => {
       const sh = sheet_('reports'), data = rows_('reports');
       const i = data.findIndex(r => String(r[0]) === String(student[0]) && String(r[1]) === month);
-      const row = [String(student[0]), "'" + month, plan, comment, new Date(), t.email];
+      let ids = i >= 0 ? reportPhotoIds_(data[i]) : [];
+      if (newPhotos) {
+        ids.forEach(fid => { try { DriveApp.getFileById(fid).setTrashed(true); } catch (e) {} });
+        const folder = newPhotos.length ? reportFolder_() : null, stamp = Date.now();
+        ids = newPhotos.map((bytes, n) => folder.createFile(Utilities.newBlob(bytes, 'image/jpeg', String(student[0]) + '_' + month + '_' + stamp + '_' + (n + 1) + '.jpg')).getId());
+      }
+      const row = [String(student[0]), "'" + month, plan, comment, new Date(), t.email, ids.length ? JSON.stringify(ids) : ''];
       if (i >= 0) sh.getRange(i + 2, 1, 1, row.length).setValues([row]); else sh.appendRow(row);
+      if (sh.getRange && sh.getRange(1, 7).getValue && sh.getRange(1, 7).getValue() === '') sh.getRange(1, 7).setValue('사진');
     });
     const sent = req.email ? reportEmail_(student, month) : 0;
     return { link: parentLink_(String(student[0]), month), sent: sent };
@@ -1025,6 +1039,26 @@ Object.assign(ACTIONS_, {
     return reportData_(student, month_(req.m || Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM')));
   }
 });
+// ---- 월간 리포트 사진: 시트 주인 Drive 의 따로 둔 폴더(공유하지 않음). 한 달에 학생마다 4장까지, 한 장 1.5MB(JPEG) 까지 ----
+const REPORT_PHOTO_MAX_ = 4, REPORT_PHOTO_MB_ = 1.5;
+function reportPhotoIds_(row) { try { const a = JSON.parse(String(row[6] || '[]')); return Array.isArray(a) ? a.filter(x => typeof x === 'string' && /^[\w-]{10,100}$/.test(x)).slice(0, REPORT_PHOTO_MAX_) : []; } catch (e) { return []; } }
+function reportPhotoCheck_(list) {
+  if (list.length > REPORT_PHOTO_MAX_) throw new Error('사진은 ' + REPORT_PHOTO_MAX_ + '장까지 올릴 수 있어요.');
+  return list.map(x => {
+    let bytes;
+    try { bytes = Utilities.base64Decode(String(x || '').replace(/^data:image\/jpeg;base64,/, '')); } catch (e) { throw new Error('사진을 읽지 못했어요. 다시 골라 주세요.'); }
+    if (!bytes.length || bytes.length > REPORT_PHOTO_MB_ * 1048576) throw new Error('사진 한 장은 ' + REPORT_PHOTO_MB_ + 'MB까지예요.');
+    if ((bytes[0] & 255) !== 0xff || (bytes[1] & 255) !== 0xd8) throw new Error('JPEG 사진만 올릴 수 있어요.');
+    return bytes;
+  });
+}
+function reportFolder_() {
+  const pr = PropertiesService.getScriptProperties(), id = pr.getProperty('REPORT_FOLDER');
+  if (id) { try { return DriveApp.getFolderById(id); } catch (e) {} }
+  const folder = DriveApp.createFolder('코드마루 월간 리포트 사진');
+  pr.setProperty('REPORT_FOLDER', folder.getId());
+  return folder;
+}
 // 매달 1일 아침에 지난달 리포트를 이메일로 일괄 발송하려면 이 함수를 한 번 실행해 트리거를 만든다(선택)
 function setupMonthlyReportTrigger() {
   ScriptApp.getProjectTriggers().filter(t => t.getHandlerFunction() === 'sendMonthlyReports').forEach(t => ScriptApp.deleteTrigger(t));

@@ -55,6 +55,35 @@ assert.equal(run(`ACTIONS_.reportSave({auth:'teacher',studentId:'1',month:'2026-
 assert.equal(sent.length, 1); assert.equal(sent[0].to, 'mom@example.test');
 assert.ok(sent[0].htmlBody.includes('&lt;b&gt;칭찬') && sent[0].htmlBody.includes('parent.html?s=1'));
 
+// 5) 사진: JPEG 만, 4장까지, 바꾸면 전 사진은 휴지통, 안 보내면 그대로, 학부모 리포트·이메일에 들어간다
+const files = {}, trashed = []; let fileN = 0;
+ctx.DriveApp = {
+  getFolderById: () => { throw new Error('없음'); },
+  createFolder: () => ({ getId: () => 'folder1', createFile: blob => { const id = 'file' + String(++fileN).padStart(8, '0'); files[id] = blob; return { getId: () => id }; } }),
+  getFileById: id => ({ getBlob: () => Object.assign({}, files[id], { getBytes: () => files[id].bytes, setName() { return this; } }), setTrashed: () => trashed.push(id) })
+};
+ctx.Utilities.base64Decode = s => [...Buffer.from(s, 'base64')].map(b => (b > 127 ? b - 256 : b));
+ctx.Utilities.base64Encode = bytes => Buffer.from(bytes.map(b => b & 255)).toString('base64');
+ctx.Utilities.newBlob = (bytes, mime, name) => ({ bytes, mime, name });
+const jpg = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]).toString('base64'), png = Buffer.from([0x89, 0x50, 0x4e, 0x47]).toString('base64');
+const save = photos => run(`ACTIONS_.reportSave({auth:'teacher',studentId:'1',month:'2026-11',comment:'사진 달',photos:${JSON.stringify(photos)}})`);
+assert.throws(() => save([png]), /JPEG/);
+assert.throws(() => save([jpg, jpg, jpg, jpg, jpg]), /4장/);
+save(['data:image/jpeg;base64,' + jpg, jpg]);
+const photoRow = () => tabs.reports.filter(r => r[0] === '1' && r[1] === '2026-11').pop();
+assert.equal(JSON.parse(photoRow()[6]).length, 2);
+run(`ACTIONS_.reportSave({auth:'teacher',studentId:'1',month:'2026-11',comment:'글만 고침'})`);
+assert.equal(JSON.parse(photoRow()[6]).length, 2);          // 사진을 안 보내면 그대로
+const rep2 = run(`ACTIONS_.parentReport({s:'1',t:'${q.get('t')}',m:'2026-11'})`);
+assert.equal(rep2.report.photos.length, 2); assert.ok(rep2.report.photos[0].startsWith('data:image/jpeg;base64,/9j/'));
+const before = sent.length;
+run(`ACTIONS_.reportSave({auth:'teacher',studentId:'1',month:'2026-11',comment:'메일',email:true})`);
+assert.equal(Object.keys(sent[before].inlineImages).length, 2); assert.ok(sent[before].htmlBody.includes('cid:p0'));
+save([jpg]);
+assert.equal(trashed.length, 2); assert.equal(JSON.parse(photoRow()[6]).length, 1);
+save([]);
+assert.equal(photoRow()[6], ''); assert.equal(trashed.length, 3);
+
 // 4) PARENT_SECRET 을 지우면 예전 링크가 막힌다
 delete props.PARENT_SECRET;
 assert.throws(() => run(`ACTIONS_.parentReport({s:'1',t:'${q.get('t')}',m:'2026-11'})`), /링크/);
