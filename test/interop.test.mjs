@@ -36,7 +36,7 @@ await assert.rejects(CHCore.decrypt(bad, buf('check.enc')));
 
 // 3) 관리자·옛 파일은 들어가지 않았고, 평문이 파일에 남지 않았다
 const files = fs.readdirSync(path.join(out, 'content'));
-assert.equal(files.length, 2);
+assert.equal(files.length, 3);   // index.html, entry/race/index.html, __projects.json(수업 목록)
 assert.ok(!files.includes(await CHCore.nameFor('admin/secret.json', meta)));
 for (const f of files) assert.ok(!buf('content/' + f).includes('레이스'));
 
@@ -75,5 +75,40 @@ assert.equal(new TextDecoder().decode(await CHCore.decrypt(skey, buf('content/' 
 assert.equal(new TextDecoder().decode(await CHCore.decrypt(skey, buf('teacher-check.enc'))), 'codingharu-teacher');
 assert.ok(!buf('content/' + teacherName).includes('정답'), '평문이 드러나면 안 된다');
 
+
+// 집 연습: HOME_PASS 와 home-paths.json 이 있으면 체크한 수업만 집 연습 열쇠로 한 벌 더 잠근다
+{
+  fs.mkdirSync(path.join(src, 'python/iot'), { recursive: true }); fs.mkdirSync(path.join(src, 'assets'), { recursive: true });
+  fs.writeFileSync(path.join(src, 'python/index.html'), '<title>파이썬 · 코드마루</title>');
+  fs.writeFileSync(path.join(src, 'python/iot/index.html'), '<title>IoT · 코드마루</title>집에서');
+  fs.writeFileSync(path.join(src, 'python/iot/iot.js'), '// iot');
+  fs.writeFileSync(path.join(src, 'assets/style.css'), 'body{}');
+  fs.mkdirSync(path.join(src, 'assets/scratch-big'), { recursive: true }); fs.mkdirSync(path.join(src, 'assets/iot-img'), { recursive: true });
+  fs.writeFileSync(path.join(src, 'assets/scratch-big/a.png'), 'png'); fs.writeFileSync(path.join(src, 'assets/iot-img/b.png'), 'png');
+  fs.writeFileSync(path.join(src, 'python/iot/page.html'), '<img src="../../assets/iot-img/b.png">');
+  fs.writeFileSync(path.join(out, 'home-paths.json'), JSON.stringify(['python/iot/', '../bad/', 'x']));
+  const HOME = 'home practice key 1';
+  execFileSync('node', ['tools/build.mjs', src, out], { env: { ...process.env, SITE_PASS: PASS, HOME_PASS: HOME }, encoding: 'utf8' });
+  const m2 = JSON.parse(fs.readFileSync(path.join(out, 'crypt.json'), 'utf8'));
+  const hk = await CHCore.deriveKey(HOME, m2), sk = await CHCore.deriveKey(PASS, m2);
+  const has = async (p) => fs.existsSync(path.join(out, 'content', await CHCore.nameFor(p, m2)));
+  assert.equal(new TextDecoder().decode(await CHCore.decrypt(hk, buf('home-check.enc'))), 'codingharu-home');
+  await assert.rejects(CHCore.decrypt(sk, buf('home-check.enc')));
+  for (const p of ['python/iot/index.html', 'python/iot/iot.js', 'python/index.html', 'index.html', 'assets/style.css']) assert.ok(await has('home/' + p), p);
+  for (const p of ['entry/race/index.html', 'assets/scratch-big/a.png']) assert.ok(!(await has('home/' + p)), p);
+  assert.ok(await has('home/assets/iot-img/b.png'));   // 체크한 수업이 부르는 assets 하위 폴더만
+  const iot = buf('content/' + await CHCore.nameFor('home/python/iot/iot.js', m2));
+  assert.equal(new TextDecoder().decode(await CHCore.decrypt(hk, iot)), '// iot');
+  await assert.rejects(CHCore.decrypt(sk, iot));                       // 집 열쇠 파일은 교안 열쇠로 안 풀리고
+  const full = buf('content/' + await CHCore.nameFor('entry/race/index.html', m2));
+  await assert.rejects(CHCore.decrypt(hk, full));                      // 학원 전용 수업은 집 열쇠로 안 풀린다
+  const pj = JSON.parse(new TextDecoder().decode(await CHCore.decrypt(sk, buf('content/' + await CHCore.nameFor('__projects.json', m2)))));
+  assert.deepEqual(pj.home, ['python/iot/']); assert.ok(pj.projects.some((x) => x.path === 'python/iot/' && x.title === 'IoT'));
+  const hl = JSON.parse(new TextDecoder().decode(await CHCore.decrypt(hk, buf('content/' + await CHCore.nameFor('home/__home.json', m2)))));
+  assert.deepEqual(hl.home, ['python/iot/']);
+  // HOME_PASS 가 없으면 집 연습은 꺼지고 home-check.enc 도 지운다
+  execFileSync('node', ['tools/build.mjs', src, out], { env: { ...process.env, SITE_PASS: PASS, HOME_PASS: '' }, encoding: 'utf8' });
+  assert.ok(!fs.existsSync(path.join(out, 'home-check.enc'))); assert.ok(!(await has('home/python/iot/iot.js')));
+}
 console.log('모든 시험 통과');
 fs.rmSync(tmp, { recursive: true, force: true });

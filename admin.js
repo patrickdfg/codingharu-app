@@ -23,7 +23,7 @@
       ['pythonHigh', '파이썬 기초 융합 미션', '노트북(차시) 1개 완료 · 6차시']]],
     ['알고리즘 · 자격 · 대회', [
       ['algorithm', '알고리즘 수업', '알고리즘 워크북 1개 완료'], ['cosproProblem', 'COS Pro 문제', '문제 1개 맞힘'], ['cosproUnit', 'COS Pro 회차 완료', '10문제를 다 풀었을 때 1번'],
-      ['koi', '정보올림피아드 연습', '문제 1개 처음 맞힘'], ['bebras', '비버챌린지', '문제 1개 맞힘']]],
+      ['koi', '정보올림피아드 연습', '문제 1개 처음 맞힘'], ['iot', '파이썬 스마트홈 IoT', '미션 1개 처음 통과'], ['bebras', '비버챌린지', '문제 1개 맞힘']]],
     ['코딩 놀이터 · 게임 · 타자', [
       ['codingLesson', '코딩 놀이터 수업', '비버·게임·탐정 제외 · 수업 1회 완료'], ['playground', '블록 코딩 100단계', '단계 1개 통과'], ['games', '블록 게임 만들기', '게임 단계 1개 통과'],
       ['detective', '코딩 탐정', '본문제·도전문제 1개'], ['typing', '타자 자리연습', '단계별 정확도 80% 이상 · 하루 1번'], ['typingWord', '타자 단어연습', '낱말 100개 끝낼 때'], ['typingSentence', '타자 문장연습', '문장 10개 끝낼 때']]],
@@ -105,7 +105,7 @@
   }
 
   // ---- 화면 고르기 ----
-  var VIEWS = { home: home, members: members, works: works, points: points, rates: rates, monthly: monthly, report: report, settings: settings };
+  var VIEWS = { home: home, members: members, works: works, points: points, rates: rates, monthly: monthly, report: report, homeuse: homeuse, settings: settings };
   function route() {
     var name = (location.hash || '#home').slice(1).split('?')[0];
     if (!VIEWS[name]) name = 'home';
@@ -541,6 +541,49 @@
       var k = await CHCore.loadKey(), had = await CHCore.loadTeacherKey().catch(function () { return null; });
       if (k && !had) { await CHCore.decrypt(k, await CHCore.getBuf(BASE, 'teacher-check.enc')); await CHCore.saveTeacherKey(k); }
     } catch (e) { /* 정답 파일이 없거나 열쇠가 다르면 그대로 둔다 */ }
+  }
+  // 집 연습 수업: 체크한 수업은 학생이 집에서 이름·번호 로그인만으로 열고, 나머지는 교안 비밀번호를 넣은 기기(학원)에서만 열린다
+  function homeuse() {
+    view.append(el('h1', '집 연습 수업'), el('p', '체크한 수업은 학생이 집에서 이름·번호로 로그인만 하면 열리고 연습할 수 있어요. 체크하지 않은 수업은 지금처럼 교안 비밀번호를 넣은 기기(학원)에서만 열려요. 저장하면 다음 교안 동기화(15분 안)부터 바뀌어요.', 'ad-note'));
+    var card = el('div', 'ad-note', 'ad-card'); card.textContent = '수업 목록을 불러오는 중…'; view.appendChild(card);
+    Promise.all([fetch('v/__projects.json', { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error('list'); return r.json(); }),
+                 api('homePaths').then(function (o) { return o.paths || []; })])
+    .then(function (res) {
+      card.textContent = '';
+      var list = res[0].projects || [], chosen = {}; res[1].forEach(function (p) { chosen[p] = 1; });
+      if (!res[0].homeOn) card.appendChild(el('p', '지금은 집 연습이 꺼져 있어요. 수업을 체크해 저장하고, GitHub 저장소 비밀값과 Apps Script 스크립트 속성에 HOME_PASS(10자 이상, 둘이 같은 값)를 넣으면 다음 동기화부터 켜져요.', 'ad-note'));
+      var form = el('form', null, 'ad-home'), boxes = [], tops = {};
+      list.forEach(function (f) { var top = f.path.split('/')[0] + '/'; (tops[top] = tops[top] || []).push(f); });
+      Object.keys(tops).sort().forEach(function (top) {
+        var items = tops[top], head = items.filter(function (f) { return f.path === top; })[0];
+        var g = el('details'); g.appendChild(el('summary', (head && head.title ? head.title + ' ' : '') + '· ' + top));
+        items.forEach(function (f) {
+          var lab = el('label'), cb = el('input'); cb.type = 'checkbox'; cb.value = f.path; cb.checked = !!chosen[f.path];
+          lab.append(cb, document.createTextNode(' ' + (f.path === top ? '전체 · ' : '') + (f.title || f.path) + ' '), el('small', f.path + ' · ' + (f.bytes / 1048576).toFixed(1) + 'MB'));
+          g.appendChild(lab); boxes.push({ cb: cb, f: f });
+        });
+        if (items.some(function (f) { return chosen[f.path]; })) g.open = true;
+        form.appendChild(g);
+      });
+      var size = el('p', '', 'ad-note');
+      function update() {
+        var on = boxes.filter(function (b) { return b.cb.checked; }).map(function (b) { return b.f; });
+        var top = on.filter(function (f) { return !on.some(function (o) { return o !== f && f.path.indexOf(o.path) === 0; }); });
+        size.textContent = '체크한 수업 ' + top.length + '개 · 앱 용량이 약 ' + Math.round(top.reduce(function (s, f) { return s + f.bytes; }, 0) / 1048576) + 'MB 늘어나요(집 연습용으로 한 벌 더 잠그므로).';
+      }
+      form.addEventListener('change', update); update();
+      var save = el('button', '집 연습 수업 저장', 'ad-btn'); save.type = 'submit';
+      form.append(size, save); card.appendChild(form);
+      form.onsubmit = function (e) {
+        e.preventDefault(); save.disabled = true;
+        api('homePathsSet', { paths: boxes.filter(function (b) { return b.cb.checked; }).map(function (b) { return b.f.path; }) })
+          .then(function (o) { toast('집 연습 수업 ' + o.paths.length + '개를 저장했어요. 15분 안에 반영돼요.'); },
+                function (err) { toast(/알 수 없는 요청/.test(err.message) ? '기록 서버(Apps Script)를 새 버전으로 배포해야 저장할 수 있어요.' : err.message, true); })
+          .then(function () { save.disabled = false; });
+      };
+    }, function (err) {
+      card.textContent = err && err.message === 'list' ? '수업 목록은 이 기기에 교안 비밀번호가 들어가 있고, 이 기능이 들어간 교안 동기화가 한 번 돈 뒤에 보여요.' : (/알 수 없는 요청/.test(err.message) ? '기록 서버(Apps Script)를 새 버전으로 배포해야 이 화면을 쓸 수 있어요.' : err.message);
+    });
   }
   function settings() {
     view.append(el('h1', '설정'), el('p', me ? me.email + ' · 선생님' : '선생님', 'ad-note'));

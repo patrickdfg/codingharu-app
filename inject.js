@@ -400,3 +400,36 @@
     }, fail);
   });
 })();
+
+// 집 연습 모드(교안 비밀번호 없이 학생 로그인으로 연 기기): 맨 위에 안내 띠를 붙이고, 열 수 없는 수업 링크는 흐리게 하고 자물쇠를 단다
+(function () {
+  if (!window.CHRecord || !/\/v\//.test(location.pathname)) return;
+  var root = CHRecord.base + 'v/';
+  fetch(root + '__home.json', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+    if (!d || !Array.isArray(d.home)) return;
+    var home = d.home;
+    function allowed(rel) {
+      if (rel.indexOf('/') < 0 || rel.indexOf('assets/') === 0) return true;
+      if (home.some(function (p) { return rel.indexOf(p) === 0; })) return true;
+      if (/(^|\/)(index\.html)?$/.test(rel)) { var dir = rel.replace(/index\.html$/, ''); return home.some(function (p) { return p.indexOf(dir) === 0; }); }
+      return false;
+    }
+    var st = document.createElement('style');
+    st.textContent = '.ch-home-bar{position:fixed;left:12px;bottom:12px;z-index:2147483000;max-width:min(560px,calc(100% - 24px));background:#fff7d6;color:#4a3a00;border:1px solid #f0d878;border-radius:12px;box-shadow:0 6px 20px #0002;padding:8px 14px;font:600 14px/1.6 sans-serif}' +
+      '.ch-home-bar a{color:#0b4fb3;margin:0 6px;white-space:nowrap}.ch-locked{opacity:.45;filter:grayscale(1)}.ch-locked::after{content:" 🔒";filter:none}';
+    document.head.appendChild(st);
+    var bar = document.createElement('div'); bar.className = 'ch-home-bar'; bar.setAttribute('role', 'note');
+    bar.appendChild(document.createTextNode('집 연습 모드 · 선생님이 열어 둔 수업만 열려요: '));
+    (d.items || home.map(function (p) { return { path: p, title: p }; })).forEach(function (it) {
+      var a = document.createElement('a'); a.href = root + it.path; a.textContent = it.title; bar.appendChild(a);
+    });
+    document.body.appendChild(bar);
+    document.querySelectorAll('a[href]').forEach(function (a) {
+      if (bar.contains(a)) return;
+      var u; try { u = new URL(a.getAttribute('href'), location.href); } catch (e) { return; }
+      if (u.origin !== location.origin || u.pathname.indexOf(new URL(root).pathname) !== 0) return;
+      var rel = decodeURIComponent(u.pathname.slice(new URL(root).pathname.length));
+      if (!allowed(rel)) { a.classList.add('ch-locked'); a.title = '학원에서 여는 수업이에요'; }
+    });
+  }).catch(function () {});
+})();

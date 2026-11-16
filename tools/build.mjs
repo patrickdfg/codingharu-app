@@ -41,6 +41,28 @@ function seal(plain, label, k = key, ik = ivKey) {
   const ct = Buffer.concat([c.update(plain), c.final()]);
   return Buffer.concat([iv, ct, c.getAuthTag()]);          // WebCrypto 는 암호문 뒤에 태그를 기대한다
 }
+// 집 연습(선택): HOME_PASS 와 집에서 열 수업 목록(home-paths.json, 예: ["koi/","python/iot/"])이 있으면
+// 그 수업 파일을 집 연습 열쇠로 한 벌 더 잠근다(home/ 경로). 학생은 로그인하면 기록 서버에서 이 열쇠를 받아, 체크한 수업만 연다.
+// 공통 파일(assets/, 맨 위 파일)과 그 수업으로 가는 길의 목록 쪽(index.html)도 함께 넣는다. 교안 비밀번호 열쇠로는 지금처럼 모두 열린다.
+const homePass = process.env.HOME_PASS || '';
+let homePaths = [];
+try { homePaths = JSON.parse(fs.readFileSync(path.join(out, 'home-paths.json'), 'utf8')); } catch (e) { homePaths = []; }
+homePaths = Array.isArray(homePaths) ? homePaths.filter((x) => typeof x === 'string' && /^[a-z0-9][a-z0-9._/-]*\/$/i.test(x) && !x.includes('..')) : [];
+if (homePass && homePass.length < MIN_PASS) { console.error(`HOME_PASS 가 ${MIN_PASS}자보다 짧습니다.`); process.exit(2); }
+const homeOn = !!homePass && homePaths.length > 0;
+const hkey = homeOn ? pbkdf2Sync(homePass, Buffer.from(meta.salt, 'base64'), meta.iter, 32, 'sha256') : null;
+const hivKey = homeOn ? createHmac('sha256', hkey).update('iv').digest() : null;
+// assets/ 는 바로 아래 파일과 vendor·icons 만 늘 넣고, 과목별 하위 폴더(assets/scratch-blocks/ 등)는 체크한 수업이 실제로 쓰는 것만 넣는다
+const ASSET_ALWAYS = /^assets\/(?:[^/]+|(?:vendor|icons)\/.+)$/;
+const homeAssets = new Set();
+function forHome(rel) {
+  if (!homeOn) return false;
+  if (!rel.includes('/') || ASSET_ALWAYS.test(rel)) return true;
+  if (rel.startsWith('assets/')) return homeAssets.has(rel.split('/').slice(0, 2).join('/') + '/');
+  if (homePaths.some((p) => rel.startsWith(p))) return true;
+  if (/(?:^|\/)index\.html$/.test(rel)) { const dir = rel.slice(0, -'index.html'.length); return homePaths.some((p) => p.startsWith(dir)); }
+  return false;
+}
 const nameFor = (p) => createHash('sha256').update(p + '|' + meta.salt).digest('hex').slice(0, 40) + '.enc';
 
 function* walk(dir, rel = '') {
@@ -63,12 +85,20 @@ fs.rmSync(contentDir, { recursive: true, force: true });
 fs.mkdirSync(contentDir, { recursive: true });
 
 const sum = createHash('sha256');
-let n = 0, nTeacher = 0;
+let n = 0, nTeacher = 0, nHome = 0, homeBytes = 0;
+const folders = new Map();   // 선생님 관리 화면의 '집에서 연습' 체크 목록: index.html 이 있는 1·2단계 폴더
 const all = [];
 for (const [prefix, dir] of sources) {
   for (const r of walk(dir)) all.push([prefix ? prefix + '/' + r : r, path.join(dir, r)]);
 }
 all.sort((a, b) => (a[0] < b[0] ? -1 : 1));
+if (homeOn) {   // 체크한 수업의 html·js·css 가 부르는 assets 하위 폴더를 찾는다
+  for (const [rel, file] of all) {
+    if (!homePaths.some((p) => rel.startsWith(p)) || !/\.(?:html?|js|css|json)$/i.test(rel)) continue;
+    const text = fs.readFileSync(file, 'utf8');
+    for (const m of text.matchAll(/assets\/([A-Za-z0-9_.-]+)\//g)) homeAssets.add('assets/' + m[1] + '/');
+  }
+}
 for (const [rel, file] of all) {
   let data = fs.readFileSync(file);
   if (REWRITE[rel]) {
@@ -87,12 +117,38 @@ for (const [rel, file] of all) {
   fs.writeFileSync(path.join(contentDir, nameFor(rel)), blob);
   sum.update(rel).update(blob);
   n++;
+  const parts = rel.split('/');
+  for (let d = 1; d <= 2 && d < parts.length; d++) {
+    const dir = parts.slice(0, d).join('/') + '/';
+    const f = folders.get(dir) || { path: dir, files: 0, bytes: 0, title: '' };
+    f.files++; f.bytes += data.length;
+    if (rel === dir + 'index.html') { const m = /<title>([^<]*)<\/title>/i.exec(data.toString('utf8')); if (m) f.title = m[1].replace(/\s*·\s*코드마루\s*$/, '').trim(); f.page = true; }
+    folders.set(dir, f);
+  }
+  if (forHome(rel)) {
+    const hblob = seal(data, 'home/' + rel, hkey, hivKey);
+    fs.writeFileSync(path.join(contentDir, nameFor('home/' + rel)), hblob);
+    sum.update('home/' + rel).update(hblob);
+    nHome++; homeBytes += hblob.length;
+  }
 }
 if (n === 0) { console.error('잠글 파일이 없습니다. class 폴더 경로를 확인하세요.'); process.exit(1); }
+
+// 목록(교안 비밀번호 열쇠로 잠금): 앱 주소 v/__projects.json
+const list = [...folders.values()].filter((f) => f.page).sort((a, b) => (a.path < b.path ? -1 : 1));
+const projects = Buffer.from(JSON.stringify({ projects: list, home: homeOn ? homePaths : [], homeOn }), 'utf8');
+const pblob = seal(projects, '__projects.json');
+fs.writeFileSync(path.join(contentDir, nameFor('__projects.json')), pblob); sum.update('__projects.json').update(pblob);
+const homeCheck = path.join(out, 'home-check.enc');
+if (homeOn) {
+  fs.writeFileSync(homeCheck, seal(Buffer.from('codingharu-home'), 'home-check', hkey, hivKey));
+  const hl = seal(Buffer.from(JSON.stringify({ home: homePaths, items: homePaths.map((p) => ({ path: p, title: (folders.get(p) || {}).title || p })) }), 'utf8'), 'home/__home.json', hkey, hivKey);
+  fs.writeFileSync(path.join(contentDir, nameFor('home/__home.json')), hl); sum.update('home/__home.json').update(hl);
+} else fs.rmSync(homeCheck, { force: true });
 
 fs.writeFileSync(path.join(out, 'check.enc'), seal(Buffer.from('codingharu'), 'check'));
 const tcheck = path.join(out, 'teacher-check.enc');
 fs.writeFileSync(tcheck, seal(Buffer.from('codingharu-teacher'), 'teacher-check', tkey, tivKey));
 fs.writeFileSync(metaPath, JSON.stringify(meta, null, 1));
 fs.writeFileSync(path.join(out, 'version.json'), JSON.stringify({ v: sum.digest('hex').slice(0, 16), n }));
-console.log(`${n}개 파일을 잠갔습니다. 선생님 정답 ${nTeacher}개.`);
+console.log(`${n}개 파일을 잠갔습니다. 선생님 정답 ${nTeacher}개. 집 연습 ${homeOn ? nHome + '개(' + Math.round(homeBytes / 1048576) + 'MB, ' + homePaths.length + '개 수업)' : '꺼짐'}.`);

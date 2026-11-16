@@ -4,6 +4,7 @@ name: 교안 동기화
 # 필요한 저장소 비밀값(Settings → Secrets and variables → Actions)
 #   CLASS_READ_TOKEN : class 저장소만, Contents 읽기 전용인 fine-grained 토큰
 #   SITE_PASS        : 학생이 입력할 비밀번호 (10자 이상)
+#   HOME_PASS        : (선택) 집 연습 열쇠 (10자 이상, Apps Script 스크립트 속성 HOME_PASS 와 같은 값). 없으면 집 연습은 꺼진다
 on:
   push:
     branches: [main]
@@ -50,9 +51,20 @@ jobs:
         with:
           node-version: 22
 
+      - name: 집에서 연습할 수업 목록 받기 (선생님 관리 화면에서 체크한 것)
+        run: |
+          api=$(node -e "console.log(require('./record-config.json').apiUrl||'')")
+          if [ -n "$api" ] && out=$(curl -sfL --max-time 60 -H 'Content-Type: text/plain;charset=utf-8' -d '{"action":"homePaths"}' "$api") \
+             && echo "$out" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const o=JSON.parse(s);if(!o.ok||!Array.isArray(o.paths))process.exit(1);require('fs').writeFileSync('home-paths.json',JSON.stringify(o.paths)+'\\n')})"; then
+            echo "집 연습 수업: $(cat home-paths.json)"
+          else
+            echo "목록을 받지 못해 지난번 목록을 그대로 씀"
+          fi
+
       - name: 잠그기
         env:
           SITE_PASS: ${{ secrets.SITE_PASS }}
+          HOME_PASS: ${{ secrets.HOME_PASS }}
           # 선생님 정답 파일도 SITE_PASS로 암호화하므로 추가 비밀번호는 사용하지 않는다.
         run: node tools/build.mjs class-src . roblox/treasure=roblox-src
 
@@ -61,6 +73,8 @@ jobs:
           git config user.name "codingharu-sync"
           git config user.email "sync@users.noreply.github.com"
           git add -A content crypt.json check.enc version.json
+          git add -A home-paths.json 2>/dev/null || true
+          git add -A home-check.enc 2>/dev/null || true
           if [ -e teacher-check.enc ] || git ls-files --error-unmatch teacher-check.enc >/dev/null 2>&1; then git add -A teacher-check.enc; fi
           if git diff --cached --quiet; then echo "바뀐 교안 없음"; exit 0; fi
           git commit -m "교안 동기화"

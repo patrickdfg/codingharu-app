@@ -6,7 +6,7 @@
 importScripts('core.js');
 
 var BASE = new URL('./', self.location.href);
-var SHELL_CACHE = 'codingharu-shell-14';
+var SHELL_CACHE = 'codingharu-shell-15';
 var SHELL = ['./', 'index.html', 'core.js', 'inject.js', 'record.js', 'report.js', 'login.html', 'record-config.json', 'manifest.webmanifest',
   'home.css', 'home-extra.css', 'home-prove.css', 'home-pages.css', 'home-pages.js', 'home.js', 'home-prove.js', 'home-scene.js', 'level-test.html', 'level-test.js', 'vendor/three/three.module.min.js', 'vendor/three/three.core.min.js',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/icon-180.png'];
@@ -71,6 +71,23 @@ async function meta() {
   return metaCache;
 }
 
+async function homeLesson(req, path, nav, key) {
+  var buf;
+  try {
+    buf = await CHCore.getBuf(BASE.href, 'content/' + await CHCore.nameFor('home/' + path, await meta()));
+  } catch (err) {
+    if (err && err.status === 404) return nav ? page(403, '학원에서 여는 수업이에요', '이 수업은 학원에서 선생님과 함께 열어요. 집에서는 선생님이 열어 둔 수업만 연습할 수 있어요.') : new Response('', { status: 404 });
+    return nav ? page(503, '교안을 불러오지 못했어요', '인터넷 연결을 확인하고 다시 열어 주세요.') : Response.error();
+  }
+  var plain;
+  try { plain = await CHCore.decrypt(key, buf); }
+  catch (err) {   // 집 연습 열쇠가 바뀌었다 → 버리고 다시 로그인
+    await CHCore.forgetHomeKey().catch(function () {});
+    return nav ? redirect('./?home=1') : new Response('', { status: 401 });
+  }
+  return respond(path, plain);
+}
+
 async function lesson(req, path) {
   var nav = req.mode === 'navigate';
   if (path === '' || path.slice(-1) === '/') path += 'index.html';
@@ -83,9 +100,12 @@ async function lesson(req, path) {
   if (path === 'assets/install.css')   // 빌드에서 빼는 파일. 교안 651쪽이 부르므로 404 대신 빈 스타일을 준다
     return new Response('/* 앱 안에서는 쓰지 않음 */', { headers: { 'Content-Type': TYPES.css } });
 
-  var key;
+  var key, homeKey = null;
   try { key = await CHCore.loadKey(); } catch (err) { key = null; }
-  if (!key) return nav ? redirect('./') : new Response('', { status: 401 });
+  // 교안 비밀번호가 없는 기기(집): 학생 로그인으로 받은 집 연습 열쇠로, 선생님이 체크한 수업만 연다
+  if (!key) { try { homeKey = await CHCore.loadHomeKey(); } catch (err) { homeKey = null; } }
+  if (!key && !homeKey) return nav ? redirect('./') : new Response('', { status: 401 });
+  if (homeKey) return homeLesson(req, path, nav, homeKey);
 
   var buf, teacherFile = false;
   try {
@@ -118,6 +138,11 @@ async function lesson(req, path) {
     return nav ? redirect('./?expired=1') : new Response('', { status: 401 });
   }
 
+  return respond(path, plain);
+}
+
+// 푼 교안을 돌려준다(html 이면 기록·앱 연결 스크립트를 붙인다)
+function respond(path, plain) {
   var ext = (path.split('.').pop() || '').toLowerCase();
   var type = TYPES[ext] || 'application/octet-stream';
   var headers = { 'Content-Type': type, 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex, nofollow' };

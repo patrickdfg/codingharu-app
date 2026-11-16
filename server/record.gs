@@ -1061,6 +1061,35 @@ function reportFolder_() {
   pr.setProperty('REPORT_FOLDER', folder.getId());
   return folder;
 }
+// ---- 집 연습: 선생님이 체크한 수업만 학생 로그인으로 집에서 연다 ----
+// 스크립트 속성 HOME_PASS(10자 이상, GitHub 저장소 비밀값 HOME_PASS 와 같은 값) · HOME_PATHS(체크한 수업 폴더 목록, 관리 화면에서 저장)
+function homePaths_() {
+  try { const a = JSON.parse(PropertiesService.getScriptProperties().getProperty('HOME_PATHS') || '[]'); return Array.isArray(a) ? a.filter(homePathOk_) : []; } catch (e) { return []; }
+}
+function homePathOk_(x) { return typeof x === 'string' && x.length <= 120 && /^[a-z0-9][a-z0-9._/-]*\/$/i.test(x) && x.indexOf('..') < 0; }
+Object.assign(ACTIONS_, {
+  // 교안 동기화(GitHub Actions)가 읽는 목록. 폴더 이름만 있고 비밀은 없다
+  homePaths() { return { paths: homePaths_() }; },
+  // 선생님: 집에서 열 수업 저장(다음 교안 동기화 때부터, 15분 안에 반영)
+  homePathsSet(req) {
+    teacher_(req.auth);
+    const list = Array.isArray(req.paths) ? req.paths : [];
+    if (list.length > 300 || !list.every(homePathOk_)) throw new Error('수업 목록이 올바르지 않아요.');
+    const uniq = list.filter((x, i) => list.indexOf(x) === i).sort();
+    PropertiesService.getScriptProperties().setProperty('HOME_PATHS', JSON.stringify(uniq));
+    return { paths: uniq };
+  },
+  // 로그인한 학생: 집 연습 열쇠(비밀번호)를 받는다
+  homeKey(req) {
+    checkSid_(req.sid, req.studentId);
+    const r = student_(req.studentId);
+    if (pending_(r) || resting_(r)) throw new Error('지금은 집 연습을 열 수 없는 계정이에요.');
+    const pass = PropertiesService.getScriptProperties().getProperty('HOME_PASS') || '';
+    if (pass.length < 10 || !homePaths_().length) throw new Error('집 연습이 아직 켜지지 않았어요.');
+    return { pass: pass };
+  }
+});
+
 // 매달 1일 아침에 지난달 리포트를 이메일로 일괄 발송하려면 이 함수를 한 번 실행해 트리거를 만든다(선택)
 function setupMonthlyReportTrigger() {
   ScriptApp.getProjectTriggers().filter(t => t.getHandlerFunction() === 'sendMonthlyReports').forEach(t => ScriptApp.deleteTrigger(t));

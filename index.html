@@ -340,7 +340,7 @@
   async function studentIn(out) {
     await CHCore.forgetTeacherKey().catch(function () {});   // 같이 쓰는 태블릿에 선생님 정답 열쇠가 남지 않게
     CHRecord.setStudent(out.student); CHRecord.setSession('student', { sid: out.sid });
-    if (!keyOk) { askClassPass(); return; }
+    if (!keyOk) { if (await homeIn()) return; askClassPass(); return; }
     say(out.student.name + ' 학생, 반가워요!', true);
     await swReady; setTimeout(goLessons, 350);
   }
@@ -436,9 +436,25 @@
   }
 
   // 이 기기에서 처음이라 수업 비밀번호를 한 번 입력해야 할 때(학생)
+  // 집 연습: 교안 비밀번호가 없는 기기에서 로그인한 학생은 기록 서버에서 집 연습 열쇠를 받아, 선생님이 체크한 수업만 연다
+  async function homeIn() {
+    try {
+      var st = CHRecord.student(); if (!st) return false;
+      var have = await CHCore.loadHomeKey().catch(function () { return null; });
+      var meta = await CHCore.getJSON(BASE, 'crypt.json');
+      if (have && await CHCore.keyWorks(BASE, have, 'home-check.enc').catch(function () { return false; })) { await swReady; goLessons(); return true; }
+      var out = await CHRecord.api('homeKey', { studentId: st.id });
+      var key = await CHCore.deriveKey(out.pass, meta);
+      if (!(await CHCore.keyWorks(BASE, key, 'home-check.enc'))) return false;
+      await CHCore.saveHomeKey(key);
+      say(st.name + ' 학생, 집 연습 모드로 들어가요. 선생님이 열어 둔 수업을 연습할 수 있어요.', true);
+      await swReady; setTimeout(goLessons, 700);
+      return true;
+    } catch (e) { return false; }
+  }
   function askClassPass() {
     passMode = 'student'; show('form');
-    lead.innerHTML = '이 기기에서는 처음이라 <b>수업 비밀번호</b>를 한 번만 입력해 주세요.<br>선생님께 물어보세요.';
+    lead.innerHTML = '이 기기에서는 처음이라 <b>수업 비밀번호</b>를 한 번만 입력해 주세요.<br>선생님께 물어보세요. (집에서 연습할 수 있게 열린 수업이 있으면 비밀번호 없이 들어가요.)';
     say(''); pass.focus();
   }
   function askSitePass() {
@@ -688,7 +704,7 @@
     if (mode !== 'join' && s && CHRecord.sessionOk()) {
       if (s.role === 'teacher') { me = { email: s.email }; showAdmin(); return; }
       if (keyOk) { await swReady; goLessons(); return; }
-      if (s.role === 'student') { askClassPass(); return; }
+      if (s.role === 'student') { if (await homeIn()) return; askClassPass(); return; }
     }
     showAuth(); tab(mode === 'join' ? 'join' : 'login');
     (mode === 'join' ? $('jName') : $('lName')).focus();

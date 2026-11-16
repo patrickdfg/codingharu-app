@@ -70,6 +70,18 @@
     return v.k;
   }
 
+  // 집 연습 열쇠: 학생이 로그인하면 기록 서버에서 받아, 선생님이 체크한 수업(home/ 경로)만 연다.
+  // 로그아웃하면 지우고, 세션처럼 14일이 지나면 버린다(다시 로그인하면 또 받는다).
+  var HOME_TTL = 14 * 86400 * 1000;
+  function saveHomeKey(key) { return kv('readwrite', function (s) { return s.put({ k: key, at: Date.now() }, 'hkey'); }); }
+  function forgetHomeKey() { return kv('readwrite', function (s) { return s.delete('hkey'); }); }
+  async function loadHomeKey() {
+    var v = await kv('readonly', function (s) { return s.get('hkey'); });
+    if (!v || !v.k) return null;
+    if (Date.now() - v.at > HOME_TTL) { await forgetHomeKey(); return null; }
+    return v.k;
+  }
+
   async function getJSON(base, name) {
     var r = await fetch(base + name, { cache: 'no-store' });
     if (!r.ok) throw new Error(name + ' ' + r.status);
@@ -82,8 +94,8 @@
   }
 
   // 열쇠가 지금 사이트의 것인지 (check.enc 가 풀리는지). 받기 실패(오프라인 등)는 예외로 올린다.
-  async function keyWorks(base, key) {
-    var buf = await getBuf(base, 'check.enc');
+  async function keyWorks(base, key, file) {
+    var buf = await getBuf(base, file || 'check.enc');
     try { await decrypt(key, buf); return true; } catch (e) { return false; }
   }
 
@@ -91,6 +103,7 @@
     deriveKey: deriveKey, decrypt: decrypt, nameFor: nameFor,
     saveKey: saveKey, loadKey: loadKey, forgetKey: forgetKey,
     saveTeacherKey: saveTeacherKey, loadTeacherKey: loadTeacherKey, forgetTeacherKey: forgetTeacherKey,
+    saveHomeKey: saveHomeKey, loadHomeKey: loadHomeKey, forgetHomeKey: forgetHomeKey,
     getJSON: getJSON, getBuf: getBuf, keyWorks: keyWorks, hex: hex
   };
 })(globalThis);

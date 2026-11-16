@@ -68,17 +68,22 @@
   g.addEventListener('online', flushPoints);
   g.setTimeout(flushPoints, 1000);
 
+  // 로그아웃하면 집 연습 열쇠(core.js 의 IndexedDB 'hkey')도 지운다. 교안 쪽(core.js 가 없는 곳)에서도 지울 수 있게 직접 연다
+  function forgetHomeKey() {
+    try { var r = indexedDB.open('codingharu', 1); r.onupgradeneeded = function () { r.result.createObjectStore('kv'); };
+      r.onsuccess = function () { try { var d = r.result, tx = d.transaction('kv', 'readwrite'); tx.objectStore('kv').delete('hkey'); tx.oncomplete = function () { d.close(); }; } catch (e) {} }; } catch (e) {}
+  }
   g.CHRecord = {
     config: config, api: api,
     device: function () { return get(K_TOKEN); },
     setDevice: function (d) { put(K_TOKEN, d); },
     student: function () { return get(K_STUDENT); },
     setStudent: function (s) { put(K_STUDENT, s); },
-    forgetDevice: function () { put(K_TOKEN, null); put(K_STUDENT, null); sput(K_SESSION, null); sput(K_AUTH, null); },
+    forgetDevice: function () { put(K_TOKEN, null); put(K_STUDENT, null); sput(K_SESSION, null); sput(K_AUTH, null); forgetHomeKey(); },
     // 로그인 상태: role 은 student(이름+번호) · teacher(구글/마이크로소프트) · offline(기록 서버에 못 닿을 때 기록 없이)
     session: function () { return sget(K_SESSION); },
     setSession: function (role, extra) { sput(K_SESSION, Object.assign({ role: role, at: Date.now() }, extra || {})); },
-    endSession: function () { sput(K_SESSION, null); sput(K_AUTH, null); put(K_STUDENT, null); },
+    endSession: function () { sput(K_SESSION, null); sput(K_AUTH, null); put(K_STUDENT, null); forgetHomeKey(); },
     sessionOk: function () {
       var s = sget(K_SESSION); if (!s) return false;
       if (s.role === 'teacher' || s.role === 'offline') return true;
