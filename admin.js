@@ -545,6 +545,47 @@
   }
   // 지난 수업 완료 체크: 포인트 제도 전에 한 수업을 학생별로 완료로 적는다(포인트 없음). 수업 목록은 v/__projects.json
   var projectList = null;
+  // 수업을 교재(큰 프로젝트)로 묶는다. 폴더 이름에서 끝의 해시·차시 번호를 떼어 같은 것끼리, 깊은 폴더는 윗폴더끼리 묶는다.
+  // 이름표는 묶인 수업 제목의 앞쪽 공통 부분(없으면 폴더 이름)이고, 혼자 남은 수업은 '그 밖의 수업'으로 모은다.
+  var BOOK_NAMES = { 'entry/dict-block': '엔트리 블록사전 #권', 'entry/work-basic': '엔트리 기초 #권 작품', 'entry/work-game': '엔트리 게임 #권 작품', 'entry/work-book': '엔트리 프로젝트 #권 작품', 'entry/project': '엔트리 프로젝트 #',
+    'entry/cos2': 'COS 엔트리 문제', 'scratch/project-basic': '스크래치 기초 #권', 'scratch/project-game': '스크래치 게임 #권', 'scratch/project-animation': '스크래치 애니메이션 #', 'scratch/project-dictionary': '스크래치 블록사전 #', 'scratch/project-book': '스크래치 프로젝트 #권', 'scratch/project-block': '스크래치 블록 #권' };
+  function groupLessons(leaves, titles) {
+    titles = titles || {};
+    function keyOf(path) {
+      var parts = path.replace(/\/$/, '').split('/');
+      if (parts.length > 2) return parts.slice(0, -1).join('/');
+      var n = parts[1] || parts[0];
+      return parts[0] + '/' + n.replace(/-[0-9a-f]{10,}$/, '').replace(/[-_](?:lesson|unit|work|set|step)[-_]?\d+$/i, '');   // 권 번호(basic4, block1)는 남긴다
+    }
+    var map = {}, order = [];
+    leaves.forEach(function (f) { var k = keyOf(f.path); if (!map[k]) { map[k] = []; order.push(k); } map[k].push(f); });
+    // 혼자 남은 것은 마지막 '-' 앞까지로 한 번 더 묶어 본다(cos2-02-snowball → cos2-02)
+    var single = order.filter(function (k) { return map[k].length === 1; }), again = {};
+    single.forEach(function (k) { var f = map[k][0], name = f.path.replace(/\/$/, ''), i = name.lastIndexOf('-'); var k2 = i > name.indexOf('/') ? name.slice(0, i) : ''; if (k2) (again[k2] = again[k2] || []).push(k); });
+    Object.keys(again).forEach(function (k2) {
+      if (again[k2].length < 2) return;
+      if (!map[k2]) { map[k2] = []; order.push(k2); }
+      again[k2].forEach(function (k) { map[k2] = map[k2].concat(map[k]); delete map[k]; });
+    });
+    function label(items, key) {
+      var a = items[0].title || '', n = a.length;
+      items.forEach(function (f) { var b = f.title || ''; var i = 0; while (i < n && i < b.length && a[i] === b[i]) i++; n = i; });
+      var s = a.slice(0, n).replace(/[\s·\-_:(\[]+$/, '').replace(/\s\d*$/, '').trim();
+      if (s.length >= 2) return s;
+      if (titles[key + '/']) return titles[key + '/'];
+      var m = /^(.*?)-?(\d+)?(?:-\d+)?$/.exec(key), named = m && BOOK_NAMES[m[1]];
+      if (named) return named.replace('#', m[2] || '').replace(/\s+권/, '권').trim();
+      return key.split('/').slice(1).join('/') || key;
+    }
+    var groups = [], rest = [];
+    order.forEach(function (k) {
+      if (!map[k]) return;
+      var items = map[k].slice().sort(function (x, y) { return x.path.localeCompare(y.path, 'en', { numeric: true }); });
+      if (items.length > 1) groups.push({ key: k, label: label(items, k), items: items }); else rest.push(items[0]);
+    });
+    if (rest.length > 1) groups.push({ key: '', label: '그 밖의 수업', items: rest }); else if (rest.length) groups.push({ key: '', label: '', items: rest });
+    return groups;
+  }
   function pastBox(s, allDone) {
     var box = el('details', null, 'ad-past'); box.appendChild(el('summary', '지난 수업 완료 체크 (포인트 없이 기록만)'));
     var body = el('div'); box.appendChild(body);
@@ -562,7 +603,7 @@
       month.type = 'month'; month.setAttribute('aria-label', '수업한 달(선택)');
       var ml = el('label', '수업한 달(선택) '); ml.appendChild(month); ml.appendChild(el('small', ' 비우면 2026년 10월 31일(월별 리포트 시작 전)로 적어, 11월부터의 리포트에 들어가지 않아요. 달을 넣으면 그 달 기록으로 들어가요.'));
       form.appendChild(ml);
-      var tops = {};
+      var tops = {}, titleOf = {}; list.forEach(function (f) { titleOf[f.path] = f.title; });
       list.forEach(function (f) { var top = f.path.split('/')[0] + '/'; if (f.path !== top) (tops[top] = tops[top] || { title: '', items: [] }).items.push(f); else (tops[top] = tops[top] || { title: '', items: [] }).title = f.title; });
       Object.keys(tops).sort().forEach(function (top) {
         var T = tops[top]; if (!T.items.length) return;
@@ -570,14 +611,25 @@
         var leaves = T.items.filter(function (f) { return !T.items.some(function (o) { return o !== f && o.path.indexOf(f.path) === 0; }); });
         var g = el('details'), n = leaves.filter(function (f) { return done[f.path]; }).length;
         var sum = el('summary', (T.title || top) + ' · ' + top + ' (' + n + ' / ' + leaves.length + ')'); g.appendChild(sum);
-        var all = btn('이 과목 모두 체크', 'small ghost'); all.type = 'button'; g.appendChild(all);
-        var mine = [];
-        leaves.forEach(function (f) {
-          var lab = el('label'), cb = el('input'); cb.type = 'checkbox'; cb.checked = !!done[f.path]; cb.dataset.was = cb.checked ? '1' : '';
-          lab.append(cb, document.createTextNode(' ' + (f.title || f.path) + ' '), el('small', f.path));
-          g.appendChild(lab); var item = { cb: cb, f: f }; boxes.push(item); mine.push(item);
+        // 과목 안을 교재(큰 프로젝트)로 묶는다: 교재 체크 하나로 그 안의 수업이 모두 체크된다
+        groupLessons(leaves, titleOf).forEach(function (G) {
+          var mine = [];
+          var holder = G.items.length > 1 ? el('details', null, 'ad-book') : g;
+          if (G.items.length > 1) {
+            var hs = el('summary'), all = el('input'); all.type = 'checkbox'; all.setAttribute('aria-label', G.label + ' 모두');
+            var cnt = el('small');
+            hs.append(all, document.createTextNode(' ' + G.label + ' '), cnt); holder.appendChild(hs); g.appendChild(holder);
+            var sync = function () { var c = mine.filter(function (b) { return b.cb.checked; }).length; all.checked = c === mine.length; all.indeterminate = c > 0 && c < mine.length; cnt.textContent = c + ' / ' + mine.length; };
+            all.onclick = function (e) { e.stopPropagation(); };
+            all.onchange = function () { mine.forEach(function (b) { b.cb.checked = all.checked; }); sync(); };
+            holder.addEventListener('change', sync); setTimeout(sync, 0);
+          }
+          G.items.forEach(function (f) {
+            var lab = el('label'), cb = el('input'); cb.type = 'checkbox'; cb.checked = !!done[f.path]; cb.dataset.was = cb.checked ? '1' : '';
+            lab.append(cb, document.createTextNode(' ' + (f.title || f.path) + ' '), el('small', f.path));
+            holder.appendChild(lab); var item = { cb: cb, f: f }; boxes.push(item); mine.push(item);
+          });
         });
-        all.onclick = function () { var on = mine.some(function (b) { return !b.cb.checked; }); mine.forEach(function (b) { b.cb.checked = on; }); update(); };
         form.appendChild(g);
       });
       var info = el('p', '', 'ad-note'), save = btn('지난 수업 저장'); save.type = 'submit';

@@ -118,3 +118,6 @@ table.ad-table { width: 100%; border-collapse: collapse; font-size: 14px; }
 .ad-past { margin-top: 16px; border: 1px solid var(--line); border-radius: 12px; padding: 4px 14px 12px; background: #f8fafd; }
 .ad-past > summary { cursor: pointer; font-weight: 700; padding: 10px 0; }
 .ad-past .ad-home details .ad-btn { margin: 4px 0 6px; }
+.ad-book { border: 1px solid #e3e8f2; border-radius: 8px; padding: 2px 10px; margin: 4px 0 4px 6px; background: #fbfcff; }
+.ad-book > summary { cursor: pointer; font-weight: 600; padding: 6px 0; } .ad-book > summary small { color: #6b7590; font-weight: 400; }
+.ad-book label { padding-left: 18px; }
