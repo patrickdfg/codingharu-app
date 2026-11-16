@@ -1,205 +1,237 @@
 <!doctype html>
-<!-- 학부모 상담용 6년 계획(초3 시작 ~ 중2): 월 4회 × 2시간 기준으로 달마다 무엇을 배우는지 보여 주고 A4 로 인쇄한다 -->
+<!-- 학부모 상담용 6년 계획(초3 시작 ~ 중2): 코딩하루 교육과정(Lv3 Connect Play ~ Lv6 Control Python, 교재 한 권 = 한 달)에 코드마루 심화·탐구 과정을 이어 72개월을 보여 주고 A4 로 인쇄한다 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>6년 배움 계획 · 코드마루</title>
-<meta name="description" content="초등 3학년에 시작해 중학교 2학년까지, 월 4회 2시간 수업으로 달마다 무엇을 배우는지 보여 주는 코드마루 6년 계획입니다.">
+<title>6년 커리큘럼 · 코드마루</title>
+<meta name="description" content="초등 3학년에 시작해 중학교 2학년까지, 교재 한 권을 한 달씩 배우는 코드마루 6년 커리큘럼입니다.">
 <link rel="canonical" href="https://codemaru.kr/plan.html">
 <meta property="og:type" content="website">
-<meta property="og:title" content="코드마루 6년 배움 계획 · 초3~중2">
-<meta property="og:description" content="월 4회 2시간, 엔트리에서 파이썬·AI·IoT까지 달마다 이어지는 코드마루 계획">
+<meta property="og:title" content="코드마루 6년 커리큘럼 · 초3~중2">
+<meta property="og:description" content="스크래치 앱에서 엔트리·스크래치·AI·앱인벤터·알고리즘을 거쳐 파이썬과 탐구 프로젝트까지, 한 달에 한 권씩 이어지는 72개월">
 <meta property="og:image" content="https://codemaru.kr/og-image.jpg">
-<meta name="theme-color" content="#15102c">
+<meta name="theme-color" content="#2a1478">
 <link rel="icon" href="icons/icon-192.png">
 <style>
-  :root { --night:#15102c; --ink:#231d38; --sub:#5f586b; --violet:#5b3fa0; --lime:#d6ff83; --paper:#f6f5f0; --line:#e4dff2; --soft:#efeaff; }
+  :root { --deep:#1c0d63; --indigo:#2f1aa0; --violet:#5b3fc4; --lav:#8b74e0; --pink:#e5267d; --mag:#b3127a; --ink:#1d1838; --sub:#5d5873; --line:#d9d2f3; --tint:#f3f0ff; --paper:#fbfaff; }
   * { box-sizing:border-box; }
-  body { margin:0; background:var(--paper); color:var(--ink); font:16px/1.7 "Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif; word-break:keep-all; }
+  body { margin:0; background:var(--paper); color:var(--ink); font:16px/1.7 "Pretendard","Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif; word-break:keep-all; }
   a { color:inherit; }
-  header { background:var(--night); color:#fff; padding:22px 20px 60px; }
-  .wrap { max-width:980px; margin:0 auto; }
-  .top { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
-  .brand { font-weight:800; font-size:20px; text-decoration:none; color:#fff; }
-  .brand span { color:var(--lime); }
-  .top nav a { color:#c9bfdc; text-decoration:none; font-size:15px; margin-left:14px; }
-  .eyebrow { font:12px/1.6 Consolas,monospace; letter-spacing:2px; color:#b8acd6; margin:44px 0 10px; }
-  h1 { font-size:clamp(30px,6vw,44px); line-height:1.25; margin:0 0 14px; letter-spacing:-.02em; }
-  h1 em { font-style:normal; color:var(--lime); }
-  header p { color:#d9d1e8; max-width:660px; margin:0; }
-  .facts { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-top:26px; }
-  .facts div { background:#241c44; border:1px solid #3a2f63; border-radius:14px; padding:12px 14px; }
-  .facts b { display:block; color:var(--lime); font-size:22px; }
-  .facts small { color:#c9bfdc; font-size:13px; }
-  main { padding:0 20px 60px; }
-  .card { background:#fff; border:1px solid var(--line); border-radius:22px; padding:24px; margin:-30px 0 22px; position:relative; }
-  .card + .card { margin-top:0; }
-  h2 { font-size:24px; margin:0 0 6px; letter-spacing:-.01em; }
-  .lead { color:var(--sub); margin:0 0 14px; }
-  .flow { display:grid; grid-template-columns:1fr 3fr 1.3fr; gap:8px; margin:6px 0 0; }
-  .flow div { border-radius:12px; padding:10px 12px; background:var(--soft); }
-  .flow b { display:block; color:var(--violet); }
-  .flow small { color:var(--sub); }
-  .tabs { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 18px; position:sticky; top:0; z-index:5; background:var(--paper); padding:12px 0; }
-  .tabs button { font:700 15px/1 inherit; padding:12px 16px; min-height:44px; border-radius:999px; border:1px solid var(--line); background:#fff; color:var(--ink); cursor:pointer; }
-  .tabs button[aria-pressed="true"] { background:var(--night); border-color:var(--night); color:#fff; }
-  .year { scroll-margin-top:80px; }
-  .year-head { display:flex; flex-wrap:wrap; align-items:baseline; gap:6px 12px; }
-  .tag { font-weight:700; font-size:13px; color:var(--violet); background:var(--soft); padding:3px 10px; border-radius:999px; }
-  .months { list-style:none; margin:14px 0 0; padding:0; display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:10px; }
-  .months li { border:1px solid var(--line); border-radius:14px; padding:10px 12px; display:grid; gap:2px; align-content:start; }
-  .months li .m { font:700 12px/1.4 Consolas,monospace; color:var(--violet); }
-  .months li .t { font-weight:700; }
-  .months li .k { justify-self:start; font-size:12px; padding:1px 8px; border-radius:999px; background:#f2f2f2; color:var(--sub); }
-  .k.robot { background:#e7f6ec; color:#1d6b3a; } .k.cert { background:#fff1d6; color:#8a5a00; } .k.ai { background:#e7efff; color:#1d4fa8; } .k.show { background:#ffe7ec; color:#a3284a; } .k.inq { background:var(--soft); color:var(--violet); }
-  .half { width:100%; border-collapse:collapse; margin-top:14px; font-size:15px; }
+  .wrap { max-width:1080px; margin:0 auto; padding:0 20px; }
+  /* 머리: 남보라 그라데이션 위 빛줄기 */
+  header { position:relative; overflow:hidden; color:#fff; background:linear-gradient(135deg,#140a52 0%,#2f1aa0 45%,#5a1ea8 75%,#9b1a86 100%); }
+  header::before, header::after { content:""; position:absolute; inset:-40%; pointer-events:none; }
+  header::before { background:repeating-linear-gradient(118deg,transparent 0 140px,rgba(255,255,255,.05) 140px 142px,transparent 142px 300px); }
+  header::after { background:linear-gradient(118deg,transparent 46%,rgba(255,120,200,.35) 50%,transparent 54%); }
+  .top { position:relative; z-index:1; display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; padding:20px 0 0; }
+  .brand { font-weight:900; font-size:20px; letter-spacing:.02em; text-decoration:none; }
+  .top nav a { color:#d8d0ff; text-decoration:none; font-size:15px; margin-left:16px; }
+  .hero { position:relative; z-index:1; text-align:center; padding:54px 0 40px; }
+  .pill { display:inline-block; background:#fff; color:var(--indigo); font-weight:700; padding:8px 22px; border-radius:999px; font-size:15px; }
+  .hero h1 { font-size:clamp(30px,6vw,52px); line-height:1.2; margin:20px 0 14px; letter-spacing:-.03em; font-weight:900; }
+  .hero h1 span { background:linear-gradient(90deg,#ff7ac0,#ffd1ef); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .hero p { color:#e3dcff; max-width:680px; margin:0 auto; }
+  .band { position:relative; z-index:1; background:#fff; color:var(--indigo); }
+  .band .wrap { display:grid; grid-template-columns:repeat(4,1fr); text-align:center; }
+  .band div div { padding:18px 8px; border-right:1px solid var(--line); }
+  .band div div:last-child { border-right:0; }
+  .band b { display:block; font-size:24px; font-weight:900; letter-spacing:-.02em; }
+  .band small { color:var(--sub); font-size:13px; }
+  main { padding:40px 0 70px; }
+  .sec-title { text-align:center; margin:56px 0 8px; font-size:clamp(24px,4.5vw,34px); font-weight:900; letter-spacing:-.03em; }
+  .sec-title .pk { color:var(--pink); }
+  .sec-lead { text-align:center; color:var(--sub); margin:0 auto 22px; max-width:720px; }
+  /* 한눈에 보는 표 */
+  .table-wrap { overflow-x:auto; border-radius:14px; border:2px solid var(--violet); background:#fff; }
+  table.at { width:100%; border-collapse:collapse; min-width:760px; font-size:14.5px; }
+  .at th { background:var(--lav); color:#fff; font-weight:700; padding:12px 8px; border:1px solid #a998ea; }
+  .at td { border:1px solid var(--line); padding:12px 10px; text-align:center; vertical-align:middle; }
+  .at td.prog { font-size:15px; font-weight:600; }
+  .at td.prog b { font-size:22px; font-weight:900; color:var(--violet); }
+  .at tr.ext td { background:var(--tint); }
+  /* 6년 시간 막대 */
+  .timeline { display:grid; grid-template-columns:repeat(72,1fr); height:58px; border-radius:12px; overflow:hidden; margin:8px 0 6px; box-shadow:0 6px 20px #2f1aa022; }
+  .timeline span { display:flex; align-items:center; justify-content:center; color:#fff; font:800 12px/1.2 inherit; text-align:center; padding:0 2px; }
+  .years { display:grid; grid-template-columns:repeat(6,1fr); text-align:center; color:var(--sub); font-size:13px; font-weight:700; }
+  .years span { border-left:1px dashed var(--line); } .years span:first-child { border-left:0; }
+  .c3a { background:#7b5cf0; } .c3e { background:#5b3fc4; } .c4 { background:#3a24a8; } .c5 { background:#7b1fa2; } .c6 { background:#c2186f; } .c7 { background:#e5267d; }
+  /* 레벨 단락 */
+  .level { position:relative; background:#fff; border:1px solid var(--line); border-radius:22px; padding:26px 24px 22px; margin:0 0 22px; overflow:hidden; scroll-margin-top:16px; }
+  .level::before { content:""; position:absolute; left:0; top:0; bottom:0; width:6px; background:var(--c); }
+  .lv-head { display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 14px; }
+  .lv-name { font-size:clamp(24px,4vw,32px); font-weight:900; letter-spacing:-.03em; margin:0; }
+  .lv-name em { font-style:normal; color:var(--pink); }
+  .lv-name span { background:linear-gradient(90deg,var(--indigo),var(--violet)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .lv-meta { display:flex; flex-wrap:wrap; gap:6px; margin:8px 0 4px; }
+  .chip { font-size:13px; font-weight:700; padding:3px 11px; border-radius:999px; background:var(--tint); color:var(--violet); }
+  .chip.cert { background:#ffe6f1; color:#b0145f; }
+  .quote { color:var(--sub); margin:6px 0 14px; }
+  .flow { list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px; counter-reset:m; }
+  .flow li { position:relative; border-radius:16px; padding:12px 12px 12px; background:var(--tint); border:1px solid #e3dcfb; min-height:96px; display:flex; flex-direction:column; gap:4px; }
+  .flow li .no { font:800 12px/1 Consolas,monospace; color:var(--c); }
+  .flow li .nm { font-weight:800; line-height:1.4; }
+  .flow li .tp { margin-top:auto; font-size:12px; color:var(--sub); }
+  .flow li.cert { background:#fff0f7; border-color:#ffc6df; } .flow li.cert .nm { color:#b0145f; }
+  .flow li.opt { background:#fff; border-style:dashed; }
+  .flow li.ext { background:#fff8fc; border-color:#f6cce2; }
+  .flow li:not(:last-child)::after { content:"→"; position:absolute; right:-11px; top:50%; transform:translateY(-50%); color:var(--lav); font-weight:900; font-size:14px; }
+  .goal { margin:16px 0 0; padding:12px 16px; border-radius:14px; background:linear-gradient(90deg,#f6f2ff,#fff3f9); font-size:15px; }
+  .goal b { color:var(--violet); }
+  .half { width:100%; border-collapse:collapse; margin-top:4px; font-size:15px; }
   .half th, .half td { border-bottom:1px solid var(--line); padding:9px 8px; text-align:left; vertical-align:top; }
   .half th { color:var(--violet); font-size:13px; }
-  .half td:first-child { font:700 13px/1.5 Consolas,monospace; color:var(--violet); width:56px; }
-  .gain { margin:14px 0 0; padding:12px 14px; border-radius:14px; background:#fbfaf3; border:1px dashed #d8d2b0; font-size:15px; }
-  .peaks { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:10px; }
-  .peaks div { border:1px solid var(--line); border-radius:14px; padding:12px 14px; }
-  .peaks b { color:var(--violet); }
-  .note { color:var(--sub); font-size:14px; }
-  .cta { display:flex; flex-wrap:wrap; gap:10px; margin-top:12px; }
-  .cta a, .cta button { font:700 15px/1 inherit; padding:13px 18px; min-height:44px; border-radius:12px; text-decoration:none; border:0; cursor:pointer; }
-  .cta .main { background:var(--night); color:var(--lime); }
-  .cta .sub { background:#fff; color:var(--violet); border:1px solid var(--line); }
-  @media (max-width:640px) { .flow { grid-template-columns:1fr; } .half td:first-child { width:44px; } .card { padding:20px 16px; } }
+  .half td:first-child { font:800 12px/1.6 Consolas,monospace; color:var(--c); width:66px; }
+  /* 수업 흐름 · 5봉 */
+  .three { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+  .three div { background:#fff; border:1px solid var(--line); border-radius:18px; padding:18px; }
+  .three b { display:block; color:var(--violet); font-size:18px; margin-bottom:4px; }
+  .peaks { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; }
+  .peaks div { background:#fff; border:1px solid var(--line); border-radius:16px; padding:14px; font-size:14px; }
+  .peaks b { display:block; font-size:17px; color:var(--pink); margin-bottom:4px; }
+  .footer-bar { margin-top:40px; border-radius:18px; color:#fff; text-align:center; padding:26px 20px; background:linear-gradient(90deg,var(--pink),var(--violet)); }
+  .footer-bar h2 { margin:0 0 6px; font-size:22px; }
+  .cta { display:flex; flex-wrap:wrap; justify-content:center; gap:10px; margin-top:14px; }
+  .cta a, .cta button { font:800 15px/1 inherit; padding:14px 20px; min-height:44px; border-radius:12px; text-decoration:none; border:0; cursor:pointer; }
+  .cta .main { background:#fff; color:var(--indigo); }
+  .cta .sub { background:transparent; color:#fff; border:1px solid #ffffffaa; }
+  .note { color:var(--sub); font-size:13.5px; text-align:center; margin:12px 0 0; }
+  @media (max-width:760px) {
+    .band .wrap { grid-template-columns:repeat(2,1fr); } .band div div:nth-child(2) { border-right:0; } .band div div:nth-child(-n+2) { border-bottom:1px solid var(--line); }
+    .three, .peaks { grid-template-columns:1fr; }
+    .timeline span { font-size:10px; }
+    .flow { grid-template-columns:repeat(2,1fr); } .flow li:not(:last-child)::after { display:none; }
+    .level { padding:22px 16px 18px; }
+  }
   @media print {
-    @page { size:A4; margin:12mm; }
-    body { background:#fff; font-size:12px; }
-    header { padding:8px 0 10px; background:#fff; color:var(--ink); }
-    header p, .facts small { color:var(--sub); }
-    .facts div { background:#fff; border-color:var(--line); } .facts b { color:var(--violet); }
-    .top nav, .tabs, .cta, .no-print { display:none !important; }
-    .eyebrow { margin:8px 0 4px; color:var(--sub); }
-    h1 em { color:var(--violet); }
-    .card { margin:0 0 10px; border-radius:10px; padding:12px; break-inside:avoid; }
-    .year { break-before:page; } .year[hidden] { display:block !important; }
-    .months { grid-template-columns:repeat(4,1fr); gap:6px; } .months li { padding:6px 8px; }
+    @page { size:A4; margin:10mm; }
+    body { background:#fff; font-size:11px; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    .top nav, .cta, .no-print { display:none !important; }
+    .hero { padding:18px 0 14px; } .hero p { font-size:11px; }
+    .sec-title { margin:16px 0 4px; font-size:20px; }
+    .level { break-inside:avoid; padding:12px 14px; margin-bottom:10px; border-radius:12px; }
+    .flow { grid-template-columns:repeat(6,1fr); gap:6px; } .flow li { min-height:0; padding:6px 7px; } .flow li::after { display:none; }
+    .lvbreak { break-before:page; }
+    table.at { min-width:0; font-size:10px; } .at td, .at th { padding:5px; } .table-wrap { break-inside:avoid; overflow:visible; }
   }
 </style>
 </head>
 <body>
 <header>
   <div class="wrap">
-    <div class="top"><a class="brand" href="./">코드마루<span>.</span></a><nav><a href="roadmap.html">5단계 로드맵</a><a href="level-test.html">레벨 테스트</a><a href="./#/admission">입학 상담</a></nav></div>
-    <p class="eyebrow">6-YEAR LEARNING PLAN</p>
-    <h1>초등 3학년부터 중학교 2학년까지,<br><em>달마다 이어지는 6년 계획</em></h1>
-    <p>한 달에 4번, 한 번에 2시간. 엔트리로 시작해 스크래치·로봇·로블록스를 거쳐 파이썬·알고리즘·AI·IoT까지, 한 달에 교재 한 권씩 차근차근 올라가요.</p>
-    <div class="facts">
-      <div><b>월 4회 · 2시간</b><small>주 1회, 한 달 8시간</small></div>
-      <div><b>1년 48회</b><small>한 달에 교재 한 권</small></div>
-      <div><b>6년 72개월</b><small>초3 → 중2</small></div>
-      <div><b>중등은 절반 탐구</b><small>코딩 + 주제 탐구 보고서</small></div>
+    <div class="top"><a class="brand" href="./">CODEMARU</a><nav><a href="roadmap.html">5단계 로드맵</a><a href="level-test.html">레벨 테스트</a><a href="./#/admission">입학 상담</a></nav></div>
+    <div class="hero">
+      <span class="pill">초등 3학년 → 중학교 2학년 · 72개월</span>
+      <h1>한 달에 한 권씩,<br><span>6년 커리큘럼 한눈에 보기</span></h1>
+      <p>블록으로 생각을 연결하고(Play), 구조를 설계하고(Craft), 논리로 완성한 뒤(Logic), 파이썬으로 직접 만들어요(Python). 중학생이 되면 수업의 절반은 주제 탐구와 프로젝트로 포트폴리오를 쌓아요.</p>
     </div>
   </div>
+  <div class="band"><div class="wrap">
+    <div><b>주 1회 · 4회/월</b><small>회당 90~120분</small></div>
+    <div><b>교재 1권 = 1개월</b><small>4차시로 한 권 완성</small></div>
+    <div><b>Lv3 → Lv6</b><small>표준 29개월 + 파이썬 11개월</small></div>
+    <div><b>중등 심화</b><small>탐구·프로젝트 32개월</small></div>
+  </div></div>
 </header>
-<main>
-  <div class="wrap">
-    <section class="card">
-      <h2>2시간 수업은 이렇게 흘러가요</h2>
-      <p class="lead">매 수업 같은 흐름으로, 배운 것을 작품과 기록으로 남겨요.</p>
-      <div class="flow">
-        <div><b>10분</b><small>타자 · 지난 시간 복습</small></div>
-        <div><b>90분 · 본 활동</b><small>교재 미션을 따라 만들고, 직접 바꿔 보며 내 작품으로 완성해요.</small></div>
-        <div><b>20분</b><small>저장 · 기록 · 짧은 발표</small></div>
-      </div>
-      <p class="note" style="margin:12px 0 0">수업에서 다 못 한 연습은 집에서 학생 아이디로 로그인해 이어서 할 수 있어요(선생님이 열어 둔 수업).</p>
-    </section>
 
-    <div class="tabs" role="toolbar" aria-label="학년 고르기" id="tabs"></div>
-    <div id="years"></div>
+<main><div class="wrap">
+  <h2 class="sec-title">한눈에 보는 <span class="pk">교육 과정</span></h2>
+  <p class="sec-lead">모든 과정은 단기 수강이 아니라 아이의 사고력 성장을 기준으로 이어져 있어요.</p>
+  <div class="table-wrap"><table class="at">
+    <thead><tr><th>프로그램</th><th>러닝 레벨</th><th>학년(초3 시작 기준)</th><th>학습 기간</th><th>상세 구성</th><th>자격·인증</th></tr></thead>
+    <tbody>
+      <tr><td class="prog" rowspan="4"><b>S</b>tandard Program<br><small>표준 정규 과정 · 29개월</small></td><td>Lv.3-A<br>Connect Play (Scratch app)</td><td>초3 1~4개월</td><td>4개월</td><td>스크래치 앱</td><td>-</td></tr>
+      <tr><td>Lv.3-E<br>Connect Play (Entry)</td><td>초3 5~11개월</td><td>5개월 + 자격 2개월</td><td>엔트리 · 엔트리 하드웨어</td><td>COS 3급 · CTAA 1급</td></tr>
+      <tr><td>Lv.4<br>Compose Craft</td><td>초3 12개월 ~ 초4</td><td>10개월 + 자격 1개월</td><td>스크래치 · 코드위즈 AI · 코스페이시스 · 알고리즘(연산)</td><td>COS 2급</td></tr>
+      <tr><td>Lv.5<br>Core Logic</td><td>초4 끝 ~ 초5 전반</td><td>6개월 + 자격 1개월</td><td>엔트리 AI · 앱인벤터 · 알고리즘(정렬·응용)</td><td>COS 1급</td></tr>
+      <tr><td class="prog"><b>Co</b>ding Challenger<br><small>심화 도전 과정</small></td><td>Lv.6<br>Control Python</td><td>초5 후반 ~ 초6 전반</td><td>8개월 + 자격 1개월 + 선택 2개월</td><td>파이썬 · 터틀 그래픽 · 파이게임</td><td>COS PRO 2급</td></tr>
+      <tr class="ext"><td class="prog"><b>M</b>aru Advanced<br><small>코드마루 심화 · 탐구</small></td><td>Lv.7<br>Explore &amp; Build</td><td>초6 후반 ~ 중2</td><td>32개월 (중등은 코딩·탐구 절반씩)</td><td>파이썬 로봇 · 웹 · 정보올림피아드 · 스마트홈 IoT · 아두이노 · AI · 탐구 포트폴리오</td><td>COS PRO · 정보올림피아드</td></tr>
+    </tbody>
+  </table></div>
 
-    <section class="card">
-      <h2>6년 동안 쌓이는 마루 5봉</h2>
-      <p class="lead">다닌 기간이 아니라 스스로 이룬 것으로 남아요.</p>
-      <div class="peaks">
-        <div><b>자격</b><br>CTAA 2급(초3) → CTAA 1급·COS 3급(초4) → COS 2급(초5) → COS 1급(초6) → COS Pro 3급(중1) → COS Pro 2급(중2)</div>
-        <div><b>대회</b><br>비버챌린지(초5~) · 정보올림피아드(초6 맛보기, 중1·중2 응시)</div>
-        <div><b>작품</b><br>해마다 12월 작품 발표 · 게임·웹·데이터 작품</div>
-        <div><b>탐구</b><br>초5 첫 보고서 → 중1 보고서 2편·AI융합 → 중2 IoT 탐구</div>
-        <div><b>메이커</b><br>큐브로이드(초3) → 어드밴스드 로봇(초4) → 코드위즈(초5) → 아두이노·IoT(중2)</div>
-      </div>
-    </section>
-
-    <section class="card">
-      <h2>상담 때 함께 정해요</h2>
-      <p class="lead">아이마다 속도와 관심이 달라요. 이 계획은 기본 길이고, 레벨 테스트와 상담으로 시작점과 속도를 함께 정해요. 3개월마다 진도를 확인하고, 학부모 월간 리포트로 매달 배운 것과 사진을 보내 드려요.</p>
-      <p class="note">자격시험과 대회 날짜는 해마다 공지를 보고 그해 계획에 맞춰 옮겨요. 이미 블록 코딩을 해 본 아이는 중간 단계부터 시작할 수 있어요.</p>
-      <div class="cta"><a class="main" href="tel:010-9855-1322">전화 상담 010-9855-1322</a><a class="sub" href="level-test.html">무료 레벨 테스트</a><button type="button" class="sub" id="printBtn">A4로 인쇄 · PDF 저장</button></div>
-    </section>
+  <h2 class="sec-title">6년 동안 <span class="pk">이렇게 이어져요</span></h2>
+  <div class="timeline" aria-label="72개월 레벨 막대">
+    <span class="c3a" style="grid-column:span 4">Lv3-A</span><span class="c3e" style="grid-column:span 7">Lv3-E</span><span class="c4" style="grid-column:span 11">Lv4</span>
+    <span class="c5" style="grid-column:span 7">Lv5</span><span class="c6" style="grid-column:span 11">Lv6</span><span class="c7" style="grid-column:span 32">Lv7 심화 · 탐구</span>
   </div>
-</main>
+  <div class="years"><span>초3</span><span>초4</span><span>초5</span><span>초6</span><span>중1</span><span>중2</span></div>
+
+  <div id="levels"></div>
+
+  <h2 class="sec-title">2시간 수업은 <span class="pk">이렇게 흘러가요</span></h2>
+  <div class="three">
+    <div><b>① 생각 열기 · 10분</b>타자와 지난 시간 복습으로 손과 머리를 깨워요.</div>
+    <div><b>② 만들기 · 90분</b>교재 차시의 미션을 따라 만들고, 직접 바꿔 보며 내 작품으로 완성해요.</div>
+    <div><b>③ 기록과 발표 · 20분</b>작품을 저장하고 배운 점을 말로 정리해요. 남은 연습은 집에서 이어 할 수 있어요.</div>
+  </div>
+
+  <h2 class="sec-title lvbreak">6년 동안 쌓이는 <span class="pk">마루 5봉</span></h2>
+  <p class="sec-lead">다닌 기간이 아니라 스스로 이룬 것으로 남아요.</p>
+  <div class="peaks">
+    <div><b>자격</b>COS 3급 → CTAA 1급 → COS 2급 → COS 1급 → COS PRO 2급</div>
+    <div><b>대회</b>비버챌린지 · 정보올림피아드(중1·중2 응시)</div>
+    <div><b>작품</b>교재마다 완성 작품 · 앱 · 게임 · 웹 · 파이게임</div>
+    <div><b>탐구</b>중1 탐구 보고서 2편 · AI융합 · 중2 IoT 탐구</div>
+    <div><b>메이커</b>엔트리 하드웨어 → 코드위즈 AI → 아두이노·IoT</div>
+  </div>
+
+  <div class="footer-bar">
+    <h2>아이마다 시작점과 속도는 상담으로 함께 정해요</h2>
+    <div>이 계획은 초3에 처음 시작하는 기준이에요. 블록 코딩을 해 본 아이는 레벨 테스트로 중간 단계부터 시작할 수 있고, 학부모 월간 리포트로 매달 배운 것과 사진을 보내 드려요.</div>
+    <div class="cta"><a class="main" href="tel:010-9855-1322">전화 상담 010-9855-1322</a><a class="sub" href="level-test.html">무료 레벨 테스트</a><button type="button" class="sub" id="printBtn">A4로 인쇄 · PDF 저장</button></div>
+  </div>
+  <p class="note">자격시험과 대회 날짜는 해마다 공지를 보고 그해 계획에 맞춰 옮겨요. 교재 순서는 코딩하루 교육과정을 따르고, Lv7 은 코드마루가 이어서 운영하는 심화·탐구 과정이에요.</p>
+</div></main>
+
 <script>
-// 6년 계획 자료: 초등은 달마다 교재 한 권, 중등은 달마다 코딩 2회 + 탐구 2회
+// 레벨별 교재 흐름: 교재 한 권 = 한 달(4차시). m 은 초3 시작부터 몇 개월차인지
 (function () {
-  var YEARS = [
-    { id: 'g3', tab: '초3', title: '초등 3학년 · 엔트리와 로봇 입문', lv: 'LV2 오솔길', lead: '블록으로 생각을 움직이는 첫해예요. 좌표·신호·변수로 키보드로 조작하는 게임을 혼자 완성해요.',
-      months: [['컴퓨터 첫걸음 + 타자', '기초'], ['엔트리 블록사전 1', ''], ['엔트리 블록사전 2', ''], ['엔트리 프로젝트 1', ''], ['엔트리 프로젝트 2', ''], ['로봇: 큐브로이드 1', 'robot'],
-               ['엔트리 게임 작품 1', ''], ['엔트리 게임 작품 2', ''], ['로봇: 큐브로이드 2', 'robot'], ['블록으로 배우는 게임 만들기', ''], ['CTAA 2급 대비', 'cert'], ['코딩 탐정 20미션 + 작품 발표', 'show']],
-      gain: '엔트리 게임 작품 2편 이상 · CTAA 2급 · 첫 로봇 작품' },
-    { id: 'g4', tab: '초4', title: '초등 4학년 · 스크래치와 로봇', lv: 'LV2 → LV3', lead: '엔트리에서 스크래치로 넓혀요. 작품 원본 코드를 탐구하고 직접 바꾸며 규칙이 많은 게임을 설계해요.',
-      months: [['스크래치 블록 1', ''], ['스크래치 블록 2', ''], ['스크래치 기초 1', ''], ['로봇: 어드밴스드 1', 'robot'], ['스크래치 기초 2', ''], ['스크래치 기초 3', ''],
-               ['로봇: 어드밴스드 2', 'robot'], ['스크래치 기초 4', ''], ['스크래치 게임 1', ''], ['스크래치 게임 2', ''], ['CTAA 1급 · COS 3급 대비', 'cert'], ['스크래치 AI 첫걸음 + 작품 발표', 'show']],
-      gain: '스크래치 게임 작품 · CTAA 1급 · COS 3급' },
-    { id: 'g5', tab: '초5', title: '초등 5학년 · 큰 작품, AI, 센서', lv: 'LV3 고개', lead: '복제본·리스트로 큰 작품을 만들고, 3D 게임 세계와 AI·센서까지 경험해요.',
-      months: [['스크래치 심화 창작', ''], ['엔트리 AI·데이터', 'ai'], ['로블록스 점프맵', ''], ['로블록스 보물섬 모험', ''], ['코드위즈 1~4회', 'robot'], ['코드위즈 5~8회', 'robot'],
-               ['코드위즈 9~12회', 'robot'], ['코드위즈 13~15회 + 센서 작품', 'robot'], ['COS 2급 대비', 'cert'], ['로블록스 AI 바이브코딩', 'ai'], ['비버챌린지 대비', 'cert'], ['첫 탐구 보고서 + 발표', 'show']],
-      gain: '3D 게임 · 센서 작품 · COS 2급 · 첫 탐구 보고서' },
-    { id: 'g6', tab: '초6', title: '초등 6학년 · 글자 코딩과 알고리즘', lv: 'LV3 → LV4', lead: '블록에서 파이썬으로 넘어가요. 탐색·정렬·재귀 같은 알고리즘을 직접 만들어요.',
-      months: [['파이썬 첫걸음: 블록에서 파이썬으로', ''], ['파이썬 첫걸음: 한 줄 쓰기 미션', ''], ['코딩 농장 초급 1~6', ''], ['코딩 농장 초급 7~12', ''], ['거북이 그림 1~5', ''], ['거북이 그림 6~9 · 프로젝트', ''],
-               ['알고리즘 생각법 + 개념 1', ''], ['알고리즘 개념 2 (탐색·정렬·재귀)', ''], ['알고리즘 작품 만들기', ''], ['COS 1급 승급 미션', 'cert'], ['코딩 농장 중급', ''], ['정보올림피아드 사고력 + 발표', 'show']],
-      gain: '파이썬 첫 작품 · 알고리즘 작품 · COS 1급' },
-    { id: 'm1', tab: '중1', title: '중학교 1학년 · 코딩 절반, 탐구 절반', lv: 'LV4 → LV5', lead: '한 달 4번 가운데 2번은 파이썬, 2번은 주제 탐구예요. 탐구 보고서가 포트폴리오로 쌓여요.',
-      half: [['파이썬 다리 1', '대주제 1: 질문 정하기'], ['파이썬 다리 2', '대주제 1: 만들기'], ['파이썬 기본 1~4단원', '대주제 1: 보고서'], ['파이썬 기본 5~8단원', '정보올림피아드 사고력'],
-             ['정보올림피아드 실기', '대주제 2: 질문 정하기'], ['파이썬 기본 9~12단원', '대주제 2: 만들기'], ['파이썬 기본 13~17단원', '대주제 2: 보고서'], ['코딩 농장 고급', 'AI융합 프로젝트 1'],
-             ['웹 만들기 기초 1', 'AI융합 프로젝트 2'], ['웹 만들기 기초 2', '탐구 결과 발표 웹페이지'], ['COS Pro 3급 대비', '탐구 기록 정리'], ['엑셀 데이터 분석', '포트폴리오 정리 · 발표']],
-      gain: '탐구 보고서 2편 · AI융합 프로젝트 · 정보올림피아드 응시 · COS Pro 3급' },
-    { id: 'm2', tab: '중2', title: '중학교 2학년 · 프로젝트, 자격, 포트폴리오', lv: 'LV5 마루', lead: '3D 로봇과 스마트홈 IoT로 현실 문제를 코드로 풀고, 아두이노로 실물까지 움직여요. 자격과 포트폴리오로 한 해를 마무리해요.',
-      half: [['파이썬 로봇 코딩 1~6', '아두이노 준비: 부품·배선'], ['파이썬 로봇 코딩 7~12', '아두이노 실물 실습 1'], ['스마트홈 IoT 1~4', '아두이노 실물 실습 2'], ['스마트홈 IoT 5~8', '정보올림피아드 대비'],
-             ['스마트홈 IoT 9~12', 'IoT 탐구: 에너지·안전'], ['스마트홈 IoT 13~16', 'IoT 탐구 보고서 · 실물 시연'], ['파이썬 프로젝트: 게임', 'AI·문제해결 1'], ['파이썬 프로젝트: 데이터', 'AI·문제해결 2'],
-             ['COS Pro 2급 실전 1~3회', '파이썬 AI 1'], ['COS Pro 2급 실전 4~6회', '파이썬 AI 2'], ['바이브코딩', '최종 프로젝트 기획'], ['정보 내신 대비', '최종 포트폴리오 · 발표회']],
-      gain: 'IoT 실물 작품 · 탐구 보고서 · COS Pro 2급 · 포트폴리오' }
+  var LEVELS = [
+    { id: 'lv3a', c: '#7b5cf0', en: 'Connect Play', ko: 'Lv.3-A', title: '스크래치 앱', when: '초3 · 1~4개월', months: '4개월', quote: '아이의 생각이 점점 더 명확한 명령이 되고, 명령은 의도한 흐름으로 반복되며 구현돼요.',
+      books: [['Digital Drawings', '이벤트·반복·좌표'], ['Graphic motion', '랜덤·신호'], ['Kids Programming', '감지·조건'], ['Game Design', '메시지·변수(점수)']], goal: '이벤트·반복·좌표·신호로 움직이는 첫 작품 4편' },
+    { id: 'lv3e', c: '#5b3fc4', en: 'Connect Play', ko: 'Lv.3-E', title: '엔트리 · 하드웨어', when: '초3 · 5~11개월', months: '5개월 + 자격 2개월', quote: '블록 하나하나의 쓰임을 익히고, 완성형 게임과 센서 작품으로 엮어요.',
+      books: [['엔트리 블록사전 1권', '시작·움직임·소리'], ['엔트리 블록사전 2권', '판단·계산·자료'], ['COS 3급', '자격', 'cert'], ['오늘의 엔트리 프로젝트 1권', '시작·신호·장면·복제 코드'], ['오늘의 엔트리 프로젝트 2권', '붓·판단·변수·리스트'], ['엔트리 하드웨어', '버튼·빛·거리 센서'], ['CTAA 1급', '자격', 'cert']], goal: '엔트리 게임 8편 · 센서 작품 · COS 3급 · CTAA 1급' },
+    { id: 'lv4', c: '#3a24a8', en: 'Compose Craft', ko: 'Lv.4', title: '스크래치 · 코드위즈 AI · 메타버스', when: '초3 12개월 ~ 초4', months: '10개월 + 자격 1개월', quote: '아이의 생각이 하나의 공통된 규칙 안에서 정리되고, 디지털 환경을 다루는 방식이 한 단계 깊어져요.',
+      books: [['코스페이시스', '가상 공간 설계'], ['스크래치 프로그래밍 1', '이벤트·신호·효과'], ['스크래치 프로그래밍 2', '복제·감지'], ['코드위즈 AI 기본편 1', '센서·자이로·IoT'], ['스크래치 응용 1', '변수·참/거짓'], ['스크래치 응용 2', '펜·리스트·내 블록'], ['코드위즈 AI 기본편 2', '도트·네오픽셀·서보'], ['스크래치 게임 1', '두더지·슈팅·미로'], ['스크래치 게임 2', '레이싱·핑퐁·바운스볼'], ['알고리즘(연산)', '홀짝·배수·소수'], ['COS 2급', '자격', 'cert']], goal: '메타버스 공간 · 스크래치 게임 8편 · 센서 작품 · COS 2급' },
+    { id: 'lv5', c: '#7b1fa2', en: 'Core Logic', ko: 'Lv.5', title: 'AI · 앱 · 알고리즘', when: '초4 끝 ~ 초5 전반 · 23~29개월', months: '6개월 + 자격 1개월', quote: '코딩을 배운 아이와 그렇지 않은 아이의 차이가 사고의 깊이와 문제 해결 결과에서 분명하게 나타나요.',
+      books: [['엔트리 AI 1권', '번역·음성·영상 감지'], ['엔트리 AI 2권', '소리·글·이미지 분류'], ['앱인벤터 비기너', '미디어·음성 인식'], ['앱인벤터 게임', '화면 전환·충돌'], ['알고리즘(정렬)', '선택·삽입·버블 정렬'], ['알고리즘(응용)', '탐색·재귀·피보나치'], ['COS 1급', '자격', 'cert']], goal: 'AI 분류 모델 · 내 휴대폰 앱 2개 · 정렬·탐색 알고리즘 · COS 1급' },
+    { id: 'lv6', c: '#c2186f', en: 'Control Python', ko: 'Lv.6', title: '파이썬 · 터틀 · 파이게임', when: '초5 후반 ~ 초6 · 30~40개월', months: '8개월 + 자격 1개월 + 선택 2개월', quote: '컴퓨터와 소프트웨어 영역을 중심으로 코딩을 하나의 전공 관점에서 깊이 탐색하기 시작해요.',
+      books: [['Turtle Graphics 1', '터틀 이동·펜'], ['파이썬 1', '출력·변수·입력'], ['파이썬 2', '문자열·리스트'], ['Turtle Graphics 2', 'for 반복·도형'], ['파이썬 3', '조건문·디버깅'], ['파이썬 4', 'while·for·중첩'], ['Turtle Graphics 3', '함수·클래스·이벤트'], ['파이썬 5', '튜플·집합·딕셔너리·함수'], ['COS PRO 2급', '자격', 'cert'], ['PYGAME BEGINNER', '선택', 'opt'], ['PYGAME MASTER', '선택', 'opt']], goal: '텍스트 코드로 그림·게임 완성 · COS PRO 2급' },
+    { id: 'lv7', c: '#e5267d', en: 'Explore & Build', ko: 'Lv.7', title: '코드마루 심화 · 탐구', when: '초6 후반 ~ 중2 · 41~72개월', months: '32개월', quote: '배운 코드로 현실의 문제를 찾고, 만들고, 탐구 보고서와 포트폴리오로 증명해요. 중학생은 한 달 4번 중 2번은 코딩, 2번은 탐구예요.',
+      books: [['파이썬 로봇 코딩', '3D 로봇 미션 36', 'ext'], ['코딩 농장 중급', '자동화·리스트', 'ext'], ['웹 만들기 기초', 'HTML·CSS·JS', 'ext'], ['웹 만들기 기초 2', '나만의 웹페이지', 'ext'], ['알고리즘 파이썬 다리', '엔트리 알고리즘을 파이썬으로', 'ext'], ['정보올림피아드 사고력', '사고력 문제', 'ext'], ['코딩 농장 고급', '탐색·최적화', 'ext'], ['초6 작품 발표 프로젝트', '기획·완성·발표', 'ext']],
+      half: [
+        ['중1 1월', '정보올림피아드 실기 1', '탐구 대주제 1: 질문 정하기'], ['중1 2월', '정보올림피아드 실기 2', '대주제 1: 만들기'], ['중1 3월', '파이썬 심화 문제 풀이', '대주제 1: 보고서'], ['중1 4월', '스마트홈 IoT 1~4', '정보올림피아드 대비'],
+        ['중1 5월', '스마트홈 IoT 5~8', '대주제 2: 질문 정하기'], ['중1 6월', '스마트홈 IoT 9~12', '대주제 2: 만들기'], ['중1 7월', '스마트홈 IoT 13~16', '대주제 2: 보고서'], ['중1 8월', '파이게임 프로젝트', 'AI융합 프로젝트 1'],
+        ['중1 9월', '웹 프로젝트', 'AI융합 프로젝트 2'], ['중1 10월', 'COS PRO 실전', '탐구 결과 발표 웹페이지'], ['중1 11월', '엑셀 데이터 분석', '탐구 기록 정리'], ['중1 12월', '바이브코딩', '포트폴리오 정리 · 발표'],
+        ['중2 1월', '아두이노 준비', 'IoT 탐구: 질문 정하기'], ['중2 2월', '아두이노 실물 IoT 1', 'IoT 탐구: 실물 만들기'], ['중2 3월', '아두이노 실물 IoT 2', 'IoT 탐구 보고서'], ['중2 4월', '파이썬 프로젝트: 게임', '정보올림피아드 대비'],
+        ['중2 5월', '파이썬 프로젝트: 데이터', 'AI·문제해결 1'], ['중2 6월', '파이썬 프로젝트: 웹서비스', 'AI·문제해결 2'], ['중2 7월', '큐로AI 파이썬 AI 1', '진로 주제 탐구 1'], ['중2 8월', '큐로AI 파이썬 AI 2', '진로 주제 탐구 2'],
+        ['중2 9월', '알고리즘 심화', '진로 주제 보고서'], ['중2 10월', '정보 내신 대비', '최종 프로젝트 기획'], ['중2 11월', '최종 프로젝트 만들기', '최종 프로젝트 검증'], ['중2 12월', '최종 포트폴리오', '발표회']],
+      goal: '탐구 보고서 4편 이상 · IoT 실물 작품 · 웹·게임·데이터 작품 · 정보올림피아드 응시 · 포트폴리오' }
   ];
-  var KIND = { robot: '로봇·메이커', cert: '자격·대회', ai: 'AI', show: '발표', '기초': '기초' };
-  var tabs = document.getElementById('tabs'), box = document.getElementById('years');
+  var START = { lv3a: 1, lv3e: 5, lv4: 12, lv5: 23, lv6: 30, lv7: 41 };
+  var box = document.getElementById('levels');
   function el(t, c, x) { var e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; }
-  YEARS.forEach(function (y, i) {
-    var s = el('section', 'card year'); s.id = y.id;
-    var h = el('div', 'year-head'); h.appendChild(el('span', 'tag', y.lv)); h.appendChild(el('h2', null, y.title)); s.appendChild(h);
-    s.appendChild(el('p', 'lead', y.lead));
-    if (y.months) {
-      var ul = el('ul', 'months');
-      y.months.forEach(function (m, j) {
-        var li = el('li'); li.appendChild(el('span', 'm', (j + 1) + '개월차')); li.appendChild(el('span', 't', m[0]));
-        if (m[1]) li.appendChild(el('span', 'k ' + m[1], KIND[m[1]] || m[1]));
-        ul.appendChild(li);
-      });
-      s.appendChild(ul);
-    } else {
-      var tb = el('table', 'half'), th = el('tr');
-      ['달', '코딩 (월 2회)', '탐구·프로젝트 (월 2회)'].forEach(function (x) { th.appendChild(el('th', null, x)); });
-      var thead = el('thead'); thead.appendChild(th); tb.appendChild(thead);
-      var tbody = el('tbody');
-      y.half.forEach(function (r, j) { var tr = el('tr'); tr.appendChild(el('td', null, (j + 1) + '월차')); tr.appendChild(el('td', null, r[0])); tr.appendChild(el('td', null, r[1])); tbody.appendChild(tr); });
-      tb.appendChild(tbody); s.appendChild(tb);
+  LEVELS.forEach(function (L, i) {
+    var s = el('section', 'level' + (i === 3 || i === 5 ? ' lvbreak' : '')); s.id = L.id; s.style.setProperty('--c', L.c);
+    var h = el('div', 'lv-head'), n = el('h3', 'lv-name'); n.appendChild(el('em', null, L.ko + ' ')); n.appendChild(el('span', null, L.en)); h.appendChild(n); h.appendChild(el('strong', null, L.title)); s.appendChild(h);
+    var meta = el('div', 'lv-meta'); [L.when, L.months].forEach(function (x) { meta.appendChild(el('span', 'chip', x)); }); s.appendChild(meta);
+    s.appendChild(el('p', 'quote', '“' + L.quote + '”'));
+    var ul = el('ol', 'flow');
+    L.books.forEach(function (b, j) {
+      var li = el('li', b[2] || ''); li.appendChild(el('span', 'no', (START[L.id] + j) + '개월차'));
+      li.appendChild(el('span', 'nm', b[0])); li.appendChild(el('span', 'tp', b[1])); ul.appendChild(li);
+    });
+    s.appendChild(ul);
+    if (L.half) {
+      s.appendChild(el('p', 'quote', '중학교 2년(49~72개월차) · 한 달에 코딩 2회 + 탐구 2회'));
+      var tb = el('table', 'half'), tr = el('tr'); ['달', '코딩 (월 2회)', '탐구·프로젝트 (월 2회)'].forEach(function (x) { tr.appendChild(el('th', null, x)); });
+      var th = el('thead'); th.appendChild(tr); tb.appendChild(th); var tbd = el('tbody');
+      L.half.forEach(function (r) { var row = el('tr'); r.forEach(function (x) { row.appendChild(el('td', null, x)); }); tbd.appendChild(row); });
+      tb.appendChild(tbd); s.appendChild(tb);
     }
-    var g = el('p', 'gain'); g.appendChild(el('b', null, '이 해에 남는 것 · ')); g.appendChild(document.createTextNode(y.gain)); s.appendChild(g);
+    var g = el('p', 'goal'); g.appendChild(el('b', null, '이 단계에서 남는 것 · ')); g.appendChild(document.createTextNode(L.goal)); s.appendChild(g);
     box.appendChild(s);
-    var b = el('button', null, y.tab); b.type = 'button'; b.dataset.id = y.id; tabs.appendChild(b);
   });
-  var all = el('button', null, '6년 전체'); all.type = 'button'; all.dataset.id = 'all'; tabs.appendChild(all);
-  function pick(id) {
-    YEARS.forEach(function (y) { document.getElementById(y.id).hidden = !(id === 'all' || id === y.id); });
-    tabs.querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.id === id)); });
-    try { history.replaceState(null, '', '#' + id); } catch (e) {}
-  }
-  tabs.addEventListener('click', function (e) { var b = e.target.closest('button'); if (b) pick(b.dataset.id); });
-  var start = location.hash.slice(1);
-  pick(YEARS.some(function (y) { return y.id === start; }) || start === 'all' ? start : 'g3');
   document.getElementById('printBtn').onclick = function () { window.print(); };
 })();
 </script>
