@@ -898,7 +898,7 @@ function pointsProof_(studentId, kind, key) {
     for (let i=2; i<=n; i++) { const part=findWorkbook_(studentId,id+'~'+i); if (!part) return null; try { Object.assign(state, JSON.parse(part.row[10] || '{}')); } catch(e) { return null; } }
     return state;
   }
-  if (kind === 'lesson') { const state=workbook('done:'+key); return !!(state && state.done === true); }
+  if (kind === 'lesson') { const state=workbook('done:'+key); return !!(state && state.done === true && !state.past); }   // 선생님이 체크한 지난 수업(past)은 점수를 주지 않는다
   if (kind === 'typing') {
     const state=workbook('coding-typing-v1');
     if (!state) return false;
@@ -1104,6 +1104,47 @@ function sendMonthlyReports() {
   rows_('students').forEach(r => { if (saved[String(r[0])] && !pending_(r)) { try { n += reportEmail_(r, month); } catch (e) { console.log(String(r[1]) + ': ' + e); } } });
   console.log(month + ' 리포트 이메일 ' + n + '통');
 }
+
+// ---- 지난 수업 완료 체크: 포인트 제도 전에 한 수업을 선생님이 학생별로 완료로 적는다(포인트 없음) ----
+// 기록 모양은 학생의 '완료' 단추와 같고(done-index + 'done:'+key), state 에 past:true 를 넣어 점수 요청을 막는다.
+// month(YYYY-MM)를 주면 그 달 15일로 적어 그 달 기록표에 들어가고, 없으면 2026-10-31(리포트 시작 전날)이다.
+Object.assign(ACTIONS_, {
+  pastDone(req) {
+    const t = teacher_(req.auth), s = student_(req.studentId), id = String(s[0]), name = String(s[1]);
+    const items = Array.isArray(req.items) ? req.items : [];
+    if (!items.length || items.length > 400) throw new Error('수업을 1~400개 골라 주세요.');
+    const ok = k => typeof k === 'string' && k.length <= 300 && /^[a-z0-9][a-z0-9._\/-]*\/$/i.test(k) && k.indexOf('..') < 0;
+    if (!items.every(x => x && ok(x.key))) throw new Error('수업 주소가 올바르지 않아요.');
+    // 달을 정하지 않으면 포인트·월별 리포트를 시작한 2026년 11월의 전날로 적는다 → 11월부터의 리포트에 섞이지 않는다
+    let when = new Date(2026, 9, 31, 12);
+    if (req.month) { const m = month_(req.month).split('-'); when = new Date(Number(m[0]), Number(m[1]) - 1, 15, 12); if (when.getTime() > Date.now()) throw new Error('앞으로 올 달은 고를 수 없어요.'); }
+    const ts = when.getTime();
+    let saved = 0, skipped = 0;
+    withLock_(() => {
+      const sh = sheet_('workbooks'), last = sh.getLastRow();
+      const data = last > 1 ? sh.getRange(2, 1, last - 1, 11).getValues() : [];
+      const at = {}; data.forEach((r, i) => { if (String(r[0]) === id) at[String(r[2])] = i + 2; });
+      const idxRow = at['done-index'];
+      const pages = (lessonJson_(idxRow ? data[idxRow - 2][10] : '').pages) || {};
+      const fresh = [];
+      items.forEach(x => {
+        const key = x.key, done = x.done !== false, wb = 'done:' + key, row = at[wb];
+        const cur = row ? lessonJson_(data[row - 2][10]) : null;
+        if (cur && cur.done && !cur.past) { skipped++; return; }          // 학생이 직접 완료한 수업(점수 받은 기록)은 건드리지 않는다
+        if (!done && !cur) return;
+        const title = String(x.title || '').replace(/\s+/g, ' ').trim().slice(0, 150) || key;
+        const line = [id, name, wb, '완료 · ' + title, key, done ? 1 : 0, 1, when, when, t.email, JSON.stringify({ done: done, at: ts, by: 'teacher', past: true })];
+        if (row) sh.getRange(row, 1, 1, line.length).setValues([line]); else fresh.push(line);
+        pages[key] = done ? ts : -ts; saved++;
+      });
+      if (fresh.length) sh.getRange(sh.getLastRow() + 1, 1, fresh.length, 11).setValues(fresh);
+      const count = Object.keys(pages).filter(k => pages[k] > 0).length, now = new Date();
+      const idx = [id, name, 'done-index', '완료한 수업', '', count, Math.max(1, Object.keys(pages).length), idxRow ? (data[idxRow - 2][7] || now) : now, now, t.email, JSON.stringify({ pages: pages })];
+      if (idxRow) sh.getRange(idxRow, 1, 1, idx.length).setValues([idx]); else sh.appendRow(idx);
+    });
+    return { saved: saved, skipped: skipped };
+  }
+});
 
 // ---- 로봇 수업 참여 기록(선생님 일괄 체크 · 학생 확인 미션) ----
 // 로봇 수업은 선생님 화면을 함께 보므로 학생 기기에 '완료'가 남지 않는다. 선생님이 출석한 학생을 한꺼번에 완료로 표시한다.

@@ -86,7 +86,7 @@ fs.mkdirSync(contentDir, { recursive: true });
 
 const sum = createHash('sha256');
 let n = 0, nTeacher = 0, nHome = 0, homeBytes = 0;
-const folders = new Map();   // 선생님 관리 화면의 '집에서 연습' 체크 목록: index.html 이 있는 1·2단계 폴더
+const folders = new Map();   // 선생님 관리 화면의 수업 목록(집 연습 체크·지난 수업 체크): index.html 이 있는 1~4단계 폴더
 const all = [];
 for (const [prefix, dir] of sources) {
   for (const r of walk(dir)) all.push([prefix ? prefix + '/' + r : r, path.join(dir, r)]);
@@ -118,7 +118,7 @@ for (const [rel, file] of all) {
   sum.update(rel).update(blob);
   n++;
   const parts = rel.split('/');
-  for (let d = 1; d <= 2 && d < parts.length; d++) {
+  for (let d = 1; d <= 4 && d < parts.length; d++) {
     const dir = parts.slice(0, d).join('/') + '/';
     const f = folders.get(dir) || { path: dir, files: 0, bytes: 0, title: '' };
     f.files++; f.bytes += data.length;

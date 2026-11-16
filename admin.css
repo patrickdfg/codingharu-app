@@ -114,3 +114,7 @@ table.ad-table { width: 100%; border-collapse: collapse; font-size: 14px; }
 .ad-home details { border: 1px solid var(--line); border-radius: 10px; padding: 4px 12px; margin: 6px 0; background: #fff; }
 .ad-home summary { cursor: pointer; font-weight: 700; padding: 8px 0; }
 .ad-home label { display: block; padding: 5px 0; } .ad-home small { color: #6b7590; }
+/* 학생 관리의 지난 수업 완료 체크 */
+.ad-past { margin-top: 16px; border: 1px solid var(--line); border-radius: 12px; padding: 4px 14px 12px; background: #f8fafd; }
+.ad-past > summary { cursor: pointer; font-weight: 700; padding: 10px 0; }
+.ad-past .ad-home details .ad-btn { margin: 4px 0 6px; }

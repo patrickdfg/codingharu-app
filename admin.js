@@ -234,6 +234,7 @@
       var link = el('a', '🗂 이 학생 월말 기록표', 'ad-btn small ghost'); link.href = '#monthly'; link.onclick = function () { monthlyState.ids = [s.id]; };
       links.append(wl, link); right.appendChild(links);
       grid.append(form, right); card.appendChild(grid);
+      card.appendChild(pastBox(s, allDone));
       // 학생 삭제(되돌릴 수 없음): 이름을 똑같이 써야 단추가 켜진다. 잠깐 쉬는 학생은 휴원으로.
       var danger = el('details', null, 'ad-danger'), dsum = el('summary', '학생 삭제');
       var dtext = el('p', s.name + ' 학생의 계정과 모든 기록(완료한 수업·수업 기록·포인트·월간 리포트·학부모 연락처·작품 게시판 글)을 지워요. 작품 파일은 Drive 휴지통으로 가요. 되돌릴 수 없어요. 잠깐 쉬는 학생이면 위의 상태를 「휴원」으로 바꿔 주세요.');
@@ -542,6 +543,60 @@
       if (k && !had) { await CHCore.decrypt(k, await CHCore.getBuf(BASE, 'teacher-check.enc')); await CHCore.saveTeacherKey(k); }
     } catch (e) { /* 정답 파일이 없거나 열쇠가 다르면 그대로 둔다 */ }
   }
+  // 지난 수업 완료 체크: 포인트 제도 전에 한 수업을 학생별로 완료로 적는다(포인트 없음). 수업 목록은 v/__projects.json
+  var projectList = null;
+  function pastBox(s, allDone) {
+    var box = el('details', null, 'ad-past'); box.appendChild(el('summary', '지난 수업 완료 체크 (포인트 없이 기록만)'));
+    var body = el('div'); box.appendChild(body);
+    box.addEventListener('toggle', function () {
+      if (!box.open || body.firstChild) return;
+      body.appendChild(el('p', '수업 목록을 불러오는 중…', 'ad-note'));
+      (projectList || (projectList = fetch('v/__projects.json', { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error('list'); return r.json(); })))
+        .then(function (pj) { body.textContent = ''; fill(pj.projects || []); },
+              function () { projectList = null; body.textContent = '수업 목록은 이 기기에 교안 비밀번호가 들어가 있어야 보여요(다음 교안 동기화 뒤에 생겨요).'; });
+    });
+    function fill(list) {
+      var done = {}; allDone.forEach(function (w) { done[String(w.workbook).slice(5)] = 1; });
+      body.appendChild(el('p', '예전에 이미 배운 수업을 체크해 저장하면 완료 기록에만 들어가요. 포인트는 주지 않아요. 학생이 직접 완료한 수업은 그대로 둬요.', 'ad-note'));
+      var form = el('form', null, 'ad-home'), month = el('input'), boxes = [];
+      month.type = 'month'; month.setAttribute('aria-label', '수업한 달(선택)');
+      var ml = el('label', '수업한 달(선택) '); ml.appendChild(month); ml.appendChild(el('small', ' 비우면 2026년 10월 31일(월별 리포트 시작 전)로 적어, 11월부터의 리포트에 들어가지 않아요. 달을 넣으면 그 달 기록으로 들어가요.'));
+      form.appendChild(ml);
+      var tops = {};
+      list.forEach(function (f) { var top = f.path.split('/')[0] + '/'; if (f.path !== top) (tops[top] = tops[top] || { title: '', items: [] }).items.push(f); else (tops[top] = tops[top] || { title: '', items: [] }).title = f.title; });
+      Object.keys(tops).sort().forEach(function (top) {
+        var T = tops[top]; if (!T.items.length) return;
+        // 아래에 더 깊은 수업이 있는 폴더(목록 쪽)는 빼고, 맨 끝 수업만 체크 대상으로 둔다
+        var leaves = T.items.filter(function (f) { return !T.items.some(function (o) { return o !== f && o.path.indexOf(f.path) === 0; }); });
+        var g = el('details'), n = leaves.filter(function (f) { return done[f.path]; }).length;
+        var sum = el('summary', (T.title || top) + ' · ' + top + ' (' + n + ' / ' + leaves.length + ')'); g.appendChild(sum);
+        var all = btn('이 과목 모두 체크', 'small ghost'); all.type = 'button'; g.appendChild(all);
+        var mine = [];
+        leaves.forEach(function (f) {
+          var lab = el('label'), cb = el('input'); cb.type = 'checkbox'; cb.checked = !!done[f.path]; cb.dataset.was = cb.checked ? '1' : '';
+          lab.append(cb, document.createTextNode(' ' + (f.title || f.path) + ' '), el('small', f.path));
+          g.appendChild(lab); var item = { cb: cb, f: f }; boxes.push(item); mine.push(item);
+        });
+        all.onclick = function () { var on = mine.some(function (b) { return !b.cb.checked; }); mine.forEach(function (b) { b.cb.checked = on; }); update(); };
+        form.appendChild(g);
+      });
+      var info = el('p', '', 'ad-note'), save = btn('지난 수업 저장'); save.type = 'submit';
+      function changed() { return boxes.filter(function (b) { return b.cb.checked !== !!b.cb.dataset.was; }); }
+      function update() { var c = changed(); info.textContent = c.length ? '바뀐 수업 ' + c.length + '개 (완료 ' + c.filter(function (b) { return b.cb.checked; }).length + ' · 취소 ' + c.filter(function (b) { return !b.cb.checked; }).length + ')' : '바뀐 것이 없어요.'; save.disabled = !c.length; }
+      form.addEventListener('change', update); update();
+      form.append(info, save); body.appendChild(form);
+      form.onsubmit = function (e) {
+        e.preventDefault(); var c = changed(); if (!c.length) return;
+        if (c.length > 400) { toast('한 번에 400개까지 저장할 수 있어요. 나눠서 저장해 주세요.', true); return; }
+        save.disabled = true; save.textContent = '저장하는 중…';
+        api('pastDone', { studentId: s.id, month: month.value || '', items: c.map(function (b) { return { key: b.f.path, title: b.f.title || b.f.path, done: b.cb.checked }; }) })
+          .then(function (o) { toast(s.name + ': 지난 수업 ' + o.saved + '개를 저장했어요' + (o.skipped ? ' (학생이 직접 완료한 ' + o.skipped + '개는 그대로)' : '') + '. 포인트는 주지 않았어요.'); load(true); },
+                function (err) { toast(/알 수 없는 요청/.test(err.message) ? '기록 서버(Apps Script)를 새 버전으로 배포해야 저장할 수 있어요.' : err.message, true); save.disabled = false; save.textContent = '지난 수업 저장'; });
+      };
+    }
+    return box;
+  }
+
   // 집 연습 수업: 체크한 수업은 학생이 집에서 이름·번호 로그인만으로 열고, 나머지는 교안 비밀번호를 넣은 기기(학원)에서만 열린다
   function homeuse() {
     view.append(el('h1', '집 연습 수업'), el('p', '체크한 수업은 학생이 집에서 이름·번호로 로그인만 하면 열리고 연습할 수 있어요. 체크하지 않은 수업은 지금처럼 교안 비밀번호를 넣은 기기(학원)에서만 열려요. 저장하면 다음 교안 동기화(15분 안)부터 바뀌어요.', 'ad-note'));
@@ -550,7 +605,7 @@
                  api('homePaths').then(function (o) { return o.paths || []; })])
     .then(function (res) {
       card.textContent = '';
-      var list = res[0].projects || [], chosen = {}; res[1].forEach(function (p) { chosen[p] = 1; });
+      var list = (res[0].projects || []).filter(function (f) { return f.path.split('/').length <= 3; }), chosen = {}; res[1].forEach(function (p) { chosen[p] = 1; });   // 집 연습은 1·2단계 폴더만
       if (!res[0].homeOn) card.appendChild(el('p', '지금은 집 연습이 꺼져 있어요. 수업을 체크해 저장하고, GitHub 저장소 비밀값과 Apps Script 스크립트 속성에 HOME_PASS(10자 이상, 둘이 같은 값)를 넣으면 다음 동기화부터 켜져요.', 'ad-note'));
       var form = el('form', null, 'ad-home'), boxes = [], tops = {};
       list.forEach(function (f) { var top = f.path.split('/')[0] + '/'; (tops[top] = tops[top] || []).push(f); });
