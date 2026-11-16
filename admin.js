@@ -553,7 +553,7 @@
     titles = titles || {};
     function keyOf(path) {
       var parts = path.replace(/\/$/, '').split('/');
-      if (parts.length > 2) return parts.slice(0, -1).join('/');
+      if (parts.length > 2) { var mm = /^([a-z]+\d+)-\d+$/i.exec(parts[parts.length - 1]); return parts.slice(0, -1).join('/') + (mm ? '/' + mm[1] : ''); }   // junior/m3-2 → junior/m3 (월별 4회)
       var n = parts[1] || parts[0];
       return parts[0] + '/' + n.replace(/-[0-9a-f]{10,}$/, '').replace(/[-_](?:lesson|unit|work|set|step)[-_]?\d+$/i, '');   // 권 번호(basic4, block1)는 남긴다
     }
@@ -568,16 +568,19 @@
       again[k2].forEach(function (k) { map[k2] = map[k2].concat(map[k]); delete map[k]; });
     });
     function label(items, key) {
+      if (titles[key + '/']) return titles[key + '/'];
+      var jm = /^scratch\/junior\/m(\d+)$/.exec(key); if (jm) return '스크래치 주니어 ' + jm[1] + '개월차 (' + jm[1] + '권 · 4회)';
       var a = items[0].title || '', n = a.length;
       items.forEach(function (f) { var b = f.title || ''; var i = 0; while (i < n && i < b.length && a[i] === b[i]) i++; n = i; });
       var s = a.slice(0, n).replace(/[\s·\-_:(\[]+$/, '').replace(/\s\d*$/, '').trim();
       if (s.length >= 2) return s;
-      if (titles[key + '/']) return titles[key + '/'];
+
       var m = /^(.*?)-?(\d+)?(?:-\d+)?$/.exec(key), named = m && BOOK_NAMES[m[1]];
       if (named) return named.replace('#', m[2] || '').replace(/\s+권/, '권').trim();
       return key.split('/').slice(1).join('/') || key;
     }
     var groups = [], rest = [];
+    order.sort(function (x, y) { return x.localeCompare(y, 'en', { numeric: true }); });
     order.forEach(function (k) {
       if (!map[k]) return;
       var items = map[k].slice().sort(function (x, y) { return x.path.localeCompare(y.path, 'en', { numeric: true }); });
