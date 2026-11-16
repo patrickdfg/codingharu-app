@@ -16,6 +16,33 @@
   function clean(t) { return String(t || '').replace(/^완료 · /, '').replace(/\s*[·|]\s*(?:코드마루|코딩하루)\s*$/, '').trim() || '이름 없는 수업'; }
   function monthLabel(v) { var p = v.split('-'); return p[0] + '년 ' + Number(p[1]) + '월'; }
 
+  // ---- 같은 계정의 다른 저장소 사이트(codemaru.kr/zoom 등): GitHub 에 그 이름의 공개 저장소가 있고 Pages 가 켜져 있으면 그 사이트를 화면 가득 보여 준다 ----
+  // 공개 API(api.github.com/repos/…)의 has_pages 로 확인하고 결과는 이 탭에 기억한다. 확인에 실패하면 아래(포트폴리오·없는 페이지)로 넘어간다.
+  var OWNER = 'patrickdfg';
+  function showSite(name) {
+    document.title = name + ' · 코드마루';
+    document.documentElement.style.height = document.body.style.height = '100%'; document.body.style.margin = '0';
+    document.body.textContent = '';
+    var f = document.createElement('iframe'); f.src = 'https://' + OWNER + '.github.io/' + name + '/' + location.search + location.hash;
+    f.title = name; f.allow = 'fullscreen; clipboard-write; camera; microphone'; f.allowFullscreen = true;
+    f.style.cssText = 'display:block;border:0;width:100%;height:100%;position:fixed;inset:0';
+    document.body.appendChild(f);
+  }
+  function siteCheck(name) {
+    var key = 'codemaru-site-' + name.toLowerCase(), hit = null;
+    try { hit = sessionStorage.getItem(key); } catch (e) {}
+    if (hit) return Promise.resolve(hit === 'y');
+    return fetch('https://api.github.com/repos/' + OWNER + '/' + encodeURIComponent(name), { headers: { Accept: 'application/vnd.github+json' } })
+      .then(function (r) { if (r.status === 404) return { has_pages: false }; if (!r.ok) throw new Error('api'); return r.json(); })
+      .then(function (d) { var ok = !!d.has_pages && !d.private; try { sessionStorage.setItem(key, ok ? 'y' : 'n'); } catch (e) {} return ok; })
+      .catch(function () { return false; });
+  }
+  if (/^[a-z0-9][a-z0-9._-]{0,38}$/i.test(path) && path.toLowerCase() !== 'codingharu-app') {
+    main.appendChild(el('p', '여는 중…', 'pf-note'));
+    siteCheck(path).then(function (ok) { if (ok) showSite(path); else { main.textContent = ''; rest(); } });
+  } else rest();
+
+  function rest() {
   // ---- 없는 주소 ----
   if (!SLUG_RE.test(path)) {
     document.title = '없는 페이지 · 코드마루'; $('pfKind').textContent = '';
@@ -214,4 +241,5 @@
   var p0 = savedPin();
   if (p0) { main.appendChild(el('p', '여는 중…', 'pf-note pf-center')); open(p0).catch(function (err) { keepPin(''); lockView(err.message); }); }
   else lockView();
+  }
 })();
