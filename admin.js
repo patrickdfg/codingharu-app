@@ -647,9 +647,10 @@
     leaves.forEach(function (f) { var x = slugOf(f.path); for (var i = 0; i < ENTRY_BOOKS.length; i++) if (ENTRY_BOOKS[i][2](x)) { (by[i] = by[i] || []).push(f); break; } });
     ENTRY_BOOKS.forEach(function (B, i) {
       var items = (by[i] || []).sort(byOrder(order)); if (!items.length) return;
-      var months = Math.ceil(items.length / 8);
+      var months = /^b[12]$/.test(B[0]) ? 1 : Math.ceil(items.length / 8);   // 블록사전은 권 하나를 통째로 둔다
+      var size = months === 1 ? items.length : 8;
       for (var k = 0; k < months; k++) {
-        var part = items.slice(k * 8, k * 8 + 8);
+        var part = items.slice(k * size, k * size + size);
         var lab = months > 1 ? B[1] + ' · ' + (k + 1) + '달차 (' + (k * 8 + 1) + '~' + (k * 8 + part.length) + ')' : B[1] + ' (' + part.length + '차시)';
         out.push({ key: 'entry/' + B[0] + '-' + k, label: lab, items: part });
       }
