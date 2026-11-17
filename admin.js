@@ -589,6 +589,19 @@
     if (rest.length > 1) groups.push({ key: '', label: '그 밖의 수업', items: rest }); else if (rest.length) groups.push({ key: '', label: '', items: rest });
     return groups;
   }
+  // 지난 수업 체크의 맨 위 묶음: 스크래치 주니어와 COS 급수 대비는 폴더 이름과 상관없이 따로 묶는다(스크래치·엔트리와 다른 카테고리)
+  var COS1_SLUGS = ['doll-target', 'library-loan', 'cat-feeding', 'foot-size-average', 'digit-calculator', 'seagull-feeding', 'food-order', 'pedicure', 'pythagoras', 'leak-detector'];
+  var SYN_TOPS = { 'cos3/': 'COS 3급 대비 (엔트리 준비)', 'cos2/': 'COS 2급 대비 (스크래치 모의고사 · 엔트리 변환)', 'cos1/': 'COS 1급 대비 (스크래치 모의고사 · 엔트리 변환)' };
+  function topOf(path) {
+    if (/^scratch\/junior\//.test(path)) return 'scratch/junior/';
+    var m = /^entry\/([^\/]+)\/?$/.exec(path);
+    if (m) {
+      if (/^cos3(-|$)/.test(m[1])) return 'cos3/';
+      if (/^cos2(-|$)/.test(m[1])) return 'cos2/';
+      if (/^cos1(-|$)/.test(m[1]) || COS1_SLUGS.indexOf(m[1]) >= 0) return 'cos1/';
+    }
+    return path.split('/')[0] + '/';
+  }
   function pastBox(s, allDone) {
     var box = el('details', null, 'ad-past'); box.appendChild(el('summary', '지난 수업 완료 체크 (포인트 없이 기록만)'));
     var body = el('div'); box.appendChild(body);
@@ -607,13 +620,13 @@
       var ml = el('label', '수업한 달(선택) '); ml.appendChild(month); ml.appendChild(el('small', ' 비우면 2026년 10월 31일(월별 리포트 시작 전)로 적어, 11월부터의 리포트에 들어가지 않아요. 달을 넣으면 그 달 기록으로 들어가요.'));
       form.appendChild(ml);
       var tops = {}, titleOf = {}; list.forEach(function (f) { titleOf[f.path] = f.title; });
-      list.forEach(function (f) { var top = f.path.split('/')[0] + '/'; if (f.path !== top) (tops[top] = tops[top] || { title: '', items: [] }).items.push(f); else (tops[top] = tops[top] || { title: '', items: [] }).title = f.title; });
+      list.forEach(function (f) { var top = topOf(f.path); if (f.path !== top) (tops[top] = tops[top] || { title: '', items: [] }).items.push(f); else (tops[top] = tops[top] || { title: '', items: [] }).title = f.title; });
       Object.keys(tops).sort().forEach(function (top) {
         var T = tops[top]; if (!T.items.length) return;
         // 아래에 더 깊은 수업이 있는 폴더(목록 쪽)는 빼고, 맨 끝 수업만 체크 대상으로 둔다
         var leaves = T.items.filter(function (f) { return !T.items.some(function (o) { return o !== f && o.path.indexOf(f.path) === 0; }); });
         var g = el('details'), n = leaves.filter(function (f) { return done[f.path]; }).length;
-        var sum = el('summary', (T.title || top) + ' · ' + top + ' (' + n + ' / ' + leaves.length + ')'); g.appendChild(sum);
+        var sum = el('summary', (SYN_TOPS[top] || ((T.title || top) + ' · ' + top)) + ' (' + n + ' / ' + leaves.length + ')'); g.appendChild(sum);
         // 과목 안을 교재(큰 프로젝트)로 묶는다: 교재 체크 하나로 그 안의 수업이 모두 체크된다
         groupLessons(leaves, titleOf).forEach(function (G) {
           var mine = [];
