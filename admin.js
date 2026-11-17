@@ -604,6 +604,78 @@
     if (sm) return sm[1] + '/';
     return path.split('/')[0] + '/';
   }
+  // ---- 엔트리·COS 묶음: 엔트리는 교재별로 한 달(8차시)씩, COS는 회차(10문제)별로 묶는다 ----
+  var ENTRY_ORDER = null;   // 엔트리 수업 목록 카드 순서(교재 안의 차시 순서) — 폴더 이름이 해시라 목록 순서를 따른다
+  function loadEntryOrder() {
+    if (ENTRY_ORDER) return Promise.resolve(ENTRY_ORDER);
+    return fetch('v/entry/index.html', { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (t) {
+      var o = {}, i = 0, re = /class="lesson-card"[^>]*href="(?:\.\.\/entry\/)?([^"\/]+)\/?"/g, m;
+      while ((m = re.exec(t))) if (!(m[1] in o)) o[m[1]] = i++;
+      ENTRY_ORDER = o; return o;
+    }, function () { ENTRY_ORDER = {}; return ENTRY_ORDER; });
+  }
+  var ENTRY_BASIC1 = ['race', 'crab', 'hats', 'flower', 'firetruck', 'potion', 'maze', 'balloons'];
+  var ENTRY_BOOKS = [   // [키, 이름, 시험] — 위에서부터 먼저 맞는 교재로 들어간다
+    ['b1', '엔트리 블록사전 1', function (x) { return /^dict-block1-/.test(x); }],
+    ['b2', '엔트리 블록사전 2', function (x) { return /^dict-block2-/.test(x); }],
+    ['k1', '엔트리 기초 1권', function (x) { return /^book1-(lesson|unit)\d+$/.test(x); }],
+    ['k2', '엔트리 기초 2권', function (x) { return /^basic2-lesson\d+$/.test(x); }],
+    ['k3', '엔트리 기초 3권', function (x) { return /^basic3-lesson\d+$/.test(x); }],
+    ['k4', '엔트리 기초 4권', function (x) { return /^basic4-lesson\d+$/.test(x); }],
+    ['g1', '엔트리 게임 1권', function (x) { return /^game1-lesson\d+$/.test(x); }],
+    ['g2', '엔트리 게임 2권', function (x) { return /^game2-lesson\d+$/.test(x); }],
+    ['p1', '엔트리 프로젝트 1', function (x) { return ENTRY_BASIC1.indexOf(x) >= 0; }],
+    ['p2', '엔트리 프로젝트 2', function (x) { return /^project2-/.test(x); }],
+    ['w1', '스크래치 기초 1권 작품 (엔트리)', function (x) { return /^work-book1-/.test(x); }],
+    ['w2', '스크래치 기초 2권 작품 (엔트리)', function (x) { return /^work-basic2-/.test(x); }],
+    ['w3', '스크래치 기초 3권 작품 (엔트리)', function (x) { return /^work-basic3-/.test(x); }],
+    ['w4', '스크래치 기초 4권 작품 (엔트리)', function (x) { return /^work-basic4-/.test(x); }],
+    ['wg1', '스크래치 게임 1권 작품 (엔트리)', function (x) { return /^work-game1-/.test(x); }],
+    ['wg2', '스크래치 게임 2권 작품 (엔트리)', function (x) { return /^work-game2-/.test(x); }],
+    ['etc', '그 밖의 엔트리 수업', function () { return true; }]
+  ];
+  function slugOf(path) { var p = path.replace(/\/$/, '').split('/'); return p[p.length - 1]; }
+  function byOrder(order) {
+    return function (a, b) {
+      var x = slugOf(a.path), y = slugOf(b.path);
+      if (x in order && y in order) return order[x] - order[y];   // 목록에 없는 차시(project2-lesson 등)는 폴더 이름 순
+      return a.path.localeCompare(b.path, 'en', { numeric: true });
+    };
+  }
+  function entryGroups(leaves) {
+    var order = ENTRY_ORDER || {}, by = {}, out = [];
+    leaves.forEach(function (f) { var x = slugOf(f.path); for (var i = 0; i < ENTRY_BOOKS.length; i++) if (ENTRY_BOOKS[i][2](x)) { (by[i] = by[i] || []).push(f); break; } });
+    ENTRY_BOOKS.forEach(function (B, i) {
+      var items = (by[i] || []).sort(byOrder(order)); if (!items.length) return;
+      var months = Math.ceil(items.length / 8);
+      for (var k = 0; k < months; k++) {
+        var part = items.slice(k * 8, k * 8 + 8);
+        var lab = months > 1 ? B[1] + ' · ' + (k + 1) + '달차 (' + (k * 8 + 1) + '~' + (k * 8 + part.length) + ')' : B[1] + ' (' + part.length + '차시)';
+        out.push({ key: 'entry/' + B[0] + '-' + k, label: lab, items: part });
+      }
+    });
+    return out;
+  }
+  function cosGroups(top, leaves) {
+    var lv = top.charAt(3), by = {}, names = {}, keys = [];
+    leaves.forEach(function (f) {
+      var x = slugOf(f.path), k, n;
+      var m3 = /^cos3-([a-z])(\d+)-\d+$/.exec(x);
+      if (m3) { k = 'e-' + m3[1] + m3[2]; n = { m: '모의고사 ' + m3[2] + '회', g: '기출문제 ' + m3[2], s: '샘플 ' + m3[2], n: '최신기출' }[m3[1]] + ' (엔트리)'; }
+      else if (/^cos2-02-/.test(x)) { k = 'e-m2'; n = '모의고사 2회 (엔트리 변환)'; }
+      else if (/^scratch\//.test(f.path)) { k = 's'; n = '스크래치 모의고사 (회차별 문제·정답 파일)'; }
+      else { k = 'e-m1'; n = '모의고사 1회 (엔트리 변환)'; }
+      if (!by[k]) { by[k] = []; keys.push(k); names[k] = n; } by[k].push(f);
+    });
+    var rank = function (k) { return k === 's' ? 9 : ({ m: 0, g: 1, s: 2, n: 3 }[k.charAt(2)] || 0); };
+    keys.sort(function (a, b) { return rank(a) - rank(b) || a.localeCompare(b, 'en', { numeric: true }); });
+    return keys.map(function (k) { var it = by[k].sort(byOrder(ENTRY_ORDER || {})); return { key: top + k, label: 'COS ' + lv + '급 ' + names[k] + ' · ' + it.length + '개', items: it }; });
+  }
+  function smartGroups(top, leaves, titles) {
+    if (top === 'entry/') return entryGroups(leaves);
+    if (/^cos[123]\/$/.test(top)) return cosGroups(top, leaves);
+    return null;
+  }
   function pastBox(s, allDone) {
     var box = el('details', null, 'ad-past'); box.appendChild(el('summary', '지난 수업 완료 체크 (포인트 없이 기록만)'));
     var body = el('div'); box.appendChild(body);
@@ -611,7 +683,7 @@
       if (!box.open || body.firstChild) return;
       body.appendChild(el('p', '수업 목록을 불러오는 중…', 'ad-note'));
       (projectList || (projectList = fetch('v/__projects.json', { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error('list'); return r.json(); })))
-        .then(function (pj) { body.textContent = ''; fill(pj.projects || []); },
+        .then(function (pj) { return loadEntryOrder().then(function () { body.textContent = ''; fill(pj.projects || []); }); },
               function () { projectList = null; body.textContent = '수업 목록은 이 기기에 교안 비밀번호가 들어가 있어야 보여요(다음 교안 동기화 뒤에 생겨요).'; });
     });
     function fill(list) {
@@ -630,7 +702,7 @@
         var g = el('details'), n = leaves.filter(function (f) { return done[f.path]; }).length;
         var sum = el('summary', (SYN_TOPS[top] || ((T.title || top) + ' · ' + top)) + ' (' + n + ' / ' + leaves.length + ')'); g.appendChild(sum);
         // 과목 안을 교재(큰 프로젝트)로 묶는다: 교재 체크 하나로 그 안의 수업이 모두 체크된다
-        groupLessons(leaves, titleOf).forEach(function (G) {
+        (smartGroups(top, leaves, titleOf) || groupLessons(leaves, titleOf)).forEach(function (G) {
           var mine = [];
           var holder = G.items.length > 1 ? el('details', null, 'ad-book') : g;
           if (G.items.length > 1) {
