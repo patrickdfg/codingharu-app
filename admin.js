@@ -591,7 +591,7 @@
   }
   // 지난 수업 체크의 맨 위 묶음: 스크래치 주니어와 COS 급수 대비는 폴더 이름과 상관없이 따로 묶는다(스크래치·엔트리와 다른 카테고리)
   var COS1_SLUGS = ['doll-target', 'library-loan', 'cat-feeding', 'foot-size-average', 'digit-calculator', 'seagull-feeding', 'food-order', 'pedicure', 'pythagoras', 'leak-detector'];
-  var SYN_TOPS = { 'cos3/': 'COS 3급 대비 (엔트리 준비)', 'cos2/': 'COS 2급 대비 (스크래치 모의고사 · 엔트리 변환)', 'cos1/': 'COS 1급 대비 (스크래치 모의고사 · 엔트리 변환)' };
+  var SYN_TOPS = { 'cos3/': 'COS 3급 대비 (엔트리 준비)', 'cos2/': 'COS 2급 대비 (스크래치·엔트리 모의고사)', 'cos1/': 'COS 1급 대비 (스크래치·엔트리 모의고사)' };
   function topOf(path) {
     if (/^scratch\/junior\//.test(path)) return 'scratch/junior/';
     var m = /^entry\/([^\/]+)\/?$/.exec(path);
@@ -600,6 +600,8 @@
       if (/^cos2(-|$)/.test(m[1])) return 'cos2/';
       if (/^cos1(-|$)/.test(m[1]) || COS1_SLUGS.indexOf(m[1]) >= 0) return 'cos1/';
     }
+    var sm = /^scratch\/(cos[12])-\d+\/?$/.exec(path);
+    if (sm) return sm[1] + '/';
     return path.split('/')[0] + '/';
   }
   function pastBox(s, allDone) {
