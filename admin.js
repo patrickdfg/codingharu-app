@@ -234,6 +234,14 @@
       var link = el('a', '🗂 이 학생 월말 기록표', 'ad-btn small ghost'); link.href = '#monthly'; link.onclick = function () { monthlyState.ids = [s.id]; };
       links.append(wl, link); right.appendChild(links);
       grid.append(form, right); card.appendChild(grid);
+      // 로그인을 5번 틀려 10분 잠긴 학생을 바로 풀어 준다
+      var unlock = btn('로그인 잠금 풀기'); unlock.type = 'button'; unlock.title = '번호를 여러 번 틀려 10분 동안 못 들어오는 것을 바로 풀어요';
+      unlock.onclick = function () {
+        unlock.disabled = true;
+        api('loginUnlock', { studentId: s.id }).then(function () { toast(s.name + ' 학생의 로그인 잠금을 풀었어요. 바로 다시 로그인할 수 있어요.'); unlock.disabled = false; },
+          function (err) { toast(/알 수 없는 요청/.test(err.message) ? '기록 서버(Apps Script)를 새 버전으로 배포해야 쓸 수 있어요.' : err.message, true); unlock.disabled = false; });
+      };
+      var ub = el('div', null, 'ad-tools'); ub.appendChild(unlock); card.appendChild(ub);
       card.appendChild(pastBox(s, allDone));
       // 학생 삭제(되돌릴 수 없음): 이름을 똑같이 써야 단추가 켜진다. 잠깐 쉬는 학생은 휴원으로.
       var danger = el('details', null, 'ad-danger'), dsum = el('summary', '학생 삭제');

@@ -304,6 +304,14 @@ const ACTIONS_ = {
     if (req.ok) pfEnsureSlugs_();
     return {};
   },
+  // 선생님이 학생의 로그인 잠금(5번 틀려 10분 쉬기)을 바로 푼다
+  loginUnlock(req) {
+    teacher_(req.auth);
+    const s = student_(req.studentId);
+    const name = String(s[1] || '').replace(/\s+/g, ' ').trim();
+    CacheService.getScriptCache().remove('fail:' + hash_(name.toLowerCase()).slice(0, 24));
+    return { name: name };
+  },
   // 학생 로그인: 이름과 4자리 번호. 같은 이름으로 5번 틀리면 10분 쉰다.
   studentLogin(req) {
     const name = String(req.name || '').replace(/\s+/g, ' ').trim();
