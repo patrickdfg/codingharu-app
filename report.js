@@ -173,14 +173,24 @@
       Promise.all(files.map(shrink)).then(function (list) { list.forEach(function (p) { if (p) photos.push(p); }); photosChanged = true; drawThumbs(); });
     };
     who.onchange = function () { photos = []; photosChanged = false; drawThumbs(); };
-    form.append(who, month, plan, comment, photoBox, make);
+    var refresh = el('input'), refreshLab = el('label', null, 'report-refresh'); refresh.type = 'checkbox';
+    refreshLab.append(refresh, document.createTextNode(' 지난 달 숫자를 지금 기록으로 다시 계산 (보통은 그대로 두세요)'));
+    function refreshUi() { refreshLab.hidden = !(month.value && month.value < ym(Date.now())); if (refreshLab.hidden) refresh.checked = false; }
+    month.addEventListener('change', refreshUi); refreshUi();
+    form.append(who, month, plan, comment, photoBox, refreshLab, make);
     var out = el('div', null, 'report-out');
     wrapEl.append(form, out);
     box.appendChild(wrapEl);
     form.onsubmit = function (e) {
       e.preventDefault();
       var s = students.filter(function (x) { return x.id === who.value; })[0]; if (!s) return;
-      var info = { name: s.name, group: s.group, month: month.value, plan: plan.value.trim(), comment: comment.value.trim(), data: collect(d, s, month.value), photos: photos.map(function (p) { return p.img; }) };
+      // 지난 달은 저장해 둔 기록(보낸 날의 숫자·목록)으로 그린다. '다시 계산'을 고르면 지금 기록으로 새로 만든다
+      var usePast = month.value < ym(Date.now()) && !refresh.checked;
+      (usePast ? CHRecord.api('reportSnapshot', { auth: CHRecord.auth(), studentId: s.id, month: month.value }).then(function (o) { return (o && o.snap) || null; }, function () { return null; }) : Promise.resolve(null))
+        .then(function (snap) { build(s, snap); });
+    };
+    function build(s, snap) {
+      var info = { name: s.name, group: s.group, month: month.value, plan: plan.value.trim(), comment: comment.value.trim(), data: snap ? collect({ workbooks: snap.workbooks || [], pointHistory: snap.pointHistory || [] }, { id: s.id, points: snap.points || 0 }, month.value) : collect(d, s, month.value), photos: photos.map(function (p) { return p.img; }) };
       var canvas = draw(info);
       out.textContent = '';
       var img = el('img'); img.alt = s.name + ' 학생 ' + monthLabel(month.value) + ' 리포트'; img.src = canvas.toDataURL('image/png'); out.appendChild(img);
@@ -218,7 +228,7 @@
       var bar2 = el('div', null, 'bar'), mailBtn = el('button', '학부모 이메일로도 보내기'), nextBtn = el('button', '다음 학생 →');
       mailBtn.type = nextBtn.type = 'button'; mailBtn.className = nextBtn.className = 'ghost';
       function saveReport(email) {
-        var req = { auth: CHRecord.auth(), studentId: s.id, month: info.month, plan: info.plan, comment: info.comment, email: !!email };
+        var req = { auth: CHRecord.auth(), studentId: s.id, month: info.month, plan: info.plan, comment: info.comment, email: !!email, refresh: !!refresh.checked };
         var sending = photosChanged ? photos.slice() : null;
         if (sending) req.photos = sending.map(function (p) { return p.url; });   // 사진을 바꿨을 때만 보낸다(안 보내면 서버가 전에 올린 사진을 그대로 둔다)
         return CHRecord.api('reportSave', req).then(function (r) { if (sending) photosChanged = false; return r; })
@@ -241,7 +251,7 @@
       saveReport(false).then(function (r) { link = r.link || ''; linkNote.textContent = link ? '학부모 링크 준비됨 · 안내글에 함께 들어가요' : '학부모 링크 없이 그림만 보내요'; },
         function (err) { linkNote.textContent = '학부모 링크 없이 그림만 보내요 — ' + err.message; });
       if (!info.data.done.length && !info.data.progress.length) say('이 달에는 기록이 없어요. 선생님 한마디 위주로 보내 주세요.');
-    };
+    }
   }
 
   g.CHReport = { mount: mount, collect: collect, draw: draw };

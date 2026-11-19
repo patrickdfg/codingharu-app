@@ -14,7 +14,7 @@ const TABS_ = {
   workbooks: ['학생 번호', '학생 이름', '워크북 ID', '제목', '페이지', '완료', '전체', '처음 저장', '마지막 저장', '선생님', '기록(JSON)'],
   visits: ['날짜', '학생 번호', '학생 이름', '페이지', '제목', '처음 연 시각', '마지막 연 시각', '연 횟수'],
   points: ['학생 번호', '시각', '종류', '식별자', '점수', '사유', '지급자'],
-  reports: ['학생 번호', '달', '다음 달 계획', '선생님 한마디', '저장 시각', '선생님', '사진'],
+  reports: ['학생 번호', '달', '다음 달 계획', '선생님 한마디', '저장 시각', '선생님', '사진', '기록'],
   parents: ['학생 번호', '학생 이름', '학부모 이메일', '수신 동의(Y)', '메모'],
   gallery: ['ID', '학생 번호', '학생 이름', '반', '제목', '주소', '종류', '소개', '공개 범위', '상태', '좋아요(학생 번호)', '올린 시각', '바꾼 시각', '파일 ID', '파일 이름', '파일 크기']
 };
@@ -979,20 +979,45 @@ function parentLink_(id, month) {
   const base = PropertiesService.getScriptProperties().getProperty('APP_URL') || APP_URL_DEFAULT_;
   return base + 'parent.html?s=' + encodeURIComponent(id) + '&t=' + parentToken_(id) + (month ? '&m=' + month : '');
 }
-// 한 학생의 한 달 리포트 재료. 워크북 기록 내용(JSON)·PIN 은 보내지 않는다
-function reportData_(student, month) {
+// 리포트 숫자·목록(완료 수업·워크북 진도·포인트)을 지금 기록으로 계산한다
+function reportStats_(student, month) {
   const id = String(student[0]);
   const workbooks = rows_('workbooks').filter(r => String(r[0]) === id && ymOf_(r[8]) === month)
     .map(r => ({ studentId: id, workbook: String(r[2]), title: String(r[3]), done: Number(r[5]) || 0, total: Number(r[6]) || 0, updatedAt: r[8] instanceof Date ? r[8].getTime() : 0 }));
   let pts; withLock_(() => { pts = rows_('points'); });
   const mine = pts.filter(r => String(r[0]) === id);
   const pointHistory = mine.filter(r => ymOf_(r[1]) === month).map(r => ({ studentId: id, at: r[1] instanceof Date ? r[1].getTime() : 0, amount: Number(r[4]) || 0 }));
-  const points = mine.reduce((s, r) => s + (Number(r[4]) || 0), 0);
+  // 누적 포인트는 그 달 말까지의 합(지난 달 리포트에 오늘 누적이 나오지 않게)
+  const p = month.split('-'), end = new Date(Number(p[0]), Number(p[1]), 1).getTime();
+  const points = mine.filter(r => !(r[1] instanceof Date) || r[1].getTime() < end).reduce((s, r) => s + (Number(r[4]) || 0), 0);
+  return { workbooks: workbooks, pointHistory: pointHistory, points: points };
+}
+// 저장해 둔 그 달 리포트 기록(보낸 날의 숫자·목록). 없거나 깨졌으면 null
+function reportSnap_(row) { try { const o = JSON.parse(String((row && row[7]) || '')); return o && Array.isArray(o.workbooks) ? o : null; } catch (e) { return null; } }
+// 저장할 기록: 시트 칸(5만 자)에 들어가게 줄인다
+function reportSnapText_(st) {
+  const o = { v: 1, at: Date.now(), workbooks: st.workbooks.slice(0, 300), pointHistory: st.pointHistory.slice(0, 400), points: st.points };
+  let t = JSON.stringify(o);
+  while (t.length > 45000 && (o.workbooks.length > 20 || o.pointHistory.length > 1)) {
+    if (o.pointHistory.length > 1) { const sum = o.pointHistory.reduce((a, r) => a + (r.amount > 0 ? r.amount : 0), 0); o.pointHistory = [{ studentId: o.pointHistory[0].studentId, at: o.pointHistory[0].at, amount: sum }]; }
+    else o.workbooks = o.workbooks.slice(0, Math.floor(o.workbooks.length / 2));
+    t = JSON.stringify(o);
+  }
+  return t;
+}
+function thisMonth_() { return Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM'); }
+// 한 학생의 한 달 리포트 재료. 워크북 기록 내용(JSON)·PIN 은 보내지 않는다
+// 지난 달은 리포트를 저장할 때 남긴 기록(보낸 날의 모습)을 그대로 쓰고, 이번 달이나 기록이 없는 달만 지금 기록으로 계산한다
+function reportData_(student, month) {
+  const id = String(student[0]);
   const rep = rows_('reports').filter(r => String(r[0]) === id && String(r[1]) === month).pop();
+  const snap = month < thisMonth_() ? reportSnap_(rep) : null;
+  const st = snap || reportStats_(student, month);
+  const workbooks = st.workbooks, pointHistory = st.pointHistory, points = st.points;
   const photos = rep ? reportPhotoIds_(rep).map(fid => { try { return 'data:image/jpeg;base64,' + Utilities.base64Encode(DriveApp.getFileById(fid).getBlob().getBytes()); } catch (e) { return ''; } }).filter(Boolean) : [];
   return {
     student: { id: id, name: String(student[1]), group: String(student[3] || ''), points: points },
-    workbooks: workbooks, pointHistory: pointHistory, month: month, now: Date.now(),
+    workbooks: workbooks, pointHistory: pointHistory, month: month, now: Date.now(), saved: snap ? snap.at : 0,
     report: rep ? { plan: String(rep[2] || ''), comment: String(rep[3] || ''), photos: photos } : null
   };
 }
@@ -1025,6 +1050,7 @@ Object.assign(ACTIONS_, {
     const plan = pointsText_(String(req.plan || '').slice(0, 120)), comment = pointsText_(String(req.comment || '').slice(0, 400));
     // 사진: req.photos 가 배열이면 이 달 사진을 그것으로 바꾼다(빈 배열이면 지움), 없으면 전에 올린 사진을 그대로 둔다
     const newPhotos = Array.isArray(req.photos) ? reportPhotoCheck_(req.photos) : null;
+    const fresh = reportSnapText_(reportStats_(student, month));   // 잠금 밖에서 미리 계산(reportStats_ 안에도 잠금이 있다)
     withLock_(() => {
       const sh = sheet_('reports'), data = rows_('reports');
       const i = data.findIndex(r => String(r[0]) === String(student[0]) && String(r[1]) === month);
@@ -1034,12 +1060,22 @@ Object.assign(ACTIONS_, {
         const folder = newPhotos.length ? reportFolder_() : null, stamp = Date.now();
         ids = newPhotos.map((bytes, n) => folder.createFile(Utilities.newBlob(bytes, 'image/jpeg', String(student[0]) + '_' + month + '_' + stamp + '_' + (n + 1) + '.jpg')).getId());
       }
-      const row = [String(student[0]), "'" + month, plan, comment, new Date(), t.email, ids.length ? JSON.stringify(ids) : ''];
+      // 기록: 이번 달은 저장할 때마다 새로, 지난 달은 이미 남긴 기록을 지킨다(선생님이 '다시 계산'을 고르면 새로)
+      const old = i >= 0 ? String(data[i][7] || '') : '';
+      const snap = (month >= thisMonth_() || req.refresh === true || !reportSnap_(i >= 0 ? data[i] : null)) ? fresh : old;
+      const row = [String(student[0]), "'" + month, plan, comment, new Date(), t.email, ids.length ? JSON.stringify(ids) : '', snap];
       if (i >= 0) sh.getRange(i + 2, 1, 1, row.length).setValues([row]); else sh.appendRow(row);
       if (sh.getRange && sh.getRange(1, 7).getValue && sh.getRange(1, 7).getValue() === '') sh.getRange(1, 7).setValue('사진');
+      if (sh.getRange && sh.getRange(1, 8).getValue && sh.getRange(1, 8).getValue() === '') sh.getRange(1, 8).setValue('기록');
     });
     const sent = req.email ? reportEmail_(student, month) : 0;
     return { link: parentLink_(String(student[0]), month), sent: sent };
+  },
+  // 선생님: 그 달에 저장해 둔 리포트 기록(보낸 날의 숫자·목록). 없으면 snap 은 null
+  reportSnapshot(req) {
+    teacher_(req.auth); const student = student_(req.studentId), month = month_(req.month);
+    const row = rows_('reports').filter(r => String(r[0]) === String(student[0]) && String(r[1]) === month).pop();
+    return { snap: reportSnap_(row) };
   },
   // 학부모: 링크의 열쇠가 맞으면 그 학생의 한 달 리포트 재료만 돌려준다
   parentReport(req) {
