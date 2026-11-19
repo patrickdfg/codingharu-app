@@ -86,7 +86,7 @@
       section('이번 달 완료한 수업', info.data.done.slice(0, 12).map(function (x) { return x.title; }).concat(info.data.done.length > 12 ? ['그 밖에 ' + (info.data.done.length - 12) + '개'] : []), '이번 달에는 완료로 표시한 수업이 없어요.');
       section('진행 중인 워크북', info.data.progress.slice(0, 6).map(function (x) { return x.title + (x.total ? '  (' + x.done + ' / ' + x.total + ')' : ''); }), '이번 달에 저장된 워크북 기록이 없어요.');
       if (info.plan) section('다음 달 계획', [info.plan], '');
-      // 이번 달 수업 사진: 1장이면 넓게, 2장 이상이면 두 칸씩. 칸에 맞게 가운데를 잘라 채운다
+      // 이번 달 수업 사진(넣은 장수만큼): 1장이면 넓게, 2장 이상이면 두 칸씩. 홀수면 마지막 한 장을 넓게. 칸에 맞게 가운데를 잘라 채운다
       var photos = (info.photos || []).filter(function (im) { return im && (im.naturalWidth || im.width); });
       if (photos.length) {
         text('이번 달 수업 사진', PAD, 34, C.ink, 800); y += 22;
@@ -95,10 +95,11 @@
         var cols = photos.length === 1 ? 1 : 2, gap = 16, cw = (inner - gap * (cols - 1)) / cols, ch = Math.round(cw * (cols === 1 ? 0.66 : 0.75));
         photos.forEach(function (im, i) {
           if (!real) return;
-          var x = PAD + (i % cols) * (cw + gap), yy = y + Math.floor(i / cols) * (ch + gap);
-          var iw = im.naturalWidth || im.width, ih = im.naturalHeight || im.height, sc = Math.max(cw / iw, ch / ih), sw = cw / sc, sh = ch / sc;
-          ctx.save(); roundRect(ctx, x, yy, cw, ch, 18); ctx.clip();
-          ctx.drawImage(im, (iw - sw) / 2, (ih - sh) / 2, sw, sh, x, yy, cw, ch); ctx.restore();
+          var x = PAD + (i % cols) * (cw + gap), yy = y + Math.floor(i / cols) * (ch + gap), w = cw;
+          if (cols === 2 && i === photos.length - 1 && photos.length % 2 === 1) { x = PAD; w = inner; }
+          var iw = im.naturalWidth || im.width, ih = im.naturalHeight || im.height, sc = Math.max(w / iw, ch / ih), sw = w / sc, sh = ch / sc;
+          ctx.save(); roundRect(ctx, x, yy, w, ch, 18); ctx.clip();
+          ctx.drawImage(im, (iw - sw) / 2, (ih - sh) / 2, sw, sh, x, yy, w, ch); ctx.restore();
         });
         y += Math.ceil(photos.length / cols) * (ch + gap) - gap + 56;
       }
@@ -135,11 +136,11 @@
     plan.type = 'text'; plan.maxLength = 120; plan.placeholder = '다음 달 계획 (선택)'; plan.setAttribute('aria-label', '다음 달 계획');
     comment.maxLength = 400; comment.rows = 3; comment.placeholder = '선생님 한마디 (학부모님께 전할 말)'; comment.setAttribute('aria-label', '선생님 한마디'); comment.required = true;
     make.type = 'submit';
-    // 수업 사진(선택, 4장까지): 기기에서 가로·세로 1280 이하 JPEG 로 줄여 둔다. 리포트 그림·학부모 링크·이메일에 함께 들어간다
+    // 수업 사진(선택, 8장까지): 기기에서 가로·세로 1280 이하 JPEG 로 줄여 둔다. 리포트 그림·학부모 링크·이메일에 함께 들어간다
     var photoBox = el('div', null, 'report-photos'), pick = el('input'), thumbs = el('div', null, 'report-thumbs');
-    var photos = [], photosChanged = false, MAXP = 4;
-    pick.type = 'file'; pick.accept = 'image/*'; pick.multiple = true; pick.setAttribute('aria-label', '수업 사진 고르기 (4장까지)');
-    var pickLabel = el('label', '수업 사진 (선택 · 4장까지) ', 'report-pick'); pickLabel.appendChild(pick);
+    var photos = [], photosChanged = false, MAXP = 8;
+    pick.type = 'file'; pick.accept = 'image/*'; pick.multiple = true; pick.setAttribute('aria-label', '수업 사진 고르기 (8장까지)');
+    var pickLabel = el('label', '수업 사진 (선택 · 8장까지) ', 'report-pick'); pickLabel.appendChild(pick);
     photoBox.append(pickLabel, thumbs);
     function shrink(file) {
       return new Promise(function (resolve) {

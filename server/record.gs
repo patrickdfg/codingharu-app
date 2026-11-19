@@ -1085,8 +1085,8 @@ Object.assign(ACTIONS_, {
     return reportData_(student, month_(req.m || Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM')));
   }
 });
-// ---- 월간 리포트 사진: 시트 주인 Drive 의 따로 둔 폴더(공유하지 않음). 한 달에 학생마다 4장까지, 한 장 1.5MB(JPEG) 까지 ----
-const REPORT_PHOTO_MAX_ = 4, REPORT_PHOTO_MB_ = 1.5;
+// ---- 월간 리포트 사진: 시트 주인 Drive 의 따로 둔 폴더(공유하지 않음). 한 달에 학생마다 8장까지, 한 장 1.5MB(JPEG) 까지 ----
+const REPORT_PHOTO_MAX_ = 8, REPORT_PHOTO_MB_ = 1.5;
 function reportPhotoIds_(row) { try { const a = JSON.parse(String(row[6] || '[]')); return Array.isArray(a) ? a.filter(x => typeof x === 'string' && /^[\w-]{10,100}$/.test(x)).slice(0, REPORT_PHOTO_MAX_) : []; } catch (e) { return []; } }
 function reportPhotoCheck_(list) {
   if (list.length > REPORT_PHOTO_MAX_) throw new Error('사진은 ' + REPORT_PHOTO_MAX_ + '장까지 올릴 수 있어요.');
