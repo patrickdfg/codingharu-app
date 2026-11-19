@@ -1124,10 +1124,14 @@ Object.assign(ACTIONS_, {
     const ok = k => typeof k === 'string' && k.length <= 300 && /^[a-z0-9][a-z0-9._\/-]*\/$/i.test(k) && k.indexOf('..') < 0;
     if (!items.every(x => x && ok(x.key))) throw new Error('수업 주소가 올바르지 않아요.');
     // 달을 정하지 않으면 포인트·월별 리포트를 시작한 2026년 11월의 전날로 적는다 → 11월부터의 리포트에 섞이지 않는다
+    // withPoints: '오늘 수업'으로 체크 — 오늘 날짜로 적고 학생이 직접 완료한 것처럼(past 아님) 수업 완료 포인트를 준다
+    const withPoints = req.withPoints === true;
     let when = new Date(2026, 9, 31, 12);
-    if (req.month) { const m = month_(req.month).split('-'); when = new Date(Number(m[0]), Number(m[1]) - 1, 15, 12); if (when.getTime() > Date.now()) throw new Error('앞으로 올 달은 고를 수 없어요.'); }
+    if (withPoints) when = new Date();
+    else if (req.month) { const m = month_(req.month).split('-'); when = new Date(Number(m[0]), Number(m[1]) - 1, 15, 12); if (when.getTime() > Date.now()) throw new Error('앞으로 올 달은 고를 수 없어요.'); }
     const ts = when.getTime();
-    let saved = 0, skipped = 0;
+    let saved = 0, skipped = 0, points = 0;
+    const award = [];
     withLock_(() => {
       const sh = sheet_('workbooks'), last = sh.getLastRow();
       const data = last > 1 ? sh.getRange(2, 1, last - 1, 11).getValues() : [];
@@ -1141,7 +1145,9 @@ Object.assign(ACTIONS_, {
         if (cur && cur.done && !cur.past) { skipped++; return; }          // 학생이 직접 완료한 수업(점수 받은 기록)은 건드리지 않는다
         if (!done && !cur) return;
         const title = String(x.title || '').replace(/\s+/g, ' ').trim().slice(0, 150) || key;
-        const line = [id, name, wb, '완료 · ' + title, key, done ? 1 : 0, 1, when, when, t.email, JSON.stringify({ done: done, at: ts, by: 'teacher', past: true })];
+        const st = withPoints && done ? { done: true, at: ts, by: 'teacher' } : { done: done, at: ts, by: 'teacher', past: true };
+        const line = [id, name, wb, '완료 · ' + title, key, done ? 1 : 0, 1, when, when, t.email, JSON.stringify(st)];
+        if (withPoints && done) award.push({ key: key, title: title });
         if (row) sh.getRange(row, 1, 1, line.length).setValues([line]); else fresh.push(line);
         pages[key] = done ? ts : -ts; saved++;
       });
@@ -1149,8 +1155,18 @@ Object.assign(ACTIONS_, {
       const count = Object.keys(pages).filter(k => pages[k] > 0).length, now = new Date();
       const idx = [id, name, 'done-index', '완료한 수업', '', count, Math.max(1, Object.keys(pages).length), idxRow ? (data[idxRow - 2][7] || now) : now, now, t.email, JSON.stringify({ pages: pages })];
       if (idxRow) sh.getRange(idxRow, 1, 1, idx.length).setValues([idx]); else sh.appendRow(idx);
+      if (award.length) {   // 수업 완료 포인트: 같은 수업은 한 번만(학생이 직접 받은 것과도 겹치지 않게)
+        const prs = rows_('points'), out = [];
+        award.forEach(a => {
+          const rateKey = pointsRule_('lesson', a.key); if (!rateKey) return;
+          if (prs.some(r => String(r[0]) === id && String(r[2]) === 'lesson' && String(r[3]) === a.key)) return;
+          const amount = pointsAmount_('lesson', a.key, rateKey); if (!amount) return;
+          out.push([id, when, 'lesson', a.key, amount, pointsText_(('수업 완료 · ' + a.title).slice(0, 120)), '선생님 체크']); points += amount;
+        });
+        if (out.length) { const ps = sheet_('points'); ps.getRange(ps.getLastRow() + 1, 1, out.length, out[0].length).setValues(out); }
+      }
     });
-    return { saved: saved, skipped: skipped };
+    return { saved: saved, skipped: skipped, points: points };
   }
 });
 

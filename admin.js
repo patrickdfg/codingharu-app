@@ -686,7 +686,7 @@
     return null;
   }
   function pastBox(s, allDone) {
-    var box = el('details', null, 'ad-past'); box.appendChild(el('summary', '지난 수업 완료 체크 (포인트 없이 기록만)'));
+    var box = el('details', null, 'ad-past'); box.appendChild(el('summary', '수업 완료 체크 (지난 수업 · 오늘 수업)'));
     var body = el('div'); box.appendChild(body);
     box.addEventListener('toggle', function () {
       if (!box.open || body.firstChild) return;
@@ -697,11 +697,21 @@
     });
     function fill(list) {
       var done = {}; allDone.forEach(function (w) { done[String(w.workbook).slice(5)] = 1; });
-      body.appendChild(el('p', '예전에 이미 배운 수업을 체크해 저장하면 완료 기록에만 들어가요. 포인트는 주지 않아요. 학생이 직접 완료한 수업은 그대로 둬요.', 'ad-note'));
+      body.appendChild(el('p', '체크한 수업을 완료로 저장해요. 학생이 직접 완료한 수업은 그대로 둬요.', 'ad-note'));
       var form = el('form', null, 'ad-home'), month = el('input'), boxes = [];
+      // 저장 방식: 지난 수업(포인트 없이 기록만) / 오늘 수업(오늘 날짜로 적고 수업 완료 포인트 지급)
+      var modeBox = el('div', null, 'ad-tools'), modes = {};
+      [['past', '지난 수업 · 포인트 없이 기록만'], ['today', '오늘 수업 · 오늘 날짜로 포인트 주기']].forEach(function (m, i) {
+        var lab = el('label'), r = el('input'); r.type = 'radio'; r.name = 'past-mode-' + s.id; r.value = m[0]; r.checked = i === 0;
+        lab.append(r, document.createTextNode(' ' + m[1] + ' ')); modeBox.appendChild(lab); modes[m[0]] = r;
+      });
+      form.appendChild(modeBox);
+      function today() { return modes.today.checked; }
       month.type = 'month'; month.setAttribute('aria-label', '수업한 달(선택)');
       var ml = el('label', '수업한 달(선택) '); ml.appendChild(month); ml.appendChild(el('small', ' 비우면 2026년 10월 31일(월별 리포트 시작 전)로 적어, 11월부터의 리포트에 들어가지 않아요. 달을 넣으면 그 달 기록으로 들어가요.'));
       form.appendChild(ml);
+      function modeUi() { ml.hidden = today(); save.textContent = today() ? '오늘 수업으로 저장 (포인트 지급)' : '지난 수업 저장'; }
+      modes.past.onchange = modes.today.onchange = function () { modeUi(); update(); };
       var tops = {}, titleOf = {}; list.forEach(function (f) { titleOf[f.path] = f.title; });
       list.forEach(function (f) { var top = topOf(f.path); if (f.path !== top) (tops[top] = tops[top] || { title: '', items: [] }).items.push(f); else (tops[top] = tops[top] || { title: '', items: [] }).title = f.title; });
       Object.keys(tops).sort().forEach(function (top) {
@@ -734,15 +744,17 @@
       var info = el('p', '', 'ad-note'), save = btn('지난 수업 저장'); save.type = 'submit';
       function changed() { return boxes.filter(function (b) { return b.cb.checked !== !!b.cb.dataset.was; }); }
       function update() { var c = changed(); info.textContent = c.length ? '바뀐 수업 ' + c.length + '개 (완료 ' + c.filter(function (b) { return b.cb.checked; }).length + ' · 취소 ' + c.filter(function (b) { return !b.cb.checked; }).length + ')' : '바뀐 것이 없어요.'; save.disabled = !c.length; }
-      form.addEventListener('change', update); update();
+      form.addEventListener('change', update); update(); modeUi();
       form.append(info, save); body.appendChild(form);
       form.onsubmit = function (e) {
         e.preventDefault(); var c = changed(); if (!c.length) return;
         if (c.length > 400) { toast('한 번에 400개까지 저장할 수 있어요. 나눠서 저장해 주세요.', true); return; }
+        var tp = today();
+        if (tp && !confirm(s.name + ' 학생의 수업 ' + c.filter(function (b) { return b.cb.checked; }).length + '개를 오늘 수업으로 체크하고 수업 완료 포인트를 줄까요?')) return;
         save.disabled = true; save.textContent = '저장하는 중…';
-        api('pastDone', { studentId: s.id, month: month.value || '', items: c.map(function (b) { return { key: b.f.path, title: b.f.title || b.f.path, done: b.cb.checked }; }) })
-          .then(function (o) { toast(s.name + ': 지난 수업 ' + o.saved + '개를 저장했어요' + (o.skipped ? ' (학생이 직접 완료한 ' + o.skipped + '개는 그대로)' : '') + '. 포인트는 주지 않았어요.'); load(true); },
-                function (err) { toast(/알 수 없는 요청/.test(err.message) ? '기록 서버(Apps Script)를 새 버전으로 배포해야 저장할 수 있어요.' : err.message, true); save.disabled = false; save.textContent = '지난 수업 저장'; });
+        api('pastDone', { studentId: s.id, month: tp ? '' : (month.value || ''), withPoints: tp, items: c.map(function (b) { return { key: b.f.path, title: b.f.title || b.f.path, done: b.cb.checked }; }) })
+          .then(function (o) { toast(s.name + ': ' + (tp ? '오늘 수업 ' : '지난 수업 ') + o.saved + '개를 저장했어요' + (o.skipped ? ' (학생이 직접 완료한 ' + o.skipped + '개는 그대로)' : '') + '. ' + (tp ? (o.points ? o.points.toLocaleString() + ' P를 줬어요.' : '새로 줄 포인트는 없었어요(이미 받은 수업이거나 기록 서버를 새로 배포해야 해요).') : '포인트는 주지 않았어요.')); load(true); },
+                function (err) { toast(/알 수 없는 요청/.test(err.message) ? '기록 서버(Apps Script)를 새 버전으로 배포해야 저장할 수 있어요.' : err.message, true); save.disabled = false; modeUi(); });
       };
     }
     return box;
