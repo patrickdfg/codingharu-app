@@ -371,7 +371,7 @@
         var row = document.createElement('div'); row.className = 'ch-rrow';
         var done = dget();
         list.forEach(function (x, i) {
-          var a = document.createElement('a'); a.className = 'ch-rcard'; a.href = x.k.replace(/@d+$/, '');
+          var a = document.createElement('a'); a.className = 'ch-rcard'; a.href = x.k.replace(/@[0-9]+$/, '');
           var num = document.createElement('span'); num.className = 'ch-rnum'; num.textContent = i + 1;
           var body = document.createElement('div'); body.className = 'ch-rbody';
           var cat = document.createElement('span'); cat.className = 'ch-rcat'; cat.textContent = CAT[x.k.split('/')[0]] || '수업';
