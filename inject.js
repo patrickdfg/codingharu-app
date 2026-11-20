@@ -218,14 +218,15 @@
         flush(); CHRecord.endSession(); location.href = CHRecord.base + 'index.html';
       };
       // 내 포트폴리오(codemaru.kr/<주소>, 로그인 번호로 연다). 주소는 로그인할 때 서버가 알려 준다(예전 로그인이면 다음 로그인부터).
-      // 내 로그인 번호(4자리) 바꾸기
+      // ⚙ 내 설정: 로그인 번호(4자리) 바꾸기 등
       (function () {
-        var pb = document.createElement('button'); pb.type = 'button'; pb.textContent = '번호 바꾸기'; pb.title = '로그인할 때 쓰는 4자리 번호를 바꿔요';
+        var pb = document.createElement('button'); pb.type = 'button'; pb.textContent = '⚙'; pb.title = '내 설정'; pb.setAttribute('aria-label', '내 설정'); pb.style.cssText = 'font-size:17px;line-height:1;padding:6px 10px';
         tag.insertBefore(pb, tag.querySelector('button'));
         pb.onclick = function () {
           var dlg = document.createElement('dialog'); dlg.setAttribute('data-ch-app', '');
           dlg.style.cssText = 'border:0;border-radius:16px;padding:22px 22px 18px;width:min(340px,calc(100vw - 24px));font:16px/1.5 sans-serif;color:#14213d;box-shadow:0 18px 50px rgba(0,0,0,.3)';
-          dlg.innerHTML = '<h3 style="margin:0 0 6px;font-size:19px">로그인 번호 바꾸기</h3><p style="margin:0 0 12px;color:#5b6b8a;font-size:14px">숫자 4자리로 정해요. 새 번호는 꼭 기억해 두세요.</p>' +
+          dlg.innerHTML = '<h3 style="margin:0 0 4px;font-size:20px">⚙ 내 설정</h3><p style="margin:0 0 14px;color:#5b6b8a;font-size:14px">' + stu.name.replace(/[<>&"]/g, '') + ' 학생</p>' +
+            '<h4 style="margin:0 0 4px;font-size:16px">로그인 번호 바꾸기</h4><p style="margin:0 0 10px;color:#5b6b8a;font-size:13px">숫자 4자리로 정해요. 새 번호는 꼭 기억해 두세요.</p>' +
             '<form method="dialog"><label style="display:block;margin-bottom:8px">지금 번호<input name="o" type="password" inputmode="numeric" maxlength="4" autocomplete="current-password" required></label>' +
             '<label style="display:block;margin-bottom:8px">새 번호<input name="n" type="password" inputmode="numeric" maxlength="4" autocomplete="new-password" required></label>' +
             '<label style="display:block;margin-bottom:8px">새 번호 한 번 더<input name="c" type="password" inputmode="numeric" maxlength="4" autocomplete="new-password" required></label>' +
