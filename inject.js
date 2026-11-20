@@ -251,6 +251,26 @@
       status('인터넷이 끊겨 이 기기에만 저장했어요. 연결되면 다시 보낼게요.');
     }
 
+    // 최근 연 수업(홈의 '내가 하고 있는 프로젝트')과 수업별 진행(목록의 3/15)을 이 기기에 적어 둔다
+    var RKEY = 'codingharu-recent-s' + stu.id, PKEY = 'codingharu-prog-s' + stu.id;
+    function jget(k, d) { try { var v = JSON.parse(localStorage.getItem(k) || 'null'); return v == null ? d : v; } catch (e) { return d; } }
+    function jput(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+    function pageTitle() { return document.title.replace(/\s*·\s*(?:코드마루|코딩하루)\s*$/, '').trim(); }
+    function progOf(k) { var p = jget(PKEY, {})[k]; return p && p.n > 0 ? p : null; }
+    function touchRecent(k) {
+      if (!k) return;
+      var list = jget(RKEY, []).filter(function (x) { return x && x.k !== k; }), p = progOf(k);
+      list.unshift({ k: k, t: pageTitle(), at: Date.now(), d: p ? p.d : 0, n: p ? p.n : 0 });
+      jput(RKEY, list.slice(0, 30));
+    }
+    function setProg(k, prog) {
+      if (!k || !prog || !(prog.total > 0)) return;
+      var all = jget(PKEY, {}); all[k] = { d: Math.min(prog.done || 0, prog.total), n: prog.total, at: Date.now() }; jput(PKEY, all);
+      var list = jget(RKEY, []), hit = false;
+      list.forEach(function (x) { if (x && x.k === k) { x.d = all[k].d; x.n = all[k].n; x.at = Date.now(); hit = true; } });
+      if (hit) { list.sort(function (a, b) { return b.at - a.at; }); jput(RKEY, list); }
+    }
+
     // 완료 표시: 교안을 열었다고 기록하지 않는다. 맨 아래 '완료' 단추를 눌렀을 때만 남기고, 목록에서는 완료한 수업을 흐리게 보여 준다.
     (function () {
       var DKEY = 'codingharu-done-s' + stu.id, IDX = 'done-index';
@@ -263,6 +283,14 @@
       var cssDone = document.createElement('style'); cssDone.setAttribute('data-ch-app', '');
       cssDone.textContent = '.ch-done-item{opacity:.5;filter:grayscale(.35);position:relative}.ch-done-item::after{content:"✔ 완료";position:absolute;top:8px;right:10px;padding:3px 10px;border-radius:999px;' +
         'background:#0056d2;color:#fff;font:700 13px sans-serif;z-index:2}' +
+        '.ch-prog-item{position:relative}.ch-prog-item::after{content:"▶ " attr(data-ch-prog);position:absolute;top:8px;right:10px;padding:3px 10px;border-radius:999px;background:#ff9f1c;color:#fff;font:800 13px sans-serif;z-index:2}' +
+        '.ch-recent{margin:6px 0 34px}.ch-recent h2{margin:0 0 4px}.ch-recent .ch-rsub{color:#5b6b8a;font-size:14px;margin:0 0 12px}' +
+        '.ch-rrow{display:flex;gap:16px;overflow-x:auto;padding:6px 2px 14px;scroll-snap-type:x mandatory}' +
+        '.ch-rcard{flex:0 0 230px;scroll-snap-align:start;display:flex;align-items:stretch;text-decoration:none;color:#14213d;background:#fff;border:1px solid #dbe5f5;border-radius:18px;overflow:hidden;box-shadow:0 6px 16px rgba(0,60,140,.08);transition:transform .15s}' +
+        '.ch-rcard:hover{transform:translateY(-3px)}.ch-rnum{flex:0 0 54px;display:flex;align-items:center;justify-content:center;font:900 46px/1 sans-serif;color:#fff;-webkit-text-stroke:2px #0056d2;background:linear-gradient(160deg,#e8f0ff,#cfe0fb)}' +
+        '.ch-rbody{padding:12px 14px;min-width:0;flex:1}.ch-rcat{display:inline-block;font:700 11px sans-serif;color:#0056d2;background:#eaf2ff;border-radius:999px;padding:2px 8px}' +
+        '.ch-rtitle{font:800 15px/1.35 sans-serif;margin:6px 0 8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}' +
+        '.ch-rbar{height:6px;background:#eef2f8;border-radius:99px;overflow:hidden}.ch-rbar i{display:block;height:100%;background:#ff9f1c}.ch-rmeta{font:700 12px sans-serif;color:#5b6b8a;margin-top:5px}' +
         '#ch-done-wrap{margin:36px auto 96px;text-align:center}#ch-done-btn{font:800 22px sans-serif;padding:16px 64px;border:0;border-radius:999px;background:#0056d2;color:#fff;cursor:pointer}' +
         '#ch-done-btn.on{background:#6b7a72}#ch-done-undo{display:block;margin:10px auto 0;border:0;background:none;color:#6b7a72;font:600 14px sans-serif;text-decoration:underline;cursor:pointer}@media print{#ch-done-wrap{display:none!important}}';
       document.head.appendChild(cssDone);
@@ -293,12 +321,17 @@
         var main = document.querySelector('main') || document.body;
         [].forEach.call(main.querySelectorAll('a[href]'), function (a) {
           if (a.closest('.breadcrumb, .toc, nav, header')) return;
-          var t = target(a); a.classList.toggle('ch-done-item', !!t && isDone(m, t));
+          var t = target(a), p = t ? progOf(t) : null, partial = !!(p && p.d > 0 && p.d < p.n);
+          a.classList.toggle('ch-done-item', !!t && !partial && (isDone(m, t) || !!(p && p.d >= p.n)));
+          a.classList.toggle('ch-prog-item', partial);
+          if (partial) a.setAttribute('data-ch-prog', p.d + ' / ' + p.n); else a.removeAttribute('data-ch-prog');
         });
         var btn = document.getElementById('ch-done-btn'), un = document.getElementById('ch-done-undo');
         if (btn) { var on = isDone(m, key); btn.className = on ? 'on' : ''; btn.textContent = on ? '✔ 완료했어요' : '완료'; un.hidden = !on; }
       }
       var isList = !!document.querySelector('[data-lessons], a.category, a.row') || key === '';
+      if (!isList) touchRecent(key);
+      if (key === '') recentRow();
       if (!isList) {
         var wrap = document.createElement('div'); wrap.id = 'ch-done-wrap'; wrap.setAttribute('data-ch-app', '');
         wrap.innerHTML = '<button type="button" id="ch-done-btn">완료</button><button type="button" id="ch-done-undo" hidden>완료 취소</button>';
@@ -326,6 +359,33 @@
       }
       paint(dget()); sync();
       addEventListener('online', function () { sync(); });
+      // 홈 두 번째 줄: 내가 하고 있는 프로젝트(1번이 가장 최근)
+      function recentRow() {
+        var list = jget(RKEY, []).filter(function (x) { return x && x.k; }).slice(0, 12);
+        var hero = document.querySelector('main .hero'); if (!list.length || !hero || document.querySelector('.ch-recent')) return;
+        var CAT = { entry: '엔트리', scratch: '스크래치', python: '파이썬', coding: '코딩 놀이터', robot: '로봇', roblox: '로블록스', algorithm: '알고리즘', web: '웹 만들기', koi: '정보올림피아드',
+          'ai-projects': 'AI 프로젝트', thinking: 'AI 사고력', digital: '중등 디지털', special: '특강', adult: '성인 과정', inquiry: '탐구 포트폴리오', gallery: '작품 게시판', 'project-lab': '프로젝트 연구소', cert: '자격증' };
+        var sec = document.createElement('section'); sec.className = 'ch-recent'; sec.setAttribute('data-ch-app', '');
+        var h = document.createElement('h2'); h.textContent = stu.name + '의 프로젝트';
+        var sub = document.createElement('p'); sub.className = 'ch-rsub'; sub.textContent = '최근에 한 순서예요. 눌러서 이어서 해요.';
+        var row = document.createElement('div'); row.className = 'ch-rrow';
+        var done = dget();
+        list.forEach(function (x, i) {
+          var a = document.createElement('a'); a.className = 'ch-rcard'; a.href = x.k.replace(/@d+$/, '');
+          var num = document.createElement('span'); num.className = 'ch-rnum'; num.textContent = i + 1;
+          var body = document.createElement('div'); body.className = 'ch-rbody';
+          var cat = document.createElement('span'); cat.className = 'ch-rcat'; cat.textContent = CAT[x.k.split('/')[0]] || '수업';
+          var t = document.createElement('div'); t.className = 'ch-rtitle'; t.textContent = x.t || x.k;
+          var p = progOf(x.k) || (x.n ? { d: x.d, n: x.n } : null), full = isDone(done, x.k) || !!(p && p.d >= p.n);
+          var bar = document.createElement('div'); bar.className = 'ch-rbar'; var fill = document.createElement('i');
+          fill.style.width = (full ? 100 : p ? Math.round(p.d * 100 / p.n) : 4) + '%'; if (full) fill.style.background = '#0056d2'; bar.appendChild(fill);
+          var meta = document.createElement('div'); meta.className = 'ch-rmeta';
+          var d = new Date(x.at), when = (d.getMonth() + 1) + '월 ' + d.getDate() + '일';
+          meta.textContent = (full ? '✔ 완료' : p ? p.d + ' / ' + p.n + ' 진행 중' : '열어 봤어요') + ' · ' + when;
+          body.append(cat, t, bar, meta); a.append(num, body); row.appendChild(a);
+        });
+        sec.append(h, sub, row); hero.insertAdjacentElement('afterend', sec);
+      }
     })();
 
     var wb = window.CodingHaruWorkbook;
@@ -347,6 +407,7 @@
     }
     function bodies() {
       var ps = split(wb.getState()), prog = wb.progress(), list = [];
+      setProg(subKey(page.replace(/index\.html$/, '')), prog);
       for (var i = ps.length - 1; i >= 1; i--) list.push({ studentId: stu.id, workbook: wbId + '~' + (i + 1), title: wb.title + ' (이어서 ' + (i + 1) + ')', page: page, state: ps[i], progress: { done: 0, total: 0 } });
       var first = ps[0]; if (ps.length > 1) first.__parts = ps.length;
       list.push({ studentId: stu.id, workbook: wbId, title: wb.title, page: page, state: first, progress: prog });   // 첫 줄은 맨 마지막에 저장
