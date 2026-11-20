@@ -913,7 +913,7 @@ function pointsProof_(studentId, kind, key) {
     if (/^typing:(?:ko-(?:home-left|home-right|home|top|bottom|all)|en-(?:home|top|bottom))$/.test(key)) {
       const oldScore=state.best && state.best[key.slice(7)]; return typeof oldScore === 'number' && oldScore >= 80 && oldScore <= 100;
     }
-    const score=state['proof:'+key], minimum=/^typing:(?:word|sentence):/.test(key) ? 0 : 80;
+    const score=state['proof:'+key], minimum=80;   // 자리·낱말·문장 모두 정확도 80% 이상일 때만
     return typeof score === 'number' && Number.isFinite(score) && score >= minimum && score <= 100;
   }
   if (kind === 'python-easy-unit') { const n=Number(key.slice(6)), state=workbook('python-basic-easy-v1'); return !!(state && Array.isArray(state.done) && Array.from({length:14},(_,j)=>state.done.includes((n-1)+':'+j)).every(Boolean)); }
