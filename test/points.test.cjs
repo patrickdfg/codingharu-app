@@ -15,7 +15,7 @@ for (const [kind,key] of [['block','games:g60-5a'],['problem','bebras:p01'],['pr
 assert.equal(run(`pointsTotal_('2')`),267);
 assert.equal(run(`pointsRates_().games`),7);assert.equal(run(`pointsRates_().cosproUnit`),30);
 run(`props.POINT_RATES='{"problem":20,"block":7,"pythonUnit":40,"bebras":15}'`);assert.equal(run(`pointsRates_().pythonProblem`),20);assert.equal(run(`pointsRates_().farm`),20);assert.equal(run(`pointsRates_().bebras`),15);assert.equal(run(`pointsRates_().playground`),7);assert.equal(run(`pointsRates_().games`),7);assert.equal(run(`pointsRates_().cosproUnit`),40);assert.equal(run(`pointsRates_().entry`),100);run(`props.POINT_RATES=''`);
-assert.equal(run(`ACTIONS_.pointsSetRates({auth:'teacher',rates:{pythonProblem:20,cosproProblem:21,bebras:22,detective:23,farm:24,playground:25,games:26,pythonUnit:400,cosproUnit:410,entry:60,scratch:70,junior:80,algorithm:30,pythonRobot:39,pythonLesson:31,codingLesson:32,roblox:33,robot:34,web:35,digital:36,adult:37,otherLesson:38,entryWork:41,scratchWork:42,doubleLesson:43,typing:20,typingWord:40,typingSentence:50,koi:30,pythonHigh:44,easyUnit:45,aiProject:46,iot:30}}).rates.playground`),25);assert.equal(run(`pointsRates_().detective`),23);assert.throws(()=>run(`ACTIONS_.pointsSetRates({auth:'teacher',rates:{problem:20,block:25}})`)); assert.equal(run(`ACTIONS_.pointsBalance({sid:'valid',studentId:'1'}).points`),90); assert.equal(run(`ACTIONS_.pointsGrant({auth:'teacher',studentId:'1',amount:-20,reason:'정정',requestId:'2234567890123456'}).points`),70);assert.throws(()=>run(`ACTIONS_.pointsGrant({auth:'teacher',studentId:'1',amount:-1000,reason:'정정',requestId:'3234567890123456'})`));
+assert.equal(run(`ACTIONS_.pointsSetRates({auth:'teacher',rates:{pythonProblem:20,cosproProblem:21,bebras:22,detective:23,farm:24,playground:25,games:26,pythonUnit:400,cosproUnit:410,entry:60,scratch:70,junior:80,algorithm:30,pythonRobot:39,pythonLesson:31,codingLesson:32,roblox:33,robot:34,web:35,digital:36,adult:37,otherLesson:38,entryWork:41,scratchWork:42,doubleLesson:43,typing:20,typingWord:40,typingSentence:50,koi:30,pythonHigh:44,easyUnit:45,aiProject:46,iot:30,labWork:100}}).rates.playground`),25);assert.equal(run(`pointsRates_().detective`),23);assert.throws(()=>run(`ACTIONS_.pointsSetRates({auth:'teacher',rates:{problem:20,block:25}})`)); assert.equal(run(`ACTIONS_.pointsBalance({sid:'valid',studentId:'1'}).points`),90); assert.equal(run(`ACTIONS_.pointsGrant({auth:'teacher',studentId:'1',amount:-20,reason:'정정',requestId:'2234567890123456'}).points`),70);assert.throws(()=>run(`ACTIONS_.pointsGrant({auth:'teacher',studentId:'1',amount:-1000,reason:'정정',requestId:'3234567890123456'})`));
 // 모든 수업은 점수를 받는다: 서버 규칙(pointsRule_)과 앱(inject.js lessonScored_)이 같은 답을 내야 한다.
 const injectSrc=fs.readFileSync('inject.js','utf8'),m=injectSrc.match(/function lessonScored_\(k\) \{[\s\S]*?\n        \}/);assert.ok(m,'inject.js 에 lessonScored_ 가 있어야 한다');
 const lessonScored_=new Function(m[0]+'; return lessonScored_;')();
@@ -55,7 +55,7 @@ const day1='2026-11-12',day2='2026-11-13';
 const p1='typing:ko-home:'+day1,p2='typing:ko-home:'+day2,p3='typing:ko-top:'+day1;
 const w1='typing:word:abc123456789',w2='typing:word:abc123456780',s1='typing:sentence:abc123456781';
 ctx.keys={p1,p2,p3,w1,w2,s1};
-run(`books['10|coding-typing-v1']={best:{'ko-home':100},['proof:'+keys.p1]:79,['proof:'+keys.p2]:80,['proof:'+keys.p3]:100,['proof:'+keys.w1]:0,['proof:'+keys.w2]:99,['proof:'+keys.s1]:50}`);
+run(`books['10|coding-typing-v1']={best:{'ko-home':100},['proof:'+keys.p1]:79,['proof:'+keys.p2]:80,['proof:'+keys.p3]:100,['proof:'+keys.w1]:85,['proof:'+keys.w2]:99,['proof:'+keys.s1]:90}`);
 assert.throws(()=>run(`ACTIONS_.pointsAward({sid:'valid',studentId:'10',kind:'typing',key:keys.p1})`));
 run(`books['10|coding-typing-v1']['proof:'+keys.p1]=80`);
 const award=key=>run(`ACTIONS_.pointsAward({sid:'valid',studentId:'10',kind:'typing',key:keys.${key}})`);
@@ -81,6 +81,9 @@ assert.equal(run(`ACTIONS_.pointsAward({sid:'valid',studentId:'10',kind:'problem
 assert.throws(()=>run(`ACTIONS_.pointsAward({sid:'valid',studentId:'10',kind:'problem',key:'iot:L01a'})`));
 assert.throws(()=>run(`ACTIONS_.pointsAward({sid:'valid',studentId:'10',kind:'problem',key:'iot:../x'})`));
 assert.equal(run(`pointsTotal_('10')`),310);
+// AI 프로젝트 연구소: 완료 체크는 점수 없음, 그 프로젝트로 작품을 올리면 프로젝트마다 100점
+assert.equal(run(`pointsRule_('lesson','project-lab/game-01/')`),0);
+assert.throws(()=>run(`ACTIONS_.pointsAward({sid:'valid',studentId:'10',kind:'gallery',key:'lab:game-01'})`));
 assert.throws(()=>run(`ACTIONS_.pointsAward({sid:'valid',studentId:'11',kind:'typing',key:keys.w1})`));
 assert.throws(()=>run(`ACTIONS_.pointsAward({sid:'valid',studentId:'10',kind:'typing',key:'typing:word:unrecorded01'})`));
 const today=new Date(Date.now()+9*3600000).toISOString().slice(0,10);ctx.today=today;

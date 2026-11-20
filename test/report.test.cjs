@@ -68,7 +68,7 @@ ctx.Utilities.newBlob = (bytes, mime, name) => ({ bytes, mime, name });
 const jpg = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]).toString('base64'), png = Buffer.from([0x89, 0x50, 0x4e, 0x47]).toString('base64');
 const save = photos => run(`ACTIONS_.reportSave({auth:'teacher',studentId:'1',month:'2026-11',comment:'사진 달',photos:${JSON.stringify(photos)}})`);
 assert.throws(() => save([png]), /JPEG/);
-assert.throws(() => save([jpg, jpg, jpg, jpg, jpg]), /4장/);
+assert.throws(() => save(Array(9).fill(jpg)), /8장/);
 save(['data:image/jpeg;base64,' + jpg, jpg]);
 const photoRow = () => tabs.reports.filter(r => r[0] === '1' && r[1] === '2026-11').pop();
 assert.equal(JSON.parse(photoRow()[6]).length, 2);
