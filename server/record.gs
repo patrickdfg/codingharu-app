@@ -312,6 +312,27 @@ const ACTIONS_ = {
     CacheService.getScriptCache().remove('fail:' + hash_(name.toLowerCase()).slice(0, 24));
     return { name: name };
   },
+  // 학생이 자기 로그인 번호(4자리)를 바꾼다: 로그인한 상태 + 지금 번호가 맞아야 한다
+  studentPin(req) {
+    if (!req.sid) throw new Error('학생으로 로그인해 주세요.');
+    checkSid_(req.sid, req.studentId);
+    const id = String(req.studentId), oldPin = String(req.oldPin || '').trim(), pin = String(req.pin || '').trim();
+    if (!/^\d{4}$/.test(pin)) throw new Error('새 번호는 숫자 4자리여야 해요.');
+    if (oldPin === pin) throw new Error('지금 번호와 같아요. 다른 번호를 골라 주세요.');
+    const cache = CacheService.getScriptCache(), fk = 'pinfail:' + id;
+    if (Number(cache.get(fk) || 0) >= 5) throw new Error('여러 번 틀렸어요. 10분 뒤에 다시 해 주세요.');
+    withLock_(() => {
+      const sh = sheet_('students'), n = sh.getLastRow() - 1;
+      const data = n > 0 ? sh.getRange(2, 1, n, 6).getValues() : [];
+      const i = data.findIndex(r => String(r[0]) === id);
+      if (i < 0) throw new Error('학생 목록에 없는 학생입니다.');
+      if (pinOf_(data[i][2]) !== oldPin) { cache.put(fk, String(Number(cache.get(fk) || 0) + 1), 600); throw new Error('지금 번호가 맞지 않아요.'); }
+      if (data.some((r, k) => k !== i && r[0] !== '' && sameName_(r[1], data[i][1]) && pinOf_(r[2]) === pin)) throw new Error('같은 이름의 친구가 쓰는 번호예요. 다른 번호를 골라 주세요.');
+      sh.getRange(i + 2, 3).setNumberFormat('@').setValue(pin);
+    });
+    cache.remove(fk);
+    return { ok: true };
+  },
   // 학생 로그인: 이름과 4자리 번호. 같은 이름으로 5번 틀리면 10분 쉰다.
   studentLogin(req) {
     const name = String(req.name || '').replace(/\s+/g, ' ').trim();

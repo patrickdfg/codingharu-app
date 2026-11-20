@@ -218,6 +218,41 @@
         flush(); CHRecord.endSession(); location.href = CHRecord.base + 'index.html';
       };
       // 내 포트폴리오(codemaru.kr/<주소>, 로그인 번호로 연다). 주소는 로그인할 때 서버가 알려 준다(예전 로그인이면 다음 로그인부터).
+      // 내 로그인 번호(4자리) 바꾸기
+      (function () {
+        var pb = document.createElement('button'); pb.type = 'button'; pb.textContent = '번호 바꾸기'; pb.title = '로그인할 때 쓰는 4자리 번호를 바꿔요';
+        tag.insertBefore(pb, tag.querySelector('button'));
+        pb.onclick = function () {
+          var dlg = document.createElement('dialog'); dlg.setAttribute('data-ch-app', '');
+          dlg.style.cssText = 'border:0;border-radius:16px;padding:22px 22px 18px;width:min(340px,calc(100vw - 24px));font:16px/1.5 sans-serif;color:#14213d;box-shadow:0 18px 50px rgba(0,0,0,.3)';
+          dlg.innerHTML = '<h3 style="margin:0 0 6px;font-size:19px">로그인 번호 바꾸기</h3><p style="margin:0 0 12px;color:#5b6b8a;font-size:14px">숫자 4자리로 정해요. 새 번호는 꼭 기억해 두세요.</p>' +
+            '<form method="dialog"><label style="display:block;margin-bottom:8px">지금 번호<input name="o" type="password" inputmode="numeric" maxlength="4" autocomplete="current-password" required></label>' +
+            '<label style="display:block;margin-bottom:8px">새 번호<input name="n" type="password" inputmode="numeric" maxlength="4" autocomplete="new-password" required></label>' +
+            '<label style="display:block;margin-bottom:8px">새 번호 한 번 더<input name="c" type="password" inputmode="numeric" maxlength="4" autocomplete="new-password" required></label>' +
+            '<p class="m" role="status" style="min-height:1.4em;margin:6px 0;color:#c2410c;font-size:14px"></p>' +
+            '<div style="display:flex;gap:8px;justify-content:flex-end"><button type="button" class="x" style="border:1px solid #c9d6ee;background:#fff;color:#14213d;border-radius:999px;padding:8px 16px;font:700 14px sans-serif;cursor:pointer">닫기</button>' +
+            '<button type="submit" class="ok" style="border:0;background:#0056d2;color:#fff;border-radius:999px;padding:8px 18px;font:700 14px sans-serif;cursor:pointer">바꾸기</button></div></form>';
+          [].forEach.call(dlg.querySelectorAll('input'), function (i) { i.style.cssText = 'display:block;width:100%;box-sizing:border-box;margin-top:4px;padding:9px 12px;border:1px solid #c9d6ee;border-radius:10px;font:18px sans-serif;letter-spacing:.3em'; });
+          document.documentElement.appendChild(dlg);
+          var f = dlg.querySelector('form'), msg = dlg.querySelector('.m'), ok = dlg.querySelector('.ok');
+          dlg.querySelector('.x').onclick = function () { dlg.close(); };
+          dlg.addEventListener('close', function () { dlg.remove(); });
+          f.onsubmit = function (e) {
+            e.preventDefault();
+            var o = f.o.value.trim(), n = f.n.value.trim(), c = f.c.value.trim();
+            if (!/^\d{4}$/.test(n)) { msg.textContent = '새 번호는 숫자 4자리여야 해요.'; return; }
+            if (n !== c) { msg.textContent = '새 번호 두 개가 서로 달라요.'; return; }
+            ok.disabled = true; msg.style.color = '#5b6b8a'; msg.textContent = '바꾸는 중…';
+            CHRecord.api('studentPin', { studentId: stu.id, oldPin: o, pin: n }).then(function () {
+              msg.style.color = '#1f9d55'; msg.textContent = '번호를 바꿨어요! 다음 로그인부터 새 번호를 써요.'; setTimeout(function () { dlg.close(); }, 1800);
+            }, function (err) {
+              ok.disabled = false; msg.style.color = '#c2410c';
+              msg.textContent = /알 수 없는 요청/.test((err && err.message) || '') ? '아직 준비 중이에요. 선생님께 말씀드려 주세요.' : ((err && err.message) || '바꾸지 못했어요.');
+            });
+          };
+          dlg.showModal(); f.o.focus();
+        };
+      })();
       if (stu.slug && /^[a-z]{1,6}\d{0,3}$/.test(stu.slug)) {
         var pf = document.createElement('a'); pf.textContent = '포트폴리오'; pf.title = '내 포트폴리오 codemaru.kr/' + stu.slug;
         pf.href = new URL('/' + stu.slug, CHRecord.base).href; pf.target = '_blank'; pf.rel = 'noopener';
