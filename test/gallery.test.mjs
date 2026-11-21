@@ -207,4 +207,31 @@ bad(call({ action: 'galleryPost', ...A, title: '넘침', vis: 'me', file: { name
 // 기존 기능은 그대로
 ok(call({ action: 'save', ...A, workbook: 'w1', title: '시험', state: { a: 1 }, progress: { done: 1, total: 2 } }));
 assert.deepEqual(ok(call({ action: 'load', ...A, workbook: 'w1' })).state, { a: 1 });
-console.log('작품 게시판 서버 시험 통과');
+// 비로그인 공개 갤러리: 승인된 all만 보이며 학생 식별 정보와 원본 파일명은 보내지 않는다.
+const publicStudent = ok(call({ action: 'galleryPost', ...B, title: '공개 게임', vis: 'all', url: 'https://scratch.mit.edu/projects/123' }));
+const pendingPublic = ok(call({ action: 'galleryPost', ...B, title: '아직 대기', vis: 'all', url: 'https://example.com/' }));
+ok(call({ action: 'galleryReview', ...T, id: publicStudent.id, decision: 'approve' }));
+const publicItems = ok(call({ action: 'galleryPublicList' })).items;
+assert.ok(publicItems.some(it => it.id === publicStudent.id));
+assert.ok(publicItems.some(it => it.id === tFile.id));
+assert.ok(!publicItems.some(it => [pendingPublic.id, pAll.id, tCls.id].includes(it.id)));
+for (const it of publicItems) {
+  assert.deepEqual(Object.keys(it).sort(), ['at', 'desc', 'file', 'id', 'kind', 'title', 'url']);
+  if (it.file) assert.deepEqual(Object.keys(it.file).sort(), ['ext', 'size']);
+}
+const publicFile = ok(call({ action: 'galleryPublicFile', id: tFile.id }));
+assert.equal(publicFile.name, 'codemaru-work.zip');
+assert.equal(Buffer.from(publicFile.data, 'base64').length, sb3.length);
+bad(call({ action: 'galleryPublicFile', id: 'missing' }), /열 수 없/);
+bad(call({ action: 'galleryPublicFile', id: pendingPublic.id }), /열 수 없/);
+ok(call({ action: 'galleryEdit', ...T, id: tFile.id, vis: 'class', group: '1반' }));
+bad(call({ action: 'galleryPublicFile', id: tFile.id }), /열 수 없/);
+ok(call({ action: 'galleryEdit', ...T, id: tFile.id, vis: 'me' }));
+bad(call({ action: 'galleryPublicFile', id: tFile.id }), /열 수 없/);
+ok(call({ action: 'galleryEdit', ...T, id: tFile.id, vis: 'all' }));
+ok(call({ action: 'galleryReview', ...T, id: tFile.id, decision: 'hide' }));
+bad(call({ action: 'galleryPublicFile', id: tFile.id }), /열 수 없/);
+assert.ok(!ok(call({ action: 'galleryPublicList' })).items.some(it => it.id === tFile.id));
+bad(call({ action: 'galleryList' }), /로그인/);
+bad(call({ action: 'galleryLike', id: publicStudent.id }), /로그인/);
+console.log('작품 게시판 서버 시험 통과 (비로그인 공개 조회·파일·공개 범위 포함)');

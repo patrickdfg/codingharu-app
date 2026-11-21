@@ -1,0 +1,81 @@
+// 공개 작품 갤러리. 서버에서 승인·공개 범위를 확인하며 등록과 수정은 기존 학생 게시판에서 한다.
+(() => {
+  'use strict';
+  const box = document.getElementById('publicGalleryList'), status = document.getElementById('publicGalleryStatus');
+  if (!box) return;
+  const el = (tag, text) => { const node = document.createElement(tag); if (text) node.textContent = text; return node; };
+  const kinds = { entry: '엔트리', scratch: '스크래치', web: '웹 작품', html: 'HTML 작품', zip: '압축 파일' };
+  let apiUrl;
+  async function api(action, body = {}) {
+    const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action, ...body }) });
+    if (!response.ok) throw new Error('gallery unavailable');
+    const data = await response.json();
+    if (!data.ok) throw new Error(data.error);
+    return data;
+  }
+  function card(item) {
+    const article = el('article'); article.className = 'list-item';
+    const meta = el('div', kinds[item.kind] || '작품'); meta.className = 'meta';
+    article.append(meta, el('h3', item.title), el('p', item.desc));
+    if (item.file) {
+      const download = el('button', '작품 파일 받기 (.' + item.file.ext + ')'); download.type = 'button';
+      const note = el('p'); note.setAttribute('role', 'status');
+      download.onclick = async () => {
+        download.disabled = true; note.textContent = '파일을 불러오는 중이에요.';
+        try {
+          const file = await api('galleryPublicFile', { id: item.id });
+          const bytes = Uint8Array.from(atob(file.data), c => c.charCodeAt(0));
+          const url = URL.createObjectURL(new Blob([bytes], { type: file.mime }));
+          const link = el('a'); link.href = url; link.download = file.name;
+          article.append(link); link.click(); link.remove();
+          setTimeout(() => URL.revokeObjectURL(url), 60000);
+          note.textContent = '파일을 내려받았어요. 해당 제작 도구에서 열어 보세요.';
+        } catch { note.textContent = '파일을 불러오지 못했어요. 잠시 뒤 다시 시도해 주세요.'; }
+        finally { download.disabled = false; }
+      };
+      article.append(download, note);
+    } else if (/^https:\/\//i.test(item.url)) {
+      const link = el('a', '작품 열어 보기 ↗'); link.href = item.url; link.target = '_blank'; link.rel = 'noopener noreferrer';
+      article.append(link);
+    }
+    return article;
+  }
+  async function load() {
+    status.textContent = '공개 작품을 불러오는 중이에요.';
+    try {
+      const config = await fetch('record-config.json', { cache: 'no-store' }).then(r => r.json());
+      apiUrl = config.apiUrl;
+      if (!apiUrl) throw new Error('gallery unavailable');
+      const data = await api('galleryPublicList');
+      const items = Array.isArray(data.items) ? data.items : [];
+      let page = 0;
+      const pages = el('div'); pages.className = 'public-gallery-pages';
+      const previous = el('button', '이전 작품'), next = el('button', '다음 작품'), counter = el('span');
+      previous.type = next.type = 'button'; counter.setAttribute('aria-live', 'polite');
+      function render() {
+        box.replaceChildren(...items.slice(page * 3, page * 3 + 3).map(card));
+        previous.disabled = page === 0; next.disabled = (page + 1) * 3 >= items.length;
+        counter.textContent = (page + 1) + ' / ' + Math.ceil(items.length / 3);
+      }
+      previous.onclick = () => { page--; render(); };
+      next.onclick = () => { page++; render(); };
+      document.getElementById('publicGalleryPages')?.remove();
+      if (items.length > 3) {
+        pages.id = 'publicGalleryPages'; pages.append(previous, counter, next); box.after(pages);
+      }
+      render();
+      status.textContent = items.length ? '공개 작품 ' + items.length + '개 · 로그인 없이 감상할 수 있어요.' : '아직 공개된 작품이 없어요. 새로운 작품을 기다려 주세요.';
+    } catch {
+      status.textContent = '작품을 불러오지 못했어요. ';
+      const retry = el('button', '다시 불러오기'); retry.type = 'button'; retry.onclick = load;
+      status.append(retry);
+    }
+  }
+  let started = false;
+  function start() {
+    if (started || document.documentElement.dataset.page !== 'works') return;
+    started = true; load();
+  }
+  new MutationObserver(start).observe(document.documentElement, { attributes: true, attributeFilter: ['data-page'] });
+  start();
+})();

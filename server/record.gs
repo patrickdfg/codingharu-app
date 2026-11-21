@@ -401,6 +401,24 @@ const ACTIONS_ = {
   // 공개 범위: all(모두 보기) · class(우리 반만) · me(나만 보기). 상태: 대기 · 승인 · 숨김 · 개인(나만 보기).
   // 학생에게는 서버가 볼 수 있는 작품만 보낸다(남의 '나만 보기'·승인 전 작품은 보내지 않는다). 선생님은 모두 본다.
   // 선생님도 올릴 수 있다: 학생 번호 칸은 'T:이메일', 이름은 '선생님', '우리 반만'은 고른 반, 승인 없이 바로 보인다('나만 보기'는 선생님끼리만).
+  // 공개 홈페이지: 승인된 '모두 보기' 작품만, 학생 식별 정보 없이 조회한다.
+  galleryPublicList() {
+    const items = rows_('gallery').filter(r => r[0] && r[8] === 'all' && r[9] === '승인').map(r => {
+      const it = galleryItem_(r);
+      return { id: it.id, title: it.title, url: it.url, kind: it.kind, desc: it.desc,
+        file: it.fileId ? { ext: galleryExt_(it.fileName), size: it.fileSize } : null,
+        at: r[11] instanceof Date ? r[11].getTime() : 0 };
+    });
+    items.sort((a, b) => b.at - a.at);
+    return { items: items.slice(0, 400) };
+  },
+  galleryPublicFile(req) {
+    const f = galleryFind_(req.id);
+    if (!f || f.row[8] !== 'all' || f.row[9] !== '승인' || !f.row[13]) throw new Error('이 작품의 파일은 열 수 없어요.');
+    const it = galleryItem_(f.row), ext = galleryExt_(it.fileName);
+    const blob = DriveApp.getFileById(it.fileId).getBlob();
+    return { name: 'codemaru-work.' + ext, mime: GALLERY_TYPES_[ext].mime, data: Utilities.base64Encode(blob.getBytes()) };
+  },
   galleryList(req) {
     const v = galleryViewer_(req);
     const tz = Session.getScriptTimeZone();

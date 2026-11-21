@@ -1,8 +1,8 @@
 // 공개 홈의 메뉴별 화면 전환(#/about 같은 주소)과 소식·수상자격 목록(news.json, results.json) 표시. 목록이 비어 있으면 그 메뉴는 숨긴다.
 (() => {
   'use strict';
-  const PAGES = { home: '', about: '학원 소개', courses: '교육과정', inquiry: '탐구·포트폴리오', works: '학생 작품', news: '소식', results: '수상·자격', admission: '입학 상담' };
-  const OLD = { courses: 'courses', learning: 'about', curriculum: 'about', projects: 'works', prove: 'inquiry', faq: 'admission', consult: 'admission' };
+  const PAGES = { home: '', about: '학원 소개', courses: '교육과정', learning: '수업 방식', ai: 'AI 탐구', projects: '프로젝트', inquiry: '탐구 기록', growth: '성장 방향', certificates: '자격증', works: '작품 갤러리', news: '소식', results: '수상·자격', admission: '입학 상담' };
+  const OLD = { courses: 'courses', learning: 'learning', curriculum: 'ai', projects: 'projects', prove: 'inquiry', faq: 'admission', consult: 'admission' };
   const empty = { news: true, results: true };
   const root = document.documentElement, baseTitle = document.title;
   const links = () => document.querySelectorAll('.home-nav a, .tile-grid a');

@@ -1,5 +1,5 @@
-/* 공개 홈을 메뉴별 화면으로 나눈다: html[data-page] 값에 맞는 구역만 보이고, 소식·실적 목록과 둘러보기 타일 모양을 정한다. */
-html[data-page="home"] .home-main section[data-page]:not([data-page="home"]):not([data-page="all"]),html[data-page="about"] .home-main section[data-page]:not([data-page="about"]):not([data-page="all"]),html[data-page="courses"] .home-main section[data-page]:not([data-page="courses"]):not([data-page="all"]),html[data-page="inquiry"] .home-main section[data-page]:not([data-page="inquiry"]):not([data-page="all"]),html[data-page="works"] .home-main section[data-page]:not([data-page="works"]):not([data-page="all"]),html[data-page="news"] .home-main section[data-page]:not([data-page="news"]):not([data-page="all"]),html[data-page="results"] .home-main section[data-page]:not([data-page="results"]):not([data-page="all"]),html[data-page="admission"] .home-main section[data-page]:not([data-page="admission"]):not([data-page="all"]){display:none}
+/* 공개 홈을 메뉴별 화면으로 나눈다. */
+html[data-page="home"] .home-main section[data-page]:not([data-page="home"]),html[data-page="about"] .home-main section[data-page]:not([data-page="about"]),html[data-page="courses"] .home-main section[data-page]:not([data-page="courses"]),html[data-page="learning"] .home-main section[data-page]:not([data-page="learning"]),html[data-page="ai"] .home-main section[data-page]:not([data-page="ai"]),html[data-page="projects"] .home-main section[data-page]:not([data-page="projects"]),html[data-page="inquiry"] .home-main section[data-page]:not([data-page="inquiry"]),html[data-page="growth"] .home-main section[data-page]:not([data-page="growth"]),html[data-page="certificates"] .home-main section[data-page]:not([data-page="certificates"]),html[data-page="works"] .home-main section[data-page]:not([data-page="works"]),html[data-page="news"] .home-main section[data-page]:not([data-page="news"]),html[data-page="results"] .home-main section[data-page]:not([data-page="results"]),html[data-page="admission"] .home-main section[data-page]:not([data-page="admission"]){display:none}
 .home-nav a[hidden],.tile-grid a[hidden]{display:none}
 .home-nav a[aria-current="page"]{color:var(--lime);font-weight:700}
 .page-tiles,.page-list{background:var(--home-paper);color:var(--home-ink)}
@@ -19,3 +19,17 @@ html[data-page="home"] .home-main section[data-page]:not([data-page="home"]):not
 .home-nav{display:flex;order:3;width:100%;gap:20px;overflow-x:auto;padding:6px 0 12px;scrollbar-width:none;white-space:nowrap}
 .home-nav::-webkit-scrollbar{display:none}.home-nav a{flex:none;padding:6px 0}}
 @media(prefers-reduced-motion:reduce){.tile-grid a{transition:none}}
+
+/* 메뉴별로 짧게 읽는 공개 페이지. */
+.home-header{height:auto;flex-wrap:wrap;padding-top:22px;padding-bottom:0;row-gap:12px}
+.home-account{margin-left:auto}.home-nav{order:3;width:100%;flex-wrap:wrap;gap:8px 24px;padding:8px 0 16px;overflow:visible;white-space:normal}.home-nav a{padding:4px 0;white-space:nowrap}
+.home-main .home-section{padding-top:56px;padding-bottom:56px}
+.home-ribbon{display:none}.tile-grid a{padding:18px 20px;gap:4px}.tile-grid a::after{display:none}
+.certificate-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}.certificate-grid article{display:flex;flex-direction:column;gap:12px}.certificate-grid button{align-self:flex-start;margin-top:auto}
+.public-samples{margin-top:28px}.public-samples summary{cursor:pointer;font-weight:700;margin-bottom:20px}.public-samples .prove-works-head{margin-top:20px}
+#publicGalleryList .list-item p{margin-bottom:12px}
+@media(max-width:780px){.home-nav{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px 8px;padding:8px 0 12px}.home-nav a{font-size:12px;text-align:center}.home-header{padding-top:14px}.tile-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.tile-grid a{padding:16px 12px}.tile-grid b{font-size:16px}.tile-grid span{font-size:12px}.course-art{display:none}.certificate-grid{grid-template-columns:1fr}.home-main .home-section{padding-top:36px;padding-bottom:36px}}
+@media(max-width:360px){.home-nav{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+@media(max-width:780px){.home-main .course-grid .promo-course{padding:22px 20px}.home-main .course-grid .course-index{display:none}.home-main .course-grid h3{font-size:21px;line-height:1.5;margin:0 0 12px}.home-main .course-grid p{font-size:13px;line-height:1.8;margin-bottom:12px}.home-main .course-grid .course-tags{margin:12px 0}.home-main .course-grid .course-open{margin-top:14px;padding-top:14px}.academy-value,.class-moments,.learning-refresh{padding-top:36px;padding-bottom:36px}.learning-refresh .learn-art{display:none}}
+.public-gallery-pages{display:flex;align-items:center;gap:16px;margin-top:24px}.public-gallery-pages button{font-size:14px;padding:10px 16px}
