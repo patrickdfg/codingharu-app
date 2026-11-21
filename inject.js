@@ -424,6 +424,7 @@
       }
     })();
 
+    document.dispatchEvent(new Event('codingharu:record-ready'));
     var wb = window.CodingHaruWorkbook;
     if (!wb) return;
     var wbId = wb.id + '-v' + wb.version, metaKey = wb.key + '-meta';

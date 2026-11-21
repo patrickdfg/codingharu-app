@@ -1,12 +1,15 @@
 /* 학습 관찰: 입력·화면 활성 상태로 활동 시간을 추정한다. 정답 판정은 교안의 명시적 이벤트만 받는다. */
 (function () {
   'use strict';
+  var started = false;
   function start() {
+    if (started || !document.getElementById('ch-student')) return;
     var student = CHRecord.student(), session = CHRecord.session(), wb = window.CodingHaruWorkbook;
     if (window.top !== window || !student || !session || session.role !== 'student' || !session.sid) return;
     if (!wb && !document.getElementById('ch-done-btn')) return;
     var page = location.pathname.split('/v/')[1];
     if (!page || /^(assets|admin|gallery|project-lab\/examples)\//.test(page)) return;
+    started = true;
     var key = 'codingharu-learning-s' + student.id, queue = read(key, []), busy = false;
     var record = { id: crypto.randomUUID(), page: page, title: document.title, activeSeconds: 0, done: 0, total: 0, attempts: 0, correct: 0, hints: 0 };
     var last = Date.now(), touched = last, ready = false, lastSurveyAt = 0, offered = false;
@@ -81,5 +84,6 @@
       setInterval(tick, 1000); setInterval(save, 45000); window.addEventListener('online', flush); flush();
     }, function () { /* 서버 배포 전에는 기존 수업만 유지한다. */ });
   }
+  document.addEventListener('codingharu:record-ready', start);
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { setTimeout(start, 0); }); else setTimeout(start, 0);
 })();
