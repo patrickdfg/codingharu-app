@@ -6,6 +6,41 @@
   const empty = { news: true, results: true };
   const root = document.documentElement, baseTitle = document.title;
   const links = () => document.querySelectorAll('.home-nav a, .tile-grid a');
+  const navigation = document.getElementById('publicNavigation'), toggle = document.querySelector('.nav-toggle');
+  const groups = Array.from(navigation.querySelectorAll('.nav-group'));
+  function closeNavigation() {
+    groups.forEach(group => { group.open = false; });
+    toggle.setAttribute('aria-expanded', 'false');
+    navigation.classList.remove('is-open');
+  }
+  toggle.addEventListener('click', () => {
+    const open = toggle.getAttribute('aria-expanded') !== 'true';
+    closeNavigation();
+    toggle.setAttribute('aria-expanded', String(open));
+    navigation.classList.toggle('is-open', open);
+  });
+  groups.forEach(group => group.addEventListener('toggle', () => {
+    if (group.open) groups.forEach(other => { if (other !== group) other.open = false; });
+  }));
+  navigation.addEventListener('click', event => {
+    if (!event.target.closest('a, button[data-auth]')) return;
+    const summary = event.target.closest('.nav-group')?.querySelector('summary');
+    const mobile = toggle.getAttribute('aria-expanded') === 'true';
+    closeNavigation();
+    if (mobile) toggle.focus(); else if (summary) summary.focus();
+  });
+  document.addEventListener('pointerdown', event => {
+    if (!event.target.closest('.home-header')) closeNavigation();
+  });
+  document.addEventListener('keydown', event => {
+    if (event.key !== 'Escape' || (!groups.some(group => group.open) && toggle.getAttribute('aria-expanded') !== 'true')) return;
+    const summary = groups.find(group => group.open)?.querySelector('summary');
+    const mobile = toggle.getAttribute('aria-expanded') === 'true';
+    closeNavigation();
+    if (mobile) toggle.focus(); else if (summary) summary.focus();
+    event.preventDefault();
+  });
+  window.matchMedia('(max-width:980px)').addEventListener('change', closeNavigation);
 
   function route(first) {
     const h = location.hash.slice(1);
@@ -19,6 +54,7 @@
     document.querySelectorAll('.home-nav a').forEach(a => {
       if (a.getAttribute('href') === '#/' + page) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
     });
+    groups.forEach(group => group.classList.toggle('is-current', !!group.querySelector('[aria-current="page"]')));
     document.title = PAGES[page] ? PAGES[page] + ' · 코드마루' : baseTitle;
     const target = anchor && document.getElementById(anchor);
     if (target) target.scrollIntoView();

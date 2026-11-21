@@ -33,3 +33,27 @@ html[data-page="home"] .home-main section[data-page]:not([data-page="home"]),htm
 
 @media(max-width:780px){.home-main .course-grid .promo-course{padding:22px 20px}.home-main .course-grid .course-index{display:none}.home-main .course-grid h3{font-size:21px;line-height:1.5;margin:0 0 12px}.home-main .course-grid p{font-size:13px;line-height:1.8;margin-bottom:12px}.home-main .course-grid .course-tags{margin:12px 0}.home-main .course-grid .course-open{margin-top:14px;padding-top:14px}.academy-value,.class-moments,.learning-refresh{padding-top:36px;padding-bottom:36px}.learning-refresh .learn-art{display:none}}
 .public-gallery-pages{display:flex;align-items:center;gap:16px;margin-top:24px}.public-gallery-pages button{font-size:14px;padding:10px 16px}
+
+/* 상단 카테고리와 하위 메뉴 */
+.home-header{height:88px;position:sticky;top:0;z-index:30;flex-wrap:nowrap;padding:0 48px;gap:32px;background:var(--night,#15102c)}
+.home-header .home-nav{display:flex;order:0;width:auto;flex:1;justify-content:flex-end;align-items:center;flex-wrap:nowrap;gap:26px;padding:0;overflow:visible;white-space:normal}
+.home-nav .nav-group{position:relative;margin:0;border:0;padding:0;background:none;color:#d1ccdf;font-size:14px}
+.nav-group summary{display:flex;align-items:center;gap:8px;padding:18px 0;cursor:pointer;list-style:none;white-space:nowrap;font-weight:600}
+.nav-group summary::-webkit-details-marker{display:none}.nav-group summary::after{content:'⌄';font-size:13px;color:#a89cbe}.nav-group[open] summary::after{transform:rotate(180deg)}
+.nav-group.is-current>summary,.nav-group[open]>summary{color:var(--lime)}
+.home-nav .nav-submenu{position:absolute;top:100%;left:-20px;min-width:200px;padding:10px;border:1px solid #483b62;border-radius:12px;background:#241c37;box-shadow:0 16px 36px #0005}
+.home-nav .nav-submenu a{display:block;padding:11px 12px;border-radius:7px;text-align:left;font-size:13px;line-height:1.5}
+.home-nav .nav-submenu a:hover,.home-nav .nav-submenu a[aria-current="page"]{background:#ffffff0c;color:var(--lime)}
+.home-nav .nav-submenu a[hidden]{display:none}.home-nav .home-account{margin-left:8px;flex:none}
+.nav-toggle{display:none}.nav-group summary:focus-visible{outline:2px solid var(--lime);outline-offset:5px;border-radius:4px}
+@media(min-width:981px) and (max-width:1180px){.home-header{padding:0 28px;gap:22px}.home-header .home-nav{gap:18px}.home-nav .nav-group{font-size:13px}.home-account button{padding:10px 12px}}
+@media(max-width:980px){
+  .home-header{height:auto;min-height:76px;padding:16px 22px;gap:12px;flex-wrap:wrap;justify-content:space-between}
+  .nav-toggle{display:flex;align-items:center;gap:10px;padding:10px 14px;border:1px solid #ffffff35;border-radius:8px;background:#ffffff0c;color:#fff;font-size:13px}
+  .home-header .home-nav{display:none;order:3;width:100%;flex:none;padding:8px 0 0;max-height:calc(100dvh - 100px);overflow-y:auto}
+  .home-header .home-nav.is-open{display:block}.home-nav .nav-group{border-bottom:1px solid #ffffff18}
+  .nav-group summary{justify-content:space-between;padding:16px 4px;font-size:15px}
+  .home-nav .nav-submenu{position:static;min-width:0;margin:0 0 12px;padding:6px;border:0;box-shadow:none}
+  .home-nav .nav-submenu a{padding:12px 14px;font-size:14px}
+  .home-nav .home-account{display:flex;justify-content:flex-start;gap:10px;margin:16px 0 4px}
+}
