@@ -70,7 +70,7 @@ const ACTIONS_ = {
   learningSave(req) {
     checkSid_(req.sid, req.studentId); student_(req.studentId);
     const x = req.record || {}, id = String(x.id || '');
-    if (!/^[a-zA-Z0-9-]{8,80}$/.test(id) || !/^[\w/-]+(?:\.html)?$/.test(x.page || '')) throw new Error('학습 기록 형식이 맞지 않아요.');
+    if (!/^[a-zA-Z0-9-]{8,80}$/.test(id) || !/^[\w%/-]+(?:\.html)?$/.test(x.page || '')) throw new Error('학습 기록 형식이 맞지 않아요.');
     const count = (v, max) => Math.max(0, Math.min(max, Math.floor(Number(v) || 0)));
     const data = { activeSeconds: count(x.activeSeconds, 14400), done: count(x.done, 100000), total: count(x.total, 100000), attempts: count(x.attempts, 10000), correct: count(x.correct, 10000), hints: count(x.hints, 10000) };
     data.correct = Math.min(data.correct, data.attempts);

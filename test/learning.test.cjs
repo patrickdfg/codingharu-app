@@ -20,7 +20,7 @@ const save=(x=rec)=>call('learningSave',{studentId:'1',sid:'sid-1',record:x});
 assert.throws(()=>call('learningSave',{studentId:'2',sid:'sid-1',record:rec}),/로그인/);
 assert.throws(()=>call('learningReport',{studentId:'1',auth:'student',month:'2026-11'}),/권한/);
 assert.throws(()=>save({...rec,page:'../<script>'}),/형식/);
-save();save();assert.equal(run('learningRows.length'),1,'재전송은 합산하지 않음');
+save({...rec,page:'python/%EA%B8%B0%EC%B4%88/'});save();assert.equal(run('learningRows.length'),1,'재전송은 합산하지 않음');
 save({...rec,activeSeconds:60,attempts:1,correct:1});
 assert.equal(run('JSON.parse(learningRows[0][6]).activeSeconds'),180,'늦은 재전송이 기록을 줄이지 않음');
 const survey={interests:['games','art'],fun:3,difficulty:2,approach:'try'};
