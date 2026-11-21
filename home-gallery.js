@@ -5,7 +5,7 @@
   if (!box) return;
   const el = (tag, text) => { const node = document.createElement(tag); if (text) node.textContent = text; return node; };
   const kinds = { entry: '엔트리', scratch: '스크래치', web: '웹 작품', html: 'HTML 작품', zip: '압축 파일' };
-  let apiUrl;
+  let apiUrl, thumbnails = {};
   async function api(action, body = {}) {
     const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action, ...body }) });
     if (!response.ok) throw new Error('gallery unavailable');
@@ -14,12 +14,29 @@
     return data;
   }
   function card(item) {
-    const article = el('article'); article.className = 'list-item';
-    const meta = el('div', kinds[item.kind] || '작품'); meta.className = 'meta';
-    article.append(meta, el('h3', item.title), el('p', item.desc));
+    const article = el('article'); article.className = 'gallery-card';
+    const kind = kinds[item.kind] ? item.kind : 'web';
+    const cover = el('div'); cover.className = 'gallery-cover'; cover.dataset.kind = kind; cover.setAttribute('aria-hidden', 'true');
+    const symbol = el('span', { entry: 'E', scratch: 'S', web: '</>', html: '</>', zip: 'ZIP' }[kind]); symbol.className = 'gallery-symbol';
+    const label = el('span', kinds[kind]); label.className = 'gallery-cover-label';
+    cover.append(symbol, label);
+    const snapshot = thumbnails[item.id], source = [item.url || '', item.file?.ext || '', item.at || 0].join('|');
+    const scratch = !item.file && kind === 'scratch' && String(item.url).match(/^https:\/\/scratch\.mit\.edu\/projects\/(\d+)(?:\/|$)/i);
+    if (snapshot?.source === source && /^[a-f0-9]{12}-[a-f0-9]{12}\.jpg$/.test(snapshot.file)) {
+      const image = document.createElement('img'); image.alt = ''; image.loading = 'lazy'; image.className = 'gallery-snapshot';
+      image.src = 'gallery-thumbnails/' + snapshot.file; image.onerror = () => image.remove(); cover.append(image);
+    } else if (scratch) {
+      const image = document.createElement('img'); image.alt = ''; image.loading = 'lazy';
+      image.src = 'https://cdn2.scratch.mit.edu/get_image/project/' + scratch[1] + '_480x360.png';
+      image.onerror = () => image.remove(); cover.append(image);
+    }
+    const body = el('div'); body.className = 'gallery-body';
+    const meta = el('span', kinds[kind]); meta.className = 'gallery-kind';
+    const title = el('h3', item.title), description = el('p', String(item.desc || '').replace(/^\[연구소:[a-z]+-\d{2}\]\s*/, '')); description.className = 'gallery-description';
+    body.append(meta, title, description); article.append(cover, body);
     if (item.file) {
-      const download = el('button', '작품 파일 받기 (.' + item.file.ext + ')'); download.type = 'button';
-      const note = el('p'); note.setAttribute('role', 'status');
+      const download = el('button', '작품 파일 받기 (.' + item.file.ext + ')'); download.type = 'button'; download.className = 'gallery-open';
+      const note = el('p'); note.className = 'gallery-file-status'; note.setAttribute('role', 'status');
       download.onclick = async () => {
         download.disabled = true; note.textContent = '파일을 불러오는 중이에요.';
         try {
@@ -33,29 +50,43 @@
         } catch { note.textContent = '파일을 불러오지 못했어요. 잠시 뒤 다시 시도해 주세요.'; }
         finally { download.disabled = false; }
       };
-      article.append(download, note);
+      body.append(download, note);
     } else if (/^https:\/\//i.test(item.url)) {
       const link = el('a', '작품 열어 보기 ↗'); link.href = item.url; link.target = '_blank'; link.rel = 'noopener noreferrer';
-      article.append(link);
+      link.className = 'gallery-open'; body.append(link);
     }
     return article;
   }
   async function load() {
     status.textContent = '공개 작품을 불러오는 중이에요.';
     try {
-      const config = await fetch('record-config.json', { cache: 'no-store' }).then(r => r.json());
+      const [config, snapshots] = await Promise.all([
+        fetch('record-config.json', { cache: 'no-store' }).then(r => r.json()),
+        fetch('gallery-thumbnails/index.json', { cache: 'no-store' }).then(r => r.ok ? r.json() : {}).catch(() => ({}))
+      ]);
+      thumbnails = snapshots.items || {};
       apiUrl = config.apiUrl;
       if (!apiUrl) throw new Error('gallery unavailable');
       const data = await api('galleryPublicList');
       const items = Array.isArray(data.items) ? data.items : [];
-      let page = 0;
+      let page = 0, category = 'all';
+      const categoryOf = item => item.file ? 'file' : (kinds[item.kind] ? item.kind : 'web');
+      const filters = document.getElementById('publicGalleryFilters');
+      const categories = [['all', '전체'], ['web', '웹 작품'], ['entry', '엔트리'], ['scratch', '스크래치'], ['file', '파일 작품']];
+      filters.replaceChildren(...categories.filter(([key]) => key === 'all' || items.some(item => categoryOf(item) === key)).map(([key, label]) => {
+        const button = el('button', label); button.type = 'button'; button.dataset.category = key;
+        button.onclick = () => { category = key; page = 0; render(); };
+        return button;
+      }));
       const pages = el('div'); pages.className = 'public-gallery-pages';
       const previous = el('button', '이전 작품'), next = el('button', '다음 작품'), counter = el('span');
       previous.type = next.type = 'button'; counter.setAttribute('aria-live', 'polite');
       function render() {
-        box.replaceChildren(...items.slice(page * 3, page * 3 + 3).map(card));
-        previous.disabled = page === 0; next.disabled = (page + 1) * 3 >= items.length;
-        counter.textContent = (page + 1) + ' / ' + Math.ceil(items.length / 3);
+        const filtered = items.filter(item => category === 'all' || categoryOf(item) === category);
+        box.replaceChildren(...filtered.slice(page * 3, page * 3 + 3).map(card));
+        filters.querySelectorAll('button').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.category === category)));
+        previous.disabled = page === 0; next.disabled = (page + 1) * 3 >= filtered.length;
+        counter.textContent = (page + 1) + ' / ' + Math.ceil(filtered.length / 3); pages.hidden = filtered.length <= 3;
       }
       previous.onclick = () => { page--; render(); };
       next.onclick = () => { page++; render(); };

@@ -1,0 +1,49 @@
+name: 작품 썸네일 자동 생성
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '7,22,37,52 * * * *'
+  push:
+    branches: [main]
+    paths: ['tools/gallery-thumbnails.cjs', '.github/workflows/gallery.yml']
+
+concurrency:
+  group: sync
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pages: write
+
+jobs:
+  thumbnails:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: 캡처 도구 준비
+        run: |
+          npm install --prefix "$RUNNER_TEMP/gallery-tools" playwright fflate --no-audit --no-fund
+          "$RUNNER_TEMP/gallery-tools/node_modules/.bin/playwright" install --with-deps chromium
+      - name: 공개 승인 작품 캡처
+        env:
+          NODE_PATH: ${{ runner.temp }}/gallery-tools/node_modules
+        run: node tools/gallery-thumbnails.cjs
+      - name: 썸네일 게시
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name "codemaru-gallery"
+          git config user.email "gallery@users.noreply.github.com"
+          git add gallery-thumbnails
+          if git diff --cached --quiet; then echo "새 썸네일 없음"; exit 0; fi
+          git commit -m "공개 작품 썸네일 자동 생성"
+          git pull --rebase origin main
+          git push origin main
+          gh api --method POST "repos/$GITHUB_REPOSITORY/pages/builds" --silent

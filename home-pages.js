@@ -22,6 +22,17 @@
   groups.forEach(group => group.addEventListener('toggle', () => {
     if (group.open) groups.forEach(other => { if (other !== group) other.open = false; });
   }));
+  groups.forEach(group => {
+    group.querySelector('summary').addEventListener('click', event => {
+      if (event.detail && group.open && window.matchMedia('(hover:hover) and (min-width:981px)').matches) event.preventDefault();
+    });
+    group.addEventListener('pointerenter', event => {
+      if (event.pointerType === 'mouse' && window.matchMedia('(min-width:981px)').matches) group.open = true;
+    });
+    group.addEventListener('pointerleave', event => {
+      if (event.pointerType === 'mouse' && !group.matches(':focus-within')) group.open = false;
+    });
+  });
   navigation.addEventListener('click', event => {
     if (!event.target.closest('a, button[data-auth]')) return;
     const summary = event.target.closest('.nav-group')?.querySelector('summary');
