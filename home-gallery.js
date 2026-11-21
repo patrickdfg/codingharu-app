@@ -83,15 +83,15 @@
       previous.type = next.type = 'button'; counter.setAttribute('aria-live', 'polite');
       function render() {
         const filtered = items.filter(item => category === 'all' || categoryOf(item) === category);
-        box.replaceChildren(...filtered.slice(page * 3, page * 3 + 3).map(card));
+        box.replaceChildren(...filtered.slice(page * 4, page * 4 + 4).map(card));
         filters.querySelectorAll('button').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.category === category)));
-        previous.disabled = page === 0; next.disabled = (page + 1) * 3 >= filtered.length;
-        counter.textContent = (page + 1) + ' / ' + Math.ceil(filtered.length / 3); pages.hidden = filtered.length <= 3;
+        previous.disabled = page === 0; next.disabled = (page + 1) * 4 >= filtered.length;
+        counter.textContent = (page + 1) + ' / ' + Math.ceil(filtered.length / 4); pages.hidden = filtered.length <= 4;
       }
       previous.onclick = () => { page--; render(); };
       next.onclick = () => { page++; render(); };
       document.getElementById('publicGalleryPages')?.remove();
-      if (items.length > 3) {
+      if (items.length > 4) {
         pages.id = 'publicGalleryPages'; pages.append(previous, counter, next); box.after(pages);
       }
       render();

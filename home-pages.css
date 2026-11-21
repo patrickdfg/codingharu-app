@@ -35,7 +35,7 @@ html[data-page="home"] .home-main section[data-page]:not([data-page="home"]),htm
 .public-gallery-pages{display:flex;align-items:center;gap:16px;margin-top:24px}.public-gallery-pages button{font-size:14px;padding:10px 16px}
 
 /* 공개 작품 카드 */
-.public-gallery-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;align-items:stretch}
+.public-gallery-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px;align-items:stretch}
 .gallery-card{display:flex;flex-direction:column;min-width:0;overflow:hidden;border:1px solid #e4e0ee;border-radius:20px;background:#fff;box-shadow:0 5px 20px #241c3706}
 .gallery-cover{position:relative;display:flex;align-items:center;justify-content:center;aspect-ratio:16/10;flex:none;overflow:hidden;background:linear-gradient(135deg,#e5ddfc,#f2edff);color:#6a45a0}
 .gallery-cover::before,.gallery-cover::after{content:'';position:absolute;width:130px;height:130px;border:1px solid currentColor;border-radius:28px;opacity:.12;transform:rotate(-24deg)}
@@ -45,9 +45,9 @@ html[data-page="home"] .home-main section[data-page]:not([data-page="home"]),htm
 .gallery-cover img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#f8f6fc}
 .gallery-cover img.gallery-snapshot{object-fit:cover}
 .gallery-filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px}.gallery-filters:empty{display:none}.gallery-filters button{padding:9px 17px;border:1px solid #ddd5e8;border-radius:24px;background:#fff;color:#665775;font-size:13px;font-weight:600}.gallery-filters button[aria-pressed="true"]{background:#4c366e;border-color:#4c366e;color:#fff}
-.gallery-body{display:flex;flex-direction:column;align-items:flex-start;flex:1;padding:24px;gap:12px;min-width:0}
+.gallery-body{display:flex;flex-direction:column;align-items:flex-start;flex:1;padding:18px;gap:10px;min-width:0}
 .gallery-kind{font-size:11px;font-weight:700;color:#6c548c;background:#f1ecf9;border-radius:6px;padding:3px 9px}
-.home-main .gallery-body h3{margin:0;font-size:21px;line-height:1.45;letter-spacing:-.5px;overflow-wrap:anywhere}
+.home-main .gallery-body h3{margin:0;font-size:18px;line-height:1.45;letter-spacing:-.5px;overflow-wrap:anywhere}
 .home-main .gallery-description{margin:0 0 8px;color:#675e77;font-size:13px;line-height:1.8;overflow-wrap:anywhere;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
 .gallery-body .gallery-open{display:inline-flex;align-items:center;justify-content:space-between;align-self:stretch;margin-top:auto;border:1px solid #ddd4eb;border-radius:9px;padding:12px 14px;background:#f7f4fc;color:#4d386d;font:700 13px/1.5 system-ui,sans-serif;text-decoration:none;text-align:left;overflow-wrap:anywhere}
 .gallery-body .gallery-open:hover{background:#eee7f8;color:#37234f}.home-main .gallery-file-status{margin:0;font-size:12px;color:#675e77;line-height:1.6;overflow-wrap:anywhere}.gallery-file-status:empty{display:none}
