@@ -105,7 +105,7 @@
   }
 
   // ---- 화면 고르기 ----
-  var VIEWS = { home: home, members: members, works: works, points: points, rates: rates, monthly: monthly, report: report, homeuse: homeuse, settings: settings };
+  var VIEWS = { home: home, members: members, learning: function () { CHLearning.render(view, students(), api); }, works: works, points: points, rates: rates, monthly: monthly, report: report, homeuse: homeuse, settings: settings };
   function route() {
     var name = (location.hash || '#home').slice(1).split('?')[0];
     if (!VIEWS[name]) name = 'home';

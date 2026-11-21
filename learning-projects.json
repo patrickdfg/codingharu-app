@@ -1,0 +1,1507 @@
+[
+  {
+    "id": "school-01",
+    "title": "급식 줄 시간 지도",
+    "category": "school",
+    "level": 1,
+    "prerequisites": "변수, 조건, 반복"
+  },
+  {
+    "id": "school-02",
+    "title": "분실물 보관함 검색",
+    "category": "school",
+    "level": 0,
+    "prerequisites": "변수, 조건, 반복"
+  },
+  {
+    "id": "school-03",
+    "title": "동아리 체험 부스 배정",
+    "category": "school",
+    "level": 2,
+    "prerequisites": "변수, 조건, 반복"
+  },
+  {
+    "id": "school-04",
+    "title": "교실 환기 신호등",
+    "category": "school",
+    "level": 0,
+    "prerequisites": "변수, 조건, 반복"
+  },
+  {
+    "id": "school-05",
+    "title": "칠판 당번 교대 계산기",
+    "category": "school",
+    "level": 0,
+    "prerequisites": "변수, 조건, 반복"
+  },
+  {
+    "id": "school-06",
+    "title": "조용한 자습 자리 추천",
+    "category": "school",
+    "level": 1,
+    "prerequisites": "변수, 조건, 반복"
+  },
+  {
+    "id": "school-07",
+    "title": "발표 순서 타이머",
+    "category": "school",
+    "level": 0,
+    "prerequisites": "변수, 조건, 반복"
+  },
+  {
+    "id": "school-08",
+    "title": "쉬는 시간 운동장 예약판",
+    "category": "school",
+    "level": 1,
+    "prerequisites": "변수, 조건, 반복"
+  },
+  {
+    "id": "school-09",
+    "title": "학급 공지 마감 모아보기",
+    "category": "school",
+    "level": 0,
+    "prerequisites": "변수, 조건, 반복"
+  },
+  {
+    "id": "school-10",
+    "title": "모둠 재료비 장부",
+    "category": "school",
+    "level": 0,
+    "prerequisites": "변수, 조건, 반복"
+  },
+  {
+    "id": "school-11",
+    "title": "수업 준비물 점검판",
+    "category": "school",
+    "level": 0,
+    "prerequisites": "변수, 조건, 반복"
+  },
+  {
+    "id": "school-12",
+    "title": "도서 반납함 분류 연습",
+    "category": "school",
+    "level": 1,
+    "prerequisites": "변수, 조건, 반복"
+  },
+  {
+    "id": "school-13",
+    "title": "행사 소품 대여 이력",
+    "category": "school",
+    "level": 1,
+    "prerequisites": "변수, 조건, 반복"
+  },
+  {
+    "id": "school-14",
+    "title": "급식 식판 선택 통계",
+    "category": "school",
+    "level": 1,
+    "prerequisites": "변수, 조건, 반복"
+  },
+  {
+    "id": "school-15",
+    "title": "모둠 회의 빈 시간 교집합",
+    "category": "school",
+    "level": 1,
+    "prerequisites": "변수, 조건, 반복"
+  },
+  {
+    "id": "school-16",
+    "title": "좌석표 거리 제약 퍼즐",
+    "category": "school",
+    "level": 2,
+    "prerequisites": "변수, 조건, 반복"
+  },
+  {
+    "id": "school-17",
+    "title": "교내 안내 표지 길찾기",
+    "category": "school",
+    "level": 2,
+    "prerequisites": "변수, 조건, 반복"
+  },
+  {
+    "id": "school-18",
+    "title": "축제 공연 간격 짜기",
+    "category": "school",
+    "level": 2,
+    "prerequisites": "변수, 조건, 반복"
+  },
+  {
+    "id": "school-19",
+    "title": "과제 제출 파일 이름 검사기",
+    "category": "school",
+    "level": 0,
+    "prerequisites": "변수, 조건, 반복"
+  },
+  {
+    "id": "school-20",
+    "title": "학교 물건 재사용 매칭",
+    "category": "school",
+    "level": 1,
+    "prerequisites": "변수, 조건, 반복"
+  },
+  {
+    "id": "learning-01",
+    "title": "AI 진로 탐색 코치",
+    "category": "learning",
+    "level": 1,
+    "prerequisites": "문자열, 조건, 목록"
+  },
+  {
+    "id": "learning-02",
+    "title": "헷갈리는 개념 짝 카드",
+    "category": "learning",
+    "level": 0,
+    "prerequisites": "문자열, 조건, 목록"
+  },
+  {
+    "id": "learning-03",
+    "title": "오답 복습 달력",
+    "category": "learning",
+    "level": 1,
+    "prerequisites": "문자열, 조건, 목록"
+  },
+  {
+    "id": "learning-04",
+    "title": "발표 문장 호흡 표시기",
+    "category": "learning",
+    "level": 0,
+    "prerequisites": "문자열, 조건, 목록"
+  },
+  {
+    "id": "learning-05",
+    "title": "탐구 보고서 근거 지도",
+    "category": "learning",
+    "level": 1,
+    "prerequisites": "문자열, 조건, 목록"
+  },
+  {
+    "id": "learning-06",
+    "title": "분수 레시피 조정기",
+    "category": "learning",
+    "level": 0,
+    "prerequisites": "문자열, 조건, 목록"
+  },
+  {
+    "id": "learning-07",
+    "title": "한자 부수 카드 탐험",
+    "category": "learning",
+    "level": 0,
+    "prerequisites": "문자열, 조건, 목록"
+  },
+  {
+    "id": "learning-08",
+    "title": "받아쓰기 혼동 패턴 차트",
+    "category": "learning",
+    "level": 1,
+    "prerequisites": "문자열, 조건, 목록"
+  },
+  {
+    "id": "learning-09",
+    "title": "코드 실행 순서 퍼즐",
+    "category": "learning",
+    "level": 1,
+    "prerequisites": "문자열, 조건, 목록"
+  },
+  {
+    "id": "learning-10",
+    "title": "읽기 계획 페이지 나누기",
+    "category": "learning",
+    "level": 0,
+    "prerequisites": "문자열, 조건, 목록"
+  },
+  {
+    "id": "learning-11",
+    "title": "질문 난이도 변환 실험",
+    "category": "learning",
+    "level": 1,
+    "prerequisites": "문자열, 조건, 목록"
+  },
+  {
+    "id": "learning-12",
+    "title": "영단어 문맥 선택기",
+    "category": "learning",
+    "level": 0,
+    "prerequisites": "문자열, 조건, 목록"
+  },
+  {
+    "id": "learning-13",
+    "title": "개념 그래프 길찾기",
+    "category": "learning",
+    "level": 2,
+    "prerequisites": "문자열, 조건, 목록"
+  },
+  {
+    "id": "learning-14",
+    "title": "과목 선택 저울",
+    "category": "learning",
+    "level": 1,
+    "prerequisites": "문자열, 조건, 목록"
+  },
+  {
+    "id": "learning-15",
+    "title": "탐구 질문 좁히기",
+    "category": "learning",
+    "level": 1,
+    "prerequisites": "문자열, 조건, 목록"
+  },
+  {
+    "id": "learning-16",
+    "title": "알고리즘 비교 운동장",
+    "category": "learning",
+    "level": 2,
+    "prerequisites": "문자열, 조건, 목록"
+  },
+  {
+    "id": "learning-17",
+    "title": "발표 예상 질문 카드",
+    "category": "learning",
+    "level": 0,
+    "prerequisites": "문자열, 조건, 목록"
+  },
+  {
+    "id": "learning-18",
+    "title": "팀 프로젝트 역산 달력",
+    "category": "learning",
+    "level": 1,
+    "prerequisites": "문자열, 조건, 목록"
+  },
+  {
+    "id": "learning-19",
+    "title": "수식 오류 위치 찾기",
+    "category": "learning",
+    "level": 1,
+    "prerequisites": "문자열, 조건, 목록"
+  },
+  {
+    "id": "learning-20",
+    "title": "학습 실험 표본 비교",
+    "category": "learning",
+    "level": 2,
+    "prerequisites": "문자열, 조건, 목록"
+  },
+  {
+    "id": "access-01",
+    "title": "누구나 읽는 교실 안내",
+    "category": "access",
+    "level": 0,
+    "prerequisites": "텍스트 입력, 조건"
+  },
+  {
+    "id": "access-02",
+    "title": "색 없이 읽는 시간표",
+    "category": "access",
+    "level": 1,
+    "prerequisites": "텍스트 입력, 조건"
+  },
+  {
+    "id": "access-03",
+    "title": "키보드만 쓰는 전시관",
+    "category": "access",
+    "level": 1,
+    "prerequisites": "텍스트 입력, 조건"
+  },
+  {
+    "id": "access-04",
+    "title": "짧은 자막 줄 나누기",
+    "category": "access",
+    "level": 1,
+    "prerequisites": "텍스트 입력, 조건"
+  },
+  {
+    "id": "access-05",
+    "title": "교실 의사소통 버튼판",
+    "category": "access",
+    "level": 0,
+    "prerequisites": "텍스트 입력, 조건"
+  },
+  {
+    "id": "access-06",
+    "title": "안내문 어려운 말 사전",
+    "category": "access",
+    "level": 1,
+    "prerequisites": "텍스트 입력, 조건"
+  },
+  {
+    "id": "access-07",
+    "title": "발표 속도 리허설",
+    "category": "access",
+    "level": 0,
+    "prerequisites": "텍스트 입력, 조건"
+  },
+  {
+    "id": "access-08",
+    "title": "시설 접근 조건 지도",
+    "category": "access",
+    "level": 2,
+    "prerequisites": "텍스트 입력, 조건"
+  },
+  {
+    "id": "access-09",
+    "title": "웹 색 대비 실험실",
+    "category": "access",
+    "level": 1,
+    "prerequisites": "텍스트 입력, 조건"
+  },
+  {
+    "id": "access-10",
+    "title": "수업 소리 상황 카드",
+    "category": "access",
+    "level": 0,
+    "prerequisites": "텍스트 입력, 조건"
+  },
+  {
+    "id": "access-11",
+    "title": "개인정보 없는 도움 문장",
+    "category": "access",
+    "level": 1,
+    "prerequisites": "텍스트 입력, 조건"
+  },
+  {
+    "id": "access-12",
+    "title": "도서관 다국어 안내 카드",
+    "category": "access",
+    "level": 0,
+    "prerequisites": "텍스트 입력, 조건"
+  },
+  {
+    "id": "access-13",
+    "title": "말풍선 순서 맞추기",
+    "category": "access",
+    "level": 0,
+    "prerequisites": "텍스트 입력, 조건"
+  },
+  {
+    "id": "access-14",
+    "title": "그림 설명 빠진 부분 찾기",
+    "category": "access",
+    "level": 1,
+    "prerequisites": "텍스트 입력, 조건"
+  },
+  {
+    "id": "access-15",
+    "title": "학급 질문 익명 분류 연습",
+    "category": "access",
+    "level": 2,
+    "prerequisites": "텍스트 입력, 조건"
+  },
+  {
+    "id": "access-16",
+    "title": "간단 문장 바꾸기 실험",
+    "category": "access",
+    "level": 1,
+    "prerequisites": "텍스트 입력, 조건"
+  },
+  {
+    "id": "access-17",
+    "title": "전시 관람 동선 편집기",
+    "category": "access",
+    "level": 1,
+    "prerequisites": "텍스트 입력, 조건"
+  },
+  {
+    "id": "access-18",
+    "title": "재난 안내의 여러 표현",
+    "category": "access",
+    "level": 0,
+    "prerequisites": "텍스트 입력, 조건"
+  },
+  {
+    "id": "access-19",
+    "title": "조작 설명 점검 게임",
+    "category": "access",
+    "level": 1,
+    "prerequisites": "텍스트 입력, 조건"
+  },
+  {
+    "id": "access-20",
+    "title": "화면 읽기 순서 점검기",
+    "category": "access",
+    "level": 2,
+    "prerequisites": "텍스트 입력, 조건"
+  },
+  {
+    "id": "nature-01",
+    "title": "교실 분리배출 탐정",
+    "category": "nature",
+    "level": 0,
+    "prerequisites": "조건, 분류 기준"
+  },
+  {
+    "id": "nature-02",
+    "title": "우리 반 전기 사용 추정",
+    "category": "nature",
+    "level": 0,
+    "prerequisites": "조건, 분류 기준"
+  },
+  {
+    "id": "nature-03",
+    "title": "빗물통 하루 수위",
+    "category": "nature",
+    "level": 1,
+    "prerequisites": "조건, 분류 기준"
+  },
+  {
+    "id": "nature-04",
+    "title": "학교 주변 새 관찰 카드",
+    "category": "nature",
+    "level": 1,
+    "prerequisites": "조건, 분류 기준"
+  },
+  {
+    "id": "nature-05",
+    "title": "텃밭 물주기 조건 실험",
+    "category": "nature",
+    "level": 0,
+    "prerequisites": "조건, 분류 기준"
+  },
+  {
+    "id": "nature-06",
+    "title": "우유팩 모으기 목표판",
+    "category": "nature",
+    "level": 0,
+    "prerequisites": "조건, 분류 기준"
+  },
+  {
+    "id": "nature-07",
+    "title": "화단 꽃 피는 주차 달력",
+    "category": "nature",
+    "level": 1,
+    "prerequisites": "조건, 분류 기준"
+  },
+  {
+    "id": "nature-08",
+    "title": "보행로 그늘 관찰",
+    "category": "nature",
+    "level": 1,
+    "prerequisites": "조건, 분류 기준"
+  },
+  {
+    "id": "nature-09",
+    "title": "물병 사용 습관 비교",
+    "category": "nature",
+    "level": 0,
+    "prerequisites": "조건, 분류 기준"
+  },
+  {
+    "id": "nature-10",
+    "title": "학교 정원 생물 관계도",
+    "category": "nature",
+    "level": 2,
+    "prerequisites": "조건, 분류 기준"
+  },
+  {
+    "id": "nature-11",
+    "title": "교실 온도 관찰 일지",
+    "category": "nature",
+    "level": 0,
+    "prerequisites": "조건, 분류 기준"
+  },
+  {
+    "id": "nature-12",
+    "title": "미세플라스틱 표본 분류",
+    "category": "nature",
+    "level": 1,
+    "prerequisites": "조건, 분류 기준"
+  },
+  {
+    "id": "nature-13",
+    "title": "퇴비 재료 비율 저울",
+    "category": "nature",
+    "level": 0,
+    "prerequisites": "조건, 분류 기준"
+  },
+  {
+    "id": "nature-14",
+    "title": "친환경 통학 시나리오",
+    "category": "nature",
+    "level": 1,
+    "prerequisites": "조건, 분류 기준"
+  },
+  {
+    "id": "nature-15",
+    "title": "다회용 식기 회전 모형",
+    "category": "nature",
+    "level": 2,
+    "prerequisites": "조건, 분류 기준"
+  },
+  {
+    "id": "nature-16",
+    "title": "씨앗 발아율 비교판",
+    "category": "nature",
+    "level": 1,
+    "prerequisites": "조건, 분류 기준"
+  },
+  {
+    "id": "nature-17",
+    "title": "정원 길 벌의 이동",
+    "category": "nature",
+    "level": 2,
+    "prerequisites": "조건, 분류 기준"
+  },
+  {
+    "id": "nature-18",
+    "title": "음식물 기록의 이상값",
+    "category": "nature",
+    "level": 2,
+    "prerequisites": "조건, 분류 기준"
+  },
+  {
+    "id": "nature-19",
+    "title": "계절 냉방 선택 실험",
+    "category": "nature",
+    "level": 1,
+    "prerequisites": "조건, 분류 기준"
+  },
+  {
+    "id": "nature-20",
+    "title": "밤하늘 관측 장소 비교",
+    "category": "nature",
+    "level": 1,
+    "prerequisites": "조건, 분류 기준"
+  },
+  {
+    "id": "science-01",
+    "title": "종이비행기 실험 노트",
+    "category": "science",
+    "level": 1,
+    "prerequisites": "수치 입력, 목록, 평균"
+  },
+  {
+    "id": "science-02",
+    "title": "소리 도착 시간 계산기",
+    "category": "science",
+    "level": 0,
+    "prerequisites": "수치 입력, 목록, 평균"
+  },
+  {
+    "id": "science-03",
+    "title": "달 모양 관찰 달력",
+    "category": "science",
+    "level": 0,
+    "prerequisites": "수치 입력, 목록, 평균"
+  },
+  {
+    "id": "science-04",
+    "title": "무게중심 받침점 찾기",
+    "category": "science",
+    "level": 1,
+    "prerequisites": "수치 입력, 목록, 평균"
+  },
+  {
+    "id": "science-05",
+    "title": "열이 식는 곡선 그리기",
+    "category": "science",
+    "level": 1,
+    "prerequisites": "수치 입력, 목록, 평균"
+  },
+  {
+    "id": "science-06",
+    "title": "빛과 거리의 관계 모형",
+    "category": "science",
+    "level": 0,
+    "prerequisites": "수치 입력, 목록, 평균"
+  },
+  {
+    "id": "science-07",
+    "title": "반응 시간 기록기",
+    "category": "science",
+    "level": 1,
+    "prerequisites": "수치 입력, 목록, 평균"
+  },
+  {
+    "id": "science-08",
+    "title": "격자 넓이 추정기",
+    "category": "science",
+    "level": 1,
+    "prerequisites": "수치 입력, 목록, 평균"
+  },
+  {
+    "id": "science-09",
+    "title": "행성 질량 비교 모형",
+    "category": "science",
+    "level": 0,
+    "prerequisites": "수치 입력, 목록, 평균"
+  },
+  {
+    "id": "science-10",
+    "title": "확률 주사위 반복 실험",
+    "category": "science",
+    "level": 1,
+    "prerequisites": "수치 입력, 목록, 평균"
+  },
+  {
+    "id": "science-11",
+    "title": "신호 전달 지연 실험",
+    "category": "science",
+    "level": 2,
+    "prerequisites": "수치 입력, 목록, 평균"
+  },
+  {
+    "id": "science-12",
+    "title": "등고선 산책 모형",
+    "category": "science",
+    "level": 2,
+    "prerequisites": "수치 입력, 목록, 평균"
+  },
+  {
+    "id": "science-13",
+    "title": "평행 이동 도형 스튜디오",
+    "category": "science",
+    "level": 0,
+    "prerequisites": "수치 입력, 목록, 평균"
+  },
+  {
+    "id": "science-14",
+    "title": "진자 길이 모의 실험",
+    "category": "science",
+    "level": 1,
+    "prerequisites": "수치 입력, 목록, 평균"
+  },
+  {
+    "id": "science-15",
+    "title": "소금물 농도 혼합기",
+    "category": "science",
+    "level": 0,
+    "prerequisites": "수치 입력, 목록, 평균"
+  },
+  {
+    "id": "science-16",
+    "title": "구슬 경사로 예측표",
+    "category": "science",
+    "level": 1,
+    "prerequisites": "수치 입력, 목록, 평균"
+  },
+  {
+    "id": "science-17",
+    "title": "격자 그림 축척 편집기",
+    "category": "science",
+    "level": 1,
+    "prerequisites": "수치 입력, 목록, 평균"
+  },
+  {
+    "id": "science-18",
+    "title": "별자리 점과 점 잇기",
+    "category": "science",
+    "level": 0,
+    "prerequisites": "수치 입력, 목록, 평균"
+  },
+  {
+    "id": "science-19",
+    "title": "오차 막대 읽기",
+    "category": "science",
+    "level": 2,
+    "prerequisites": "수치 입력, 목록, 평균"
+  },
+  {
+    "id": "science-20",
+    "title": "포물선 착지 구간",
+    "category": "science",
+    "level": 2,
+    "prerequisites": "수치 입력, 목록, 평균"
+  },
+  {
+    "id": "civic-01",
+    "title": "우리 동네 벤치 찾기",
+    "category": "civic",
+    "level": 0,
+    "prerequisites": "목록, 조건 검색"
+  },
+  {
+    "id": "civic-02",
+    "title": "마을 버스 배차 간격",
+    "category": "civic",
+    "level": 1,
+    "prerequisites": "목록, 조건 검색"
+  },
+  {
+    "id": "civic-03",
+    "title": "공유 우산 회수 장부",
+    "category": "civic",
+    "level": 1,
+    "prerequisites": "목록, 조건 검색"
+  },
+  {
+    "id": "civic-04",
+    "title": "동네 행사 일정 지도",
+    "category": "civic",
+    "level": 0,
+    "prerequisites": "목록, 조건 검색"
+  },
+  {
+    "id": "civic-05",
+    "title": "모의 주민 제안 모아보기",
+    "category": "civic",
+    "level": 1,
+    "prerequisites": "목록, 조건 검색"
+  },
+  {
+    "id": "civic-06",
+    "title": "문화공간 운영 시간 비교",
+    "category": "civic",
+    "level": 0,
+    "prerequisites": "목록, 조건 검색"
+  },
+  {
+    "id": "civic-07",
+    "title": "시장 장보기 경로 퍼즐",
+    "category": "civic",
+    "level": 2,
+    "prerequisites": "목록, 조건 검색"
+  },
+  {
+    "id": "civic-08",
+    "title": "지역 교환 장터 균형판",
+    "category": "civic",
+    "level": 1,
+    "prerequisites": "목록, 조건 검색"
+  },
+  {
+    "id": "civic-09",
+    "title": "쉼터 물품 보충 계획",
+    "category": "civic",
+    "level": 2,
+    "prerequisites": "목록, 조건 검색"
+  },
+  {
+    "id": "civic-10",
+    "title": "봉사 활동 시간 맞추기",
+    "category": "civic",
+    "level": 1,
+    "prerequisites": "목록, 조건 검색"
+  },
+  {
+    "id": "civic-11",
+    "title": "골목 점자블록 관찰 지도",
+    "category": "civic",
+    "level": 0,
+    "prerequisites": "목록, 조건 검색"
+  },
+  {
+    "id": "civic-12",
+    "title": "공동 텃밭 작물 교대표",
+    "category": "civic",
+    "level": 1,
+    "prerequisites": "목록, 조건 검색"
+  },
+  {
+    "id": "civic-13",
+    "title": "거리 공사 우회 안내",
+    "category": "civic",
+    "level": 2,
+    "prerequisites": "목록, 조건 검색"
+  },
+  {
+    "id": "civic-14",
+    "title": "마을 이야기 산책 지도",
+    "category": "civic",
+    "level": 0,
+    "prerequisites": "목록, 조건 검색"
+  },
+  {
+    "id": "civic-15",
+    "title": "공유 냉장고 유통기한 모형",
+    "category": "civic",
+    "level": 1,
+    "prerequisites": "목록, 조건 검색"
+  },
+  {
+    "id": "civic-16",
+    "title": "대피소 혼잡도 보드",
+    "category": "civic",
+    "level": 2,
+    "prerequisites": "목록, 조건 검색"
+  },
+  {
+    "id": "civic-17",
+    "title": "어린이 도서 나눔함",
+    "category": "civic",
+    "level": 0,
+    "prerequisites": "목록, 조건 검색"
+  },
+  {
+    "id": "civic-18",
+    "title": "시민 제안 우선순위 저울",
+    "category": "civic",
+    "level": 2,
+    "prerequisites": "목록, 조건 검색"
+  },
+  {
+    "id": "civic-19",
+    "title": "동네 소음 관찰 격자",
+    "category": "civic",
+    "level": 1,
+    "prerequisites": "목록, 조건 검색"
+  },
+  {
+    "id": "civic-20",
+    "title": "물건 수리 접수 분류기",
+    "category": "civic",
+    "level": 1,
+    "prerequisites": "목록, 조건 검색"
+  },
+  {
+    "id": "media-01",
+    "title": "AI 답변 근거 대조판",
+    "category": "media",
+    "level": 1,
+    "prerequisites": "문자열 비교, 근거 확인"
+  },
+  {
+    "id": "media-02",
+    "title": "날짜가 바뀐 기사 찾기",
+    "category": "media",
+    "level": 0,
+    "prerequisites": "문자열 비교, 근거 확인"
+  },
+  {
+    "id": "media-03",
+    "title": "사진 자르기와 맥락",
+    "category": "media",
+    "level": 1,
+    "prerequisites": "문자열 비교, 근거 확인"
+  },
+  {
+    "id": "media-04",
+    "title": "AI 분류 데이터 균형판",
+    "category": "media",
+    "level": 1,
+    "prerequisites": "문자열 비교, 근거 확인"
+  },
+  {
+    "id": "media-05",
+    "title": "제목 감정 단어 탐색",
+    "category": "media",
+    "level": 1,
+    "prerequisites": "문자열 비교, 근거 확인"
+  },
+  {
+    "id": "media-06",
+    "title": "같은 사진 다른 출처",
+    "category": "media",
+    "level": 0,
+    "prerequisites": "문자열 비교, 근거 확인"
+  },
+  {
+    "id": "media-07",
+    "title": "추천 피드 편향 실험",
+    "category": "media",
+    "level": 2,
+    "prerequisites": "문자열 비교, 근거 확인"
+  },
+  {
+    "id": "media-08",
+    "title": "표 그래프 축 바꾸기",
+    "category": "media",
+    "level": 1,
+    "prerequisites": "문자열 비교, 근거 확인"
+  },
+  {
+    "id": "media-09",
+    "title": "프롬프트 변경 이력판",
+    "category": "media",
+    "level": 1,
+    "prerequisites": "문자열 비교, 근거 확인"
+  },
+  {
+    "id": "media-10",
+    "title": "AI 답변 불확실성 표시",
+    "category": "media",
+    "level": 1,
+    "prerequisites": "문자열 비교, 근거 확인"
+  },
+  {
+    "id": "media-11",
+    "title": "댓글 주제 분류 비교",
+    "category": "media",
+    "level": 2,
+    "prerequisites": "문자열 비교, 근거 확인"
+  },
+  {
+    "id": "media-12",
+    "title": "AI 인용문 출처 검사",
+    "category": "media",
+    "level": 0,
+    "prerequisites": "문자열 비교, 근거 확인"
+  },
+  {
+    "id": "media-13",
+    "title": "가상 AI 면접 답변 기준표",
+    "category": "media",
+    "level": 1,
+    "prerequisites": "문자열 비교, 근거 확인"
+  },
+  {
+    "id": "media-14",
+    "title": "봇 문장 판별 한계",
+    "category": "media",
+    "level": 2,
+    "prerequisites": "문자열 비교, 근거 확인"
+  },
+  {
+    "id": "media-15",
+    "title": "지도 스크린샷 날짜 확인",
+    "category": "media",
+    "level": 0,
+    "prerequisites": "문자열 비교, 근거 확인"
+  },
+  {
+    "id": "media-16",
+    "title": "개인정보 마스킹 연습",
+    "category": "media",
+    "level": 1,
+    "prerequisites": "문자열 비교, 근거 확인"
+  },
+  {
+    "id": "media-17",
+    "title": "AI 요약 누락 찾기",
+    "category": "media",
+    "level": 1,
+    "prerequisites": "문자열 비교, 근거 확인"
+  },
+  {
+    "id": "media-18",
+    "title": "AI 검색 결과 순서 실험",
+    "category": "media",
+    "level": 2,
+    "prerequisites": "문자열 비교, 근거 확인"
+  },
+  {
+    "id": "media-19",
+    "title": "광고 표시 읽기 카드",
+    "category": "media",
+    "level": 0,
+    "prerequisites": "문자열 비교, 근거 확인"
+  },
+  {
+    "id": "media-20",
+    "title": "비교 문장 분모 검사",
+    "category": "media",
+    "level": 0,
+    "prerequisites": "문자열 비교, 근거 확인"
+  },
+  {
+    "id": "art-01",
+    "title": "색 팔레트 사계절 편집기",
+    "category": "art",
+    "level": 0,
+    "prerequisites": "버튼 이벤트, 색상 값"
+  },
+  {
+    "id": "art-02",
+    "title": "분기 동화 지도",
+    "category": "art",
+    "level": 1,
+    "prerequisites": "버튼 이벤트, 색상 값"
+  },
+  {
+    "id": "art-03",
+    "title": "도장 패턴 작곡기",
+    "category": "art",
+    "level": 1,
+    "prerequisites": "버튼 이벤트, 색상 값"
+  },
+  {
+    "id": "art-04",
+    "title": "한글 타이포 포스터",
+    "category": "art",
+    "level": 0,
+    "prerequisites": "버튼 이벤트, 색상 값"
+  },
+  {
+    "id": "art-05",
+    "title": "리듬 격자 드럼",
+    "category": "art",
+    "level": 1,
+    "prerequisites": "버튼 이벤트, 색상 값"
+  },
+  {
+    "id": "art-06",
+    "title": "이미지 없는 만화 콘티",
+    "category": "art",
+    "level": 0,
+    "prerequisites": "버튼 이벤트, 색상 값"
+  },
+  {
+    "id": "art-07",
+    "title": "손짓 없이 애니메이션",
+    "category": "art",
+    "level": 1,
+    "prerequisites": "버튼 이벤트, 색상 값"
+  },
+  {
+    "id": "art-08",
+    "title": "모자이크 픽셀 그림",
+    "category": "art",
+    "level": 0,
+    "prerequisites": "버튼 이벤트, 색상 값"
+  },
+  {
+    "id": "art-09",
+    "title": "효과음 이야기 타임라인",
+    "category": "art",
+    "level": 1,
+    "prerequisites": "버튼 이벤트, 색상 값"
+  },
+  {
+    "id": "art-10",
+    "title": "그림 느낌 태그 추천",
+    "category": "art",
+    "level": 2,
+    "prerequisites": "버튼 이벤트, 색상 값"
+  },
+  {
+    "id": "art-11",
+    "title": "시의 반복 어구 지도",
+    "category": "art",
+    "level": 1,
+    "prerequisites": "버튼 이벤트, 색상 값"
+  },
+  {
+    "id": "art-12",
+    "title": "장면 조명 계획표",
+    "category": "art",
+    "level": 0,
+    "prerequisites": "버튼 이벤트, 색상 값"
+  },
+  {
+    "id": "art-13",
+    "title": "음표 길이 조각 맞추기",
+    "category": "art",
+    "level": 0,
+    "prerequisites": "버튼 이벤트, 색상 값"
+  },
+  {
+    "id": "art-14",
+    "title": "정해진 단어로 만드는 시",
+    "category": "art",
+    "level": 0,
+    "prerequisites": "버튼 이벤트, 색상 값"
+  },
+  {
+    "id": "art-15",
+    "title": "격자 그림자 애니메이션",
+    "category": "art",
+    "level": 2,
+    "prerequisites": "버튼 이벤트, 색상 값"
+  },
+  {
+    "id": "art-16",
+    "title": "공연 배경 큐시트",
+    "category": "art",
+    "level": 1,
+    "prerequisites": "버튼 이벤트, 색상 값"
+  },
+  {
+    "id": "art-17",
+    "title": "이야기 등장인물 관계도",
+    "category": "art",
+    "level": 1,
+    "prerequisites": "버튼 이벤트, 색상 값"
+  },
+  {
+    "id": "art-18",
+    "title": "도형으로 만든 글자 실험",
+    "category": "art",
+    "level": 1,
+    "prerequisites": "버튼 이벤트, 색상 값"
+  },
+  {
+    "id": "art-19",
+    "title": "작은 박물관 오디오 순서",
+    "category": "art",
+    "level": 0,
+    "prerequisites": "버튼 이벤트, 색상 값"
+  },
+  {
+    "id": "art-20",
+    "title": "규칙으로 그린 나뭇가지",
+    "category": "art",
+    "level": 2,
+    "prerequisites": "버튼 이벤트, 색상 값"
+  },
+  {
+    "id": "games-01",
+    "title": "보물 창고 경로 게임",
+    "category": "games",
+    "level": 0,
+    "prerequisites": "좌표, 조건, 반복"
+  },
+  {
+    "id": "games-02",
+    "title": "도서관 로봇 배송",
+    "category": "games",
+    "level": 1,
+    "prerequisites": "좌표, 조건, 반복"
+  },
+  {
+    "id": "games-03",
+    "title": "도형 점령 전략",
+    "category": "games",
+    "level": 2,
+    "prerequisites": "좌표, 조건, 반복"
+  },
+  {
+    "id": "games-04",
+    "title": "섬 물자 운반 퍼즐",
+    "category": "games",
+    "level": 2,
+    "prerequisites": "좌표, 조건, 반복"
+  },
+  {
+    "id": "games-05",
+    "title": "숨은 숫자 질문 게임",
+    "category": "games",
+    "level": 0,
+    "prerequisites": "좌표, 조건, 반복"
+  },
+  {
+    "id": "games-06",
+    "title": "정거장 에너지 경주",
+    "category": "games",
+    "level": 1,
+    "prerequisites": "좌표, 조건, 반복"
+  },
+  {
+    "id": "games-07",
+    "title": "도형 규칙 이어 놓기",
+    "category": "games",
+    "level": 0,
+    "prerequisites": "좌표, 조건, 반복"
+  },
+  {
+    "id": "games-08",
+    "title": "교실 자원 협력 게임",
+    "category": "games",
+    "level": 1,
+    "prerequisites": "좌표, 조건, 반복"
+  },
+  {
+    "id": "games-09",
+    "title": "소행성 피하기 반응 게임",
+    "category": "games",
+    "level": 1,
+    "prerequisites": "좌표, 조건, 반복"
+  },
+  {
+    "id": "games-10",
+    "title": "연못 생물 균형 모형",
+    "category": "games",
+    "level": 2,
+    "prerequisites": "좌표, 조건, 반복"
+  },
+  {
+    "id": "games-11",
+    "title": "로봇 미로 탐색 비교",
+    "category": "games",
+    "level": 2,
+    "prerequisites": "좌표, 조건, 반복"
+  },
+  {
+    "id": "games-12",
+    "title": "숫자 상자 메모리 게임",
+    "category": "games",
+    "level": 0,
+    "prerequisites": "좌표, 조건, 반복"
+  },
+  {
+    "id": "games-13",
+    "title": "픽셀 신호 복원 게임",
+    "category": "games",
+    "level": 1,
+    "prerequisites": "좌표, 조건, 반복"
+  },
+  {
+    "id": "games-14",
+    "title": "연극 좌석 판매 모형",
+    "category": "games",
+    "level": 1,
+    "prerequisites": "좌표, 조건, 반복"
+  },
+  {
+    "id": "games-15",
+    "title": "기상 관측소 보급 게임",
+    "category": "games",
+    "level": 2,
+    "prerequisites": "좌표, 조건, 반복"
+  },
+  {
+    "id": "games-16",
+    "title": "온실 조건 맞추기 퍼즐",
+    "category": "games",
+    "level": 1,
+    "prerequisites": "좌표, 조건, 반복"
+  },
+  {
+    "id": "games-17",
+    "title": "미니 도시 예산 게임",
+    "category": "games",
+    "level": 1,
+    "prerequisites": "좌표, 조건, 반복"
+  },
+  {
+    "id": "games-18",
+    "title": "서랍 정리 제한 이동",
+    "category": "games",
+    "level": 0,
+    "prerequisites": "좌표, 조건, 반복"
+  },
+  {
+    "id": "games-19",
+    "title": "별빛 신호 번역 퍼즐",
+    "category": "games",
+    "level": 0,
+    "prerequisites": "좌표, 조건, 반복"
+  },
+  {
+    "id": "games-20",
+    "title": "곤충 로봇 채집 순서",
+    "category": "games",
+    "level": 2,
+    "prerequisites": "좌표, 조건, 반복"
+  },
+  {
+    "id": "computing-01",
+    "title": "영화 취향 닮은꼴 추천",
+    "category": "computing",
+    "level": 2,
+    "prerequisites": "목록, 점수 계산, 정렬"
+  },
+  {
+    "id": "computing-02",
+    "title": "센서 로그 빠진 값 찾기",
+    "category": "computing",
+    "level": 1,
+    "prerequisites": "목록, 점수 계산, 정렬"
+  },
+  {
+    "id": "computing-03",
+    "title": "손글씨 숫자 모형 분류",
+    "category": "computing",
+    "level": 2,
+    "prerequisites": "목록, 점수 계산, 정렬"
+  },
+  {
+    "id": "computing-04",
+    "title": "문장 검색 공백 실험",
+    "category": "computing",
+    "level": 1,
+    "prerequisites": "목록, 점수 계산, 정렬"
+  },
+  {
+    "id": "computing-05",
+    "title": "도서 코드 검증기",
+    "category": "computing",
+    "level": 1,
+    "prerequisites": "목록, 점수 계산, 정렬"
+  },
+  {
+    "id": "computing-06",
+    "title": "텍스트 압축 길이 비교",
+    "category": "computing",
+    "level": 1,
+    "prerequisites": "목록, 점수 계산, 정렬"
+  },
+  {
+    "id": "computing-07",
+    "title": "데이터 표 정리 실습",
+    "category": "computing",
+    "level": 1,
+    "prerequisites": "목록, 점수 계산, 정렬"
+  },
+  {
+    "id": "computing-08",
+    "title": "그래프 점 위치 찾기",
+    "category": "computing",
+    "level": 0,
+    "prerequisites": "목록, 점수 계산, 정렬"
+  },
+  {
+    "id": "computing-09",
+    "title": "모형 날씨 자동 분류",
+    "category": "computing",
+    "level": 2,
+    "prerequisites": "목록, 점수 계산, 정렬"
+  },
+  {
+    "id": "computing-10",
+    "title": "학급 퀴즈 통계 검증기",
+    "category": "computing",
+    "level": 1,
+    "prerequisites": "목록, 점수 계산, 정렬"
+  },
+  {
+    "id": "computing-11",
+    "title": "파일 목록 확장자 정리",
+    "category": "computing",
+    "level": 0,
+    "prerequisites": "목록, 점수 계산, 정렬"
+  },
+  {
+    "id": "computing-12",
+    "title": "그림 규칙 학습 놀이터",
+    "category": "computing",
+    "level": 2,
+    "prerequisites": "목록, 점수 계산, 정렬"
+  },
+  {
+    "id": "computing-13",
+    "title": "개인정보 최소 설문 제작기",
+    "category": "computing",
+    "level": 0,
+    "prerequisites": "목록, 점수 계산, 정렬"
+  },
+  {
+    "id": "computing-14",
+    "title": "링크 끊김 모형 검사",
+    "category": "computing",
+    "level": 1,
+    "prerequisites": "목록, 점수 계산, 정렬"
+  },
+  {
+    "id": "computing-15",
+    "title": "짝 비교 순위 만들기",
+    "category": "computing",
+    "level": 2,
+    "prerequisites": "목록, 점수 계산, 정렬"
+  },
+  {
+    "id": "computing-16",
+    "title": "웹 페이지 태그 나무",
+    "category": "computing",
+    "level": 1,
+    "prerequisites": "목록, 점수 계산, 정렬"
+  },
+  {
+    "id": "computing-17",
+    "title": "동네 말뭉치 이어쓰기",
+    "category": "computing",
+    "level": 2,
+    "prerequisites": "목록, 점수 계산, 정렬"
+  },
+  {
+    "id": "computing-18",
+    "title": "두 센서 합의 판정",
+    "category": "computing",
+    "level": 1,
+    "prerequisites": "목록, 점수 계산, 정렬"
+  },
+  {
+    "id": "computing-19",
+    "title": "데이터 출처 꼬리표",
+    "category": "computing",
+    "level": 0,
+    "prerequisites": "목록, 점수 계산, 정렬"
+  },
+  {
+    "id": "computing-20",
+    "title": "좌표 묶음 자동 찾기",
+    "category": "computing",
+    "level": 2,
+    "prerequisites": "목록, 점수 계산, 정렬"
+  },
+  {
+    "id": "learning-21",
+    "title": "중학 영문법 마스터",
+    "category": "learning",
+    "level": 1,
+    "prerequisites": "문자열, 조건, 목록"
+  },
+  {
+    "id": "learning-22",
+    "title": "중학 단어암기 마스터",
+    "category": "learning",
+    "level": 1,
+    "prerequisites": "문자열, 조건, 목록"
+  },
+  {
+    "id": "arduino-01",
+    "title": "초음파 레이더",
+    "category": "arduino",
+    "level": 2,
+    "prerequisites": "센서 값, 조건, 입출력"
+  },
+  {
+    "id": "arduino-02",
+    "title": "자동으로 열리는 센서 휴지통",
+    "category": "arduino",
+    "level": 1,
+    "prerequisites": "센서 값, 조건, 입출력"
+  },
+  {
+    "id": "arduino-03",
+    "title": "자동 화분 물주기",
+    "category": "arduino",
+    "level": 2,
+    "prerequisites": "센서 값, 조건, 입출력"
+  },
+  {
+    "id": "arduino-04",
+    "title": "해바라기 태양광 추적기",
+    "category": "arduino",
+    "level": 2,
+    "prerequisites": "센서 값, 조건, 입출력"
+  },
+  {
+    "id": "arduino-05",
+    "title": "반응 속도 게임",
+    "category": "arduino",
+    "level": 0,
+    "prerequisites": "센서 값, 조건, 입출력"
+  },
+  {
+    "id": "arduino-06",
+    "title": "스마트 주차 거리 경고",
+    "category": "arduino",
+    "level": 1,
+    "prerequisites": "센서 값, 조건, 입출력"
+  },
+  {
+    "id": "arduino-07",
+    "title": "교실 온습도 알리미",
+    "category": "arduino",
+    "level": 1,
+    "prerequisites": "센서 값, 조건, 입출력"
+  },
+  {
+    "id": "arduino-08",
+    "title": "비밀번호 금고",
+    "category": "arduino",
+    "level": 2,
+    "prerequisites": "센서 값, 조건, 입출력"
+  },
+  {
+    "id": "arduino-09",
+    "title": "층간소음 신호등",
+    "category": "arduino",
+    "level": 1,
+    "prerequisites": "센서 값, 조건, 입출력"
+  },
+  {
+    "id": "arduino-10",
+    "title": "보행자 버튼 신호등",
+    "category": "arduino",
+    "level": 0,
+    "prerequisites": "센서 값, 조건, 입출력"
+  },
+  {
+    "id": "arduino-11",
+    "title": "디지털 줄자",
+    "category": "arduino",
+    "level": 0,
+    "prerequisites": "센서 값, 조건, 입출력"
+  },
+  {
+    "id": "arduino-12",
+    "title": "무드등 색 섞기",
+    "category": "arduino",
+    "level": 0,
+    "prerequisites": "센서 값, 조건, 입출력"
+  },
+  {
+    "id": "games-21",
+    "title": "삼국지 턴제 전략 게임 만들기",
+    "category": "games",
+    "level": 2,
+    "prerequisites": "좌표, 조건, 반복"
+  }
+]

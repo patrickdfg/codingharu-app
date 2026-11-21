@@ -6,8 +6,9 @@
 importScripts('core.js');
 
 var BASE = new URL('./', self.location.href);
-var SHELL_CACHE = 'codingharu-shell-19';
+var SHELL_CACHE = 'codingharu-shell-20';
 var SHELL = ['./', 'index.html', 'core.js', 'inject.js', 'record.js', 'report.js', 'login.html', 'record-config.json', 'manifest.webmanifest',
+  'learning.js',
   'home.css', 'home-extra.css', 'home-prove.css', 'home-pages.css', 'home-pages.js', 'home.js', 'home-prove.js', 'home-gallery.js', 'home-scene.js', 'level-test.html', 'level-test.js', 'vendor/three/three.module.min.js', 'vendor/three/three.core.min.js',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/icon-180.png'];
 
@@ -154,6 +155,7 @@ function respond(path, plain) {
     var tag = '<meta name="robots" content="noindex,nofollow">' +
       '<link rel="manifest" href="' + BASE.pathname + 'manifest.webmanifest">' +
       '<script src="' + BASE.pathname + 'record.js" defer></script>' +
+      '<script src="' + BASE.pathname + 'learning.js" defer></script>' +
       '<script src="' + BASE.pathname + 'inject.js" defer></script>';
     html = /<\/head>/i.test(html) ? html.replace(/<\/head>/i, tag + '</head>') : tag + html;
     return new Response(html, { headers: headers });

@@ -109,6 +109,8 @@ table.ad-table { width: 100%; border-collapse: collapse; font-size: 14px; }
   @page { size: A4; margin: 0; }
 }
 /* 월간 리포트 사진 고르기 */
+.ad-learning-pick { margin: 12px 0; padding: 12px; border: 1px solid var(--line); border-radius: 10px; }
+.ad-learning-pick small { display: block; color: var(--mute); }
 .report-photos{display:grid;gap:6px} .report-pick{font-size:14px} .report-pick input{display:block;margin-top:4px;max-width:100%} .report-thumbs{display:flex;flex-wrap:wrap;gap:8px} .report-thumbs figure{position:relative;margin:0;width:96px;height:72px} .report-thumbs img{width:100%;height:100%;object-fit:cover;border-radius:8px;border:1px solid #d9d1ee} .report-thumbs button{position:absolute;top:-8px;right:-8px;width:28px;height:28px;min-height:0;padding:0;border-radius:50%;border:0;background:#231d38;color:#fff;font-size:13px;cursor:pointer}
 /* 집 연습 수업 체크 목록 */
 .ad-home details { border: 1px solid var(--line); border-radius: 10px; padding: 4px 12px; margin: 6px 0; background: #fff; }

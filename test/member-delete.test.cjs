@@ -5,6 +5,7 @@ const ctx = vm.createContext({ console, Date, JSON, Number, String, Array, Objec
 vm.runInContext(src, ctx);
 vm.runInContext(`
 var sheets = {
+  learning: [['학생 번호'], ['1','session-one'], ['2','session-two']],
   students: [['번호','이름','PIN(4자리)','반','메모','상태','포트폴리오 주소'], [1,'가나','1234','A','','승인','gn'], [2,'다라','2222','A','','승인','dr'], [3,'마바','3333','','','승인','mb']],
   workbooks: [['학생 번호'], ['1','가나','done:a','t',1,1,1,'',''], ['2','다라','done:b','t',1,1,1,'',''], ['1','가나','python/','t',1,2,9,'',''], ['3','마바','done:c','t',1,1,1,'','']],
   visits: [['날짜','학생 번호'], ['2026-11-01','1'], ['2026-11-01','2'], ['2026-11-02','1']],
@@ -44,13 +45,14 @@ assert.throws(() => run(`ACTIONS_.studentDelete({auth:'teacher',id:'9',confirmNa
 
 const out = run(`ACTIONS_.studentDelete({auth:'teacher',id:'1',confirmName:' 가나 '})`).deleted;
 assert.equal(out.name, '가나');
-assert.deepEqual(JSON.parse(JSON.stringify(out.removed)), { workbooks: 2, visits: 2, points: 1, reports: 1, parents: 0, gallery: 1 });
+assert.deepEqual(JSON.parse(JSON.stringify(out.removed)), { workbooks: 2, visits: 2, points: 1, reports: 1, parents: 0, gallery: 1, learning: 1 });
 assert.deepEqual(run(`sheets.students.slice(1).map(r => r[0])`), [2, 3]);
 assert.deepEqual(ids('workbooks'), ['2', '3']);
 assert.deepEqual(ids('visits'), ['2']);
 assert.deepEqual(ids('points'), ['2']);
 assert.deepEqual(ids('reports'), []);
 assert.deepEqual(ids('parents'), ['2']);
+assert.deepEqual(ids('learning'), ['2']);
 assert.deepEqual(ids('gallery'), ['3']);
 assert.deepEqual(run(`trashed`), ['FILE1']);
 // 다른 학생 기록은 그대로(내용까지)

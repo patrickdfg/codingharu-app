@@ -8,6 +8,7 @@
 // 자세한 순서는 저장소의 SETUP.md '수업 기록' 절.
 
 const TABS_ = {
+  learning: ['학생 번호', '세션 ID', '페이지', '제목', '처음 기록', '마지막 기록', '활동 기록(JSON)'],
   teachers: ['선생님 이메일', '이름', '메모'],
   students: ['번호', '이름', 'PIN(4자리)', '반', '메모', '상태', '포트폴리오 주소'],
   devices: ['기기 열쇠(암호화)', '선생님 이메일', '등록 시각', '마지막 사용', '기기 정보'],
@@ -20,6 +21,7 @@ const TABS_ = {
 };
 const TAB_NAMES_ = { reports: '월간 리포트', parents: '학부모', points: '포인트 내역', teachers: '선생님', students: '학생', devices: '기기', workbooks: '워크북 기록', visits: '수업 기록', gallery: '작품 게시판' };
 const DEVICE_DAYS_ = 365;
+TAB_NAMES_.learning = '학습 관찰';
 const SESSION_DAYS_ = 14;
 
 function setup() {
@@ -59,6 +61,55 @@ function doPost(e) {
 }
 
 const ACTIONS_ = {
+  learningStatus(req) {
+    checkSid_(req.sid, req.studentId); student_(req.studentId);
+    let rows; withLock_(() => { rows = rows_('learning'); });
+    const surveys = rows.filter(r => String(r[0]) === String(req.studentId)).map(r => JSON.parse(r[6] || '{}')).filter(x => x.survey);
+    return { lastSurveyAt: surveys.reduce((n, x) => Math.max(n, x.surveyAt || 0), 0) };
+  },
+  learningSave(req) {
+    checkSid_(req.sid, req.studentId); student_(req.studentId);
+    const x = req.record || {}, id = String(x.id || '');
+    if (!/^[a-zA-Z0-9-]{8,80}$/.test(id) || !/^[\w/-]+(?:\.html)?$/.test(x.page || '')) throw new Error('학습 기록 형식이 맞지 않아요.');
+    const count = (v, max) => Math.max(0, Math.min(max, Math.floor(Number(v) || 0)));
+    const data = { activeSeconds: count(x.activeSeconds, 14400), done: count(x.done, 100000), total: count(x.total, 100000), attempts: count(x.attempts, 10000), correct: count(x.correct, 10000), hints: count(x.hints, 10000) };
+    data.correct = Math.min(data.correct, data.attempts);
+    if (x.survey) {
+      const q = x.survey, interests = Array.isArray(q.interests) ? q.interests.filter(k => /^(school|learning|access|nature|science|civic|media|art|games|computing|arduino)$/.test(k)).slice(0, 3) : [];
+      if (!interests.length || ![1,2,3].includes(q.fun) || ![1,2,3].includes(q.difficulty) || !['try','hint','ask'].includes(q.approach)) throw new Error('설문 답을 다시 확인해 주세요.');
+      data.survey = { interests: Array.from(new Set(interests)), fun: q.fun, difficulty: q.difficulty, approach: q.approach };
+    }
+    withLock_(() => {
+      const sh = sheet_('learning'), rows = rows_('learning');
+      const i = rows.findIndex(r => String(r[0]) === String(req.studentId) && String(r[1]) === id), now = new Date();
+      const old = i >= 0 ? JSON.parse(rows[i][6] || '{}') : {};
+      ['activeSeconds','done','total','attempts','correct','hints'].forEach(k => { data[k] = Math.max(data[k], old[k] || 0); });
+      if (old.survey && (!data.survey || JSON.stringify(data.survey) === JSON.stringify(old.survey))) { data.survey = old.survey; data.surveyAt = old.surveyAt; }
+      else if (data.survey) data.surveyAt = now.getTime();
+      const row = [String(req.studentId), id, String(x.page).slice(0,300), String(x.title || '').slice(0,200), i >= 0 ? rows[i][4] : now, now, JSON.stringify(data)];
+      if (i >= 0) sh.getRange(i + 2, 1, 1, row.length).setValues([row]); else sh.appendRow(row);
+    });
+    return {};
+  },
+  learningReport(req) {
+    teacher_(req.auth); student_(req.studentId);
+    const month = String(req.month || '');
+    if (!/^\d{4}-\d{2}$/.test(month)) throw new Error('달을 선택해 주세요.');
+    let rows; withLock_(() => { rows = rows_('learning'); });
+    const tz = Session.getScriptTimeZone(), all = rows.filter(r => String(r[0]) === String(req.studentId));
+    const sessions = all.filter(r => r[4] instanceof Date && Utilities.formatDate(r[4], tz, 'yyyy-MM') === month).map(r => Object.assign({ id: String(r[1]), page: String(r[2]), title: String(r[3]), at: r[4].getTime(), updatedAt: r[5].getTime() }, JSON.parse(r[6] || '{}')));
+    const surveys = all.map(r => Object.assign({ title: String(r[3]) }, JSON.parse(r[6] || '{}'))).filter(x => x.survey && Utilities.formatDate(new Date(x.surveyAt), tz, 'yyyy-MM') <= month).sort((a,b) => b.surveyAt-a.surveyAt).slice(0, 8).map(x => ({ at:x.surveyAt, title:x.title, answers:x.survey }));
+    return { sessions: sessions.filter(x => x.kind !== 'teacher-note'), surveys: surveys, observations: sessions.filter(x => x.kind === 'teacher-note') };
+  },
+  learningNote(req) {
+    const teacher = teacher_(req.auth); student_(req.studentId);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(req.day || '') || !String(req.note || '').trim()) throw new Error('수업 날짜와 관찰 내용을 적어 주세요.');
+    const day = new Date(req.day + 'T12:00:00+09:00');
+    if (isNaN(day.getTime())) throw new Error('수업 날짜를 확인해 주세요.');
+    const note = { kind:'teacher-note', note:String(req.note).trim().slice(0,1000), robotMinutes:Math.max(0, Math.min(120, Number(req.robotMinutes) || 0)), by:teacher.email };
+    withLock_(() => sheet_('learning').appendRow([String(req.studentId), Utilities.getUuid(), '', '교실 관찰', day, new Date(), JSON.stringify(note)]));
+    return {};
+  },
   // 선생님 구글 로그인(ID 토큰) → 확인 후 이 기기 전용 열쇠 발급
   pair(req) {
     const info = teacher_(req.auth || req.idToken);
@@ -259,7 +310,7 @@ const ACTIONS_ = {
       pr.setProperty('LAST_STUDENT_ID', String(Math.max(Number(pr.getProperty('LAST_STUDENT_ID')) || 0, Number(id) || 0)));
       sh.deleteRow(i + 2);
       const removed = {};
-      [['workbooks', 0], ['visits', 1], ['points', 0], ['reports', 0], ['parents', 0], ['gallery', 1]].forEach(x => {
+      [['workbooks', 0], ['visits', 1], ['points', 0], ['reports', 0], ['parents', 0], ['gallery', 1], ['learning', 0]].forEach(x => {
         removed[x[0]] = pruneRows_(x[0], x[1], id, x[0] === 'gallery' ? galleryTrash_ : null);
       });
       out = { id: id, name: String(data[i][1]), removed: removed, by: t.email };
@@ -979,6 +1030,7 @@ function pointsProof_(studentId, kind, key) {
   return false;
 }
 function sheet_(k) {
+  if (k === 'learning') { const ss = SpreadsheetApp.getActive(); let sh = ss.getSheetByName(TAB_NAMES_[k]); if (!sh) { sh = ss.insertSheet(TAB_NAMES_[k]); sh.appendRow(TABS_[k]); sh.setFrozenRows(1); } return sh; }
   if (k === 'reports' || k === 'parents') { const ss = SpreadsheetApp.getActive(); let sh = ss.getSheetByName(TAB_NAMES_[k]); if (!sh) { sh = ss.insertSheet(TAB_NAMES_[k]); sh.appendRow(TABS_[k]); sh.setFrozenRows(1); } return sh; }
   if (k === 'points') { const ss = SpreadsheetApp.getActive(); let sh = ss.getSheetByName(TAB_NAMES_[k]); if (!sh) { sh = ss.insertSheet(TAB_NAMES_[k]); sh.appendRow(TABS_[k]); sh.setFrozenRows(1); } return sh; }
   if (k === 'gallery') return gallerySheet_();
