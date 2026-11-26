@@ -307,6 +307,54 @@
       if (hit) { list.sort(function (a, b) { return b.at - a.at; }); jput(RKEY, list); }
     }
 
+
+    // One workbook can contain many projects. Keep server/workbook keys intact,
+    // but use each project's own title, progress and resume URL on the home row.
+    function mergeRecentProjects(projects,base) {
+      if (!Array.isArray(projects) || !projects.length) return true;
+      var list=jget(RKEY, []).filter(function (x) { return x && x.k !== base; }), all=jget(PKEY, {});
+      projects.forEach(function (project) {
+        if (!project || typeof project.key !== 'string' || !project.key.startsWith(base+'#lesson=') || !/^\d+$/.test(project.key.slice((base+'#lesson=').length))) return;
+        if (typeof project.href !== 'string' || !project.href.startsWith(base+'#lesson=') || !/^\d+$/.test(project.href.slice((base+'#lesson=').length))) return;
+        if (!(Number.isFinite(project.total) && project.total>0)) return;
+        var previous=list.find(function (x) { return x.k===project.key; });
+        var at=Number.isFinite(project.at)&&project.at>0?project.at:previous?previous.at:Date.now()-1000;
+        var count=Math.max(0,Math.min(Number(project.done)||0,project.total));
+        all[project.key]={d:count,n:project.total,at:at};
+        list=list.filter(function (x) { return x.k!==project.key; });
+        list.push({k:project.key,href:project.href,t:String(project.title||'블록 코딩 프로젝트'),at:at,d:count,n:project.total});
+      });
+      list.sort(function (a,b) { return b.at-a.at; });
+      jput(PKEY,all);jput(RKEY,list.slice(0,30));
+      return true;
+    }
+    function syncRecentProjects() {
+      var book=window.CodingHaruWorkbook;
+      if (!book || typeof book.recentProjects !== 'function') return false;
+      return mergeRecentProjects(book.recentProjects(),page.replace(/index\.html$/, ''));
+    }
+    function migrateBlockProjects() {
+      return fetch(CHRecord.base+'v/coding/recent-project-catalog.json').then(function(r){if(!r.ok)throw new Error('catalog');return r.json();}).then(function(catalog){
+        (catalog.courses||[]).forEach(function(course){
+          var localKey=course.storage+'-s'+stu.id, saved=jget(localKey,null), visits=jget(localKey+'-projects',{});
+          if(!saved||!saved.work||!Array.isArray(saved.done))return;
+          var projects=[];
+          course.projects.forEach(function(project,id){
+            var v=visits[id],used=project.ids.some(function(key){return saved.done.indexOf(key)>=0||Object.prototype.hasOwnProperty.call(saved.work,key);});
+            if(!used&&!(v&&project.indices.indexOf(v.index)>=0))return;
+            var resume=v&&project.indices.indexOf(v.index)>=0?v.index:project.indices.indexOf(saved.last)>=0?saved.last:project.indices.find(function(n,i){return saved.done.indexOf(project.ids[i])<0;});
+            if(!Number.isInteger(resume))resume=project.indices[0];
+            projects.push({key:course.path+'#lesson='+(project.indices[0]+1),href:course.path+'#lesson='+(resume+1),title:project.title,done:project.ids.filter(function(key){return saved.done.indexOf(key)>=0;}).length,total:project.ids.length,at:v?v.at:0});
+          });
+          mergeRecentProjects(projects,course.path);
+        });
+      });
+    }
+    document.addEventListener('codingharu:projects',syncRecentProjects);
+    document.addEventListener('codingharu:save',syncRecentProjects);
+    addEventListener('hashchange',syncRecentProjects);
+    addEventListener('pagehide',syncRecentProjects);
+
     // 완료 표시: 교안을 열었다고 기록하지 않는다. 맨 아래 '완료' 단추를 눌렀을 때만 남기고, 목록에서는 완료한 수업을 흐리게 보여 준다.
     (function () {
       var DKEY = 'codingharu-done-s' + stu.id, IDX = 'done-index';
@@ -366,8 +414,8 @@
         if (btn) { var on = isDone(m, key); btn.className = on ? 'on' : ''; btn.textContent = on ? '✔ 완료했어요' : '완료'; un.hidden = !on; }
       }
       var isList = !!document.querySelector('[data-lessons], a.category, a.row') || key === '';
-      if (!isList) touchRecent(key);
-      if (key === '') recentRow();
+      if (!syncRecentProjects() && !isList) touchRecent(key);
+      if (key === '') { recentRow();migrateBlockProjects().then(recentRow).catch(function(){}); }
       if (!isList) {
         var wrap = document.createElement('div'); wrap.id = 'ch-done-wrap'; wrap.setAttribute('data-ch-app', '');
         wrap.innerHTML = '<button type="button" id="ch-done-btn">완료</button><button type="button" id="ch-done-undo" hidden>완료 취소</button>';
@@ -398,7 +446,7 @@
       // 홈 두 번째 줄: 내가 하고 있는 프로젝트(1번이 가장 최근)
       function recentRow() {
         var list = jget(RKEY, []).filter(function (x) { return x && x.k; }).slice(0, 12);
-        var hero = document.querySelector('main .hero'); if (!list.length || !hero || document.querySelector('.ch-recent')) return;
+        var hero = document.querySelector('main .hero'); if (!hero) return;var existing=document.querySelector('.ch-recent');if(existing)existing.remove();if(!list.length)return;
         var CAT = { entry: '엔트리', scratch: '스크래치', python: '파이썬', coding: '코딩 놀이터', robot: '로봇', roblox: '로블록스', algorithm: '알고리즘', web: '웹 만들기', koi: '정보올림피아드',
           'ai-projects': 'AI 프로젝트', thinking: 'AI 사고력', digital: '중등 디지털', special: '특강', adult: '성인 과정', inquiry: '탐구 포트폴리오', gallery: '작품 게시판', 'project-lab': '프로젝트 연구소', cert: '자격증' };
         var sec = document.createElement('section'); sec.className = 'ch-recent'; sec.setAttribute('data-ch-app', '');
@@ -407,7 +455,7 @@
         var row = document.createElement('div'); row.className = 'ch-rrow';
         var done = dget();
         list.forEach(function (x, i) {
-          var a = document.createElement('a'); a.className = 'ch-rcard'; a.href = x.k.replace(/@[0-9]+$/, '');
+          var a = document.createElement('a'); a.className = 'ch-rcard'; a.href = x.href || x.k.replace(/@[0-9]+$/, '');
           var num = document.createElement('span'); num.className = 'ch-rnum'; num.textContent = i + 1;
           var body = document.createElement('div'); body.className = 'ch-rbody';
           var cat = document.createElement('span'); cat.className = 'ch-rcat'; cat.textContent = CAT[x.k.split('/')[0]] || '수업';
@@ -495,6 +543,7 @@
       } else if (m.dirty || (!out.state && Object.keys(wb.getState()).length)) {
         push();
       } else status('기록과 같아요');
+      syncRecentProjects();
     }, fail);
   });
 })();
