@@ -2,7 +2,7 @@ export const koreanDay=()=>new Date(Date.now()+9*3600000).toISOString().slice(0,
 export function createClearance(storage,key){
  let cleared=[];try{const data=JSON.parse(storage.getItem(key)||'[]');if(Array.isArray(data))cleared=data.filter(x=>x&&typeof x.map==='string'&&typeof x.day==='string');}catch{}
  const signature=rows=>rows.join('\n');
- return {has:rows=>cleared.some(x=>x.map===signature(rows)&&x.day===koreanDay()),mark(rows){const value={map:signature(rows),day:koreanDay()};cleared=[value,...cleared.filter(x=>x.map!==value.map)].slice(0,200);try{storage.setItem(key,JSON.stringify(cleared));}catch{}}};
+ return {has(rows){try{const data=JSON.parse(storage.getItem(key)||'[]');if(Array.isArray(data))cleared=data;}catch{}return cleared.some(x=>x&&x.map===signature(rows)&&x.day===koreanDay());},mark(rows){const value={map:signature(rows),day:koreanDay()};cleared=[value,...cleared.filter(x=>x.map!==value.map)].slice(0,200);try{storage.setItem(key,JSON.stringify(cleared));}catch{}}};
 }
 // Generate the whole map, never a sprite collage. Text is fixed; row characters are not inserted as markup.
 export function mapThumbnail(rows){
