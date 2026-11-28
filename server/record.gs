@@ -1056,7 +1056,7 @@ function withLock_(fn) {
 //  ① 학부모 전용 링크(parent.html)로 언제든 그 달 리포트를 볼 수 있고
 //  ② '학부모' 탭에 이메일과 수신 동의(Y)가 있는 학생은 이메일로도 받는다.
 // 학부모 링크 열쇠는 스크립트 속성 PARENT_SECRET 으로 서명한다. 이 속성을 지우면 지금까지 보낸 링크가 모두 막힌다.
-const APP_URL_DEFAULT_ = 'https://patrickdfg.github.io/codingharu-app/';
+const APP_URL_DEFAULT_ = 'https://codemaru.kr/';
 function parentSecret_() {
   const pr = PropertiesService.getScriptProperties();
   let s = pr.getProperty('PARENT_SECRET');
