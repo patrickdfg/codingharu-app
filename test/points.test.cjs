@@ -99,3 +99,5 @@ run(`books['7|python-basic-easy-v1']={done:Array.from({length:13},(_,j)=>'2:'+j)
 run(`books['6|ai-thinking-projects-v1']={'check-l02':true}`);assert.equal(run(`pointsRule_('ai-lesson','l02')`),'aiProject');assert.equal(run(`pointsRule_('ai-lesson','l13')`),0);assert.equal(run(`ACTIONS_.pointsAward({sid:'valid',studentId:'6',kind:'ai-lesson',key:'l02'}).awarded`),true);assert.throws(()=>run(`ACTIONS_.pointsAward({sid:'valid',studentId:'6',kind:'ai-lesson',key:'l03'})`));
 run(`books['6|done:python/high/run/@2']={done:true}`);assert.equal(run(`ACTIONS_.pointsAward({sid:'valid',studentId:'6',kind:'lesson',key:'python/high/run/@2'}).awarded`),true);assert.throws(()=>run(`ACTIONS_.pointsAward({sid:'valid',studentId:'6',kind:'lesson',key:'python/high/run/@3'})`));
 console.log('서버 지급, 중복 방지, 학생 분리, 교사 인증, 완료 검증, 모든 수업 점수, 로봇 차시별 점수, 수업별 점수, 융합·기본 단원·AI 차시 점수 통과');
+
+assert.equal(run("pointsRule_('lesson','coding/bounceball/')"),0);assert.equal(run("pointsRule_('lesson','coding/bounceball-react/')"),0);

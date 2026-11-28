@@ -1013,7 +1013,7 @@ function pointsRule_(kind, key) {
   if (kind === 'lesson' && /\/$/.test(key)) {
     if (/^python\/(?:high\/(?:run\/)?|easy-basic\/)$/.test(key)) return 0;   // 목록·단원 쪽 자체에는 완료 점수가 없다(차시·단원별 점수가 따로 있다)
     if (/^(?:admin|assets|docs|downloads|gallery|work|project-lab)\//.test(key)) return 0;   // AI 프로젝트 연구소는 완료 체크로는 점수 없음(작품을 올리면 labWork)
-    if (/^python\/(?:basic|cospro2|farm|robot)\//.test(key) || /^coding\/(?:bebras|block-games|detective|vendor|typing)\//.test(key)) return 0;
+    if (/^python\/(?:basic|cospro2|farm|robot)\//.test(key) || /^coding\/(?:bebras|block-games|detective|vendor|typing|bounceball|bounceball-react)\//.test(key)) return 0;
     if (/^robot\/(?:check|arduino\/editor)\//.test(key)) return 0;   // 참여 확인 도구·편집기는 수업이 아니다
     // 2차시 분량이 한 쪽에 있는 수업(로블록스 세트, 엔트리·스크래치 게임 작품 등)
     if (/^(?:roblox\/vibe-12\/set[1-6]|roblox\/jump-map|robot\/cubroid\/lower\/0[45]|robot\/cubroid\/hub\/06|python\/bridge|special\/middle-vibe-6|entry\/work-game[12]-[^/]+|scratch\/project-game[12]-[^/]+)\/$/.test(key)) return 'doubleLesson';

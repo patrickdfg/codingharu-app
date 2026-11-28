@@ -432,7 +432,7 @@
           if (!/\/$/.test(k)) return false;
           if (/^python\/(?:high\/(?:run\/)?|easy-basic\/)$/.test(k)) return false;
           if (/^(?:admin|assets|docs|downloads|gallery|work|project-lab)\//.test(k)) return false;   // 연구소는 작품을 올릴 때 점수
-          if (/^python\/(?:basic|cospro2|farm|robot)\//.test(k) || /^coding\/(?:bebras|block-games|detective|vendor|typing)\//.test(k)) return false;
+          if (/^python\/(?:basic|cospro2|farm|robot)\//.test(k) || /^coding\/(?:bebras|block-games|detective|vendor|typing|bounceball|bounceball-react)\//.test(k)) return false;
           if (/^robot\/(?:check|arduino\/editor)\//.test(k)) return false;
           if (/^entry\/(?:[a-z0-9]+-lesson\d+|book1-unit\d+)\/$/.test(k)) return false;   // 엔트리 차시 안내 쪽은 작품 쪽이 점수를 받는다
           if (/^entry\//.test(k)) return /^entry\/[^/]+\/$/.test(k);
