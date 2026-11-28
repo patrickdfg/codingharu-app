@@ -70,7 +70,7 @@ function env() {
   const src = fs.readFileSync(new URL('../server/record.gs', import.meta.url), 'utf8');
   vm.runInContext(src + '\nthis.__call = (o) => doPost({ postData: { contents: JSON.stringify(o) } }).s;\nthis.__setup = setup;', ctx);
   ctx.__setup();
-  return { call: o => JSON.parse(ctx.__call(o)), ss, sheets, drive };
+  return { call: o => JSON.parse(ctx.__call(o)), ss, sheets, drive, ctx };
 }
 
 const { call, sheets, drive } = env();
@@ -235,3 +235,42 @@ assert.ok(!ok(call({ action: 'galleryPublicList' })).items.some(it => it.id === 
 bad(call({ action: 'galleryList' }), /로그인/);
 bad(call({ action: 'galleryLike', id: publicStudent.id }), /로그인/);
 console.log('작품 게시판 서버 시험 통과 (비로그인 공개 조회·파일·공개 범위 포함)');
+
+// Parkour: existing moderation plus exact dimensions, per-viewer daily counts and daily save points.
+const pe=env(), pc=o=>pe.call(o), teacher={auth:'ok:admin@test.kr'};
+const learners=[];
+for(const [name,pin] of [['맵작가','4321'],['플레이어','4322']]){
+ const s=ok(pc({action:'studentSignup',name,pin})).student;
+ ok(pc({action:'approve',...teacher,id:s.id,ok:true}));
+ const login=ok(pc({action:'studentLogin',name,pin}));learners.push({studentId:login.student.id,sid:login.sid});
+}
+const [maker,player]=learners;
+pe.ctx.__now=Date.now();
+vm.runInContext('const RealDate=Date;Date=class extends RealDate{constructor(...args){super(...(args.length?args:[__now]));}static now(){return __now;}};',pe.ctx);
+const today=()=>new Date(pe.ctx.__now+9*3600000).toISOString().slice(0,10);
+const mr=Array(15).fill('.'.repeat(24));mr[14]='#'.repeat(24);mr[13]='.SG'+'.'.repeat(21);mr[9]='CFMVILEAXY'+'.'.repeat(14);
+const map={version:1,completed:true,rows:mr};
+bad(pc({action:'galleryPost',...maker,title:'미완주',vis:'all',map:{...map,completed:false}}),/완주/);
+const shared=ok(pc({action:'galleryPost',...maker,title:'파쿠르 테스트',vis:'all',map}));assert.equal(shared.status,'대기');
+bad(pc({action:'parkourPlay',...player,id:shared.id}),/열 수 없/);
+ok(pc({action:'galleryReview',...teacher,id:shared.id,decision:'approve'}));
+assert.equal(ok(pc({action:'parkourPlay',...maker,id:shared.id})).views,0);
+assert.equal(ok(pc({action:'parkourPlay',...player,id:shared.id})).views,1);
+assert.equal(ok(pc({action:'parkourPlay',...player,id:shared.id})).views,1);
+assert.equal(ok(pc({action:'parkourPlay',...teacher,id:shared.id})).views,1);
+const preview=ok(pc({action:'galleryList',...player})).items.find(x=>x.id===shared.id);assert.deepEqual(preview.map,mr);assert.equal(preview.views,1);
+const pub=ok(pc({action:'galleryPublicList'})).items.find(x=>x.id===shared.id);assert.deepEqual(pub.map,mr);assert(!('studentId' in pub));assert(!('ids' in pub));
+assert.equal(ok(pc({action:'parkourSave',...maker,title:'첫 맵',day:today(),map})).awarded,true);
+assert.equal(ok(pc({action:'parkourSave',...maker,title:'같은 날 다른 맵',day:today(),map})).awarded,false);
+assert.equal(ok(pc({action:'parkourSave',...maker,title:'반복',day:today(),map})).points,100);
+bad(pc({action:'parkourSave',...teacher,day:today(),map}),/로그인|기기|학생/);
+bad(pc({action:'parkourSave',...maker,day:'1999-01-01',map}),/날짜/);
+bad(pc({action:'pointsAward',...maker,kind:'parkour',key:today()}),/지급할 수 없는/);
+pe.ctx.__now+=86400000;
+assert.equal(ok(pc({action:'parkourPlay',...player,id:shared.id})).views,2);
+assert.equal(ok(pc({action:'parkourSave',...maker,title:'다음 날',day:today(),map})).awarded,true);
+assert.equal(ok(pc({action:'parkourSave',...maker,title:'다음 날 반복',day:today(),map})).points,200);
+pe.ctx.__now-=86400000; // restore the fixture Google token's valid hour before teacher moderation
+ok(pc({action:'galleryReview',...teacher,id:shared.id,decision:'hide'}));
+bad(pc({action:'parkourPlay',...player,id:shared.id}),/열 수 없/);
+console.log('파쿠르 공유/썸네일/승인/학생별 일일 조회수/하루100점/다음날 초기화/일반 포인트 우회 차단 통과');

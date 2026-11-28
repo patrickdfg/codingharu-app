@@ -17,7 +17,7 @@ const TABS_ = {
   points: ['학생 번호', '시각', '종류', '식별자', '점수', '사유', '지급자'],
   reports: ['학생 번호', '달', '다음 달 계획', '선생님 한마디', '저장 시각', '선생님', '사진', '기록'],
   parents: ['학생 번호', '학생 이름', '학부모 이메일', '수신 동의(Y)', '메모'],
-  gallery: ['ID', '학생 번호', '학생 이름', '반', '제목', '주소', '종류', '소개', '공개 범위', '상태', '좋아요(학생 번호)', '올린 시각', '바꾼 시각', '파일 ID', '파일 이름', '파일 크기']
+  gallery: ['ID', '학생 번호', '학생 이름', '반', '제목', '주소', '종류', '소개', '공개 범위', '상태', '좋아요(학생 번호)', '올린 시각', '바꾼 시각', '파일 ID', '파일 이름', '파일 크기', '파쿠르 맵', '플레이 조회수', '오늘 플레이 학생']
 };
 const TAB_NAMES_ = { reports: '월간 리포트', parents: '학부모', points: '포인트 내역', teachers: '선생님', students: '학생', devices: '기기', workbooks: '워크북 기록', visits: '수업 기록', gallery: '작품 게시판' };
 const DEVICE_DAYS_ = 365;
@@ -458,7 +458,7 @@ const ACTIONS_ = {
       const it = galleryItem_(r);
       return { id: it.id, title: it.title, url: it.url, kind: it.kind, desc: it.desc,
         file: it.fileId ? { ext: galleryExt_(it.fileName), size: it.fileSize } : null,
-        at: r[11] instanceof Date ? r[11].getTime() : 0 };
+        at: r[11] instanceof Date ? r[11].getTime() : 0, ...(it.kind === 'parkour' ? { views: it.views, map: parkourPreview_(r) } : {}) };
     });
     items.sort((a, b) => b.at - a.at);
     return { items: items.slice(0, 400) };
@@ -482,7 +482,7 @@ const ACTIONS_ = {
       const likes = galleryLikes_(r[10]);
       items.push({ id: it.id, studentId: it.studentId, name: it.name, group: it.group, title: it.title, url: it.url, kind: it.kind, desc: it.desc,
         file: it.fileId ? { name: it.fileName, size: it.fileSize, ext: galleryExt_(it.fileName) } : null,
-        vis: it.vis, status: (v.teacher || mine) ? it.status : '승인', mine: mine, likes: likes.length, liked: !v.teacher && likes.indexOf(v.id) >= 0,
+        vis: it.vis, status: (v.teacher || mine) ? it.status : '승인', mine: mine, likes: likes.length, liked: !v.teacher && likes.indexOf(v.id) >= 0, views: it.views, map: it.kind === 'parkour' ? parkourPreview_(r) : null,
         at: r[11] instanceof Date ? r[11].getTime() : 0, day: r[11] instanceof Date ? Utilities.formatDate(r[11], tz, 'yyyy-MM-dd') : '' });
     });
     items.sort((a, b) => b.at - a.at);
@@ -491,16 +491,17 @@ const ACTIONS_ = {
   },
   galleryPost(req) {
     const v = galleryViewer_(req);
+    const map = req.map ? parkourMap_(req.map) : null;
     const title = String(req.title || '').replace(/\s+/g, ' ').trim();
     const desc = String(req.desc || '').replace(/\s+/g, ' ').trim();
-    const file = req.file ? galleryCheckFile_(req.file) : null;
-    const url = file ? '' : String(req.url || '').trim();
+    const file = !map && req.file ? galleryCheckFile_(req.file) : null;
+    const url = map || file ? '' : String(req.url || '').trim();
     const vis = galleryVis_(req.vis);
     const group = v.teacher ? galleryGroup_(vis, req.group) : v.group;
     const status = vis === 'me' ? '개인' : v.teacher ? '승인' : '대기';
     if (title.length < 1 || title.length > 40) throw new Error('제목은 1~40자로 써 주세요.');
     if (desc.length > 200) throw new Error('소개는 200자까지 쓸 수 있어요.');
-    if (!file && (!/^https:\/\/[^\s<>"']+$/.test(url) || url.length > 500)) throw new Error('https:// 로 시작하는 작품 주소를 넣거나 파일을 골라 주세요.');
+    if (!map && !file && (!/^https:\/\/[^\s<>"']+$/.test(url) || url.length > 500)) throw new Error('https:// 로 시작하는 작품 주소를 넣거나 파일을 골라 주세요.');
     const cache = CacheService.getScriptCache(), ck = 'gpost:' + v.id + ':' + Utilities.formatDate(new Date(), 'UTC', 'yyyyMMddHH');
     if (Number(cache.get(ck) || 0) >= 20) throw new Error('작품을 너무 많이 올렸어요. 잠시 뒤에 다시 해 주세요.');
     cache.put(ck, String(Number(cache.get(ck) || 0) + 1), 3700);
@@ -520,10 +521,49 @@ const ACTIONS_ = {
       }
       id = Utilities.getUuid().replace(/-/g, '').slice(0, 12);
       const now = new Date();
-      sh.appendRow([id, v.id, v.name, group, title, url, file ? file.kind : galleryKind_(url), desc, vis, status, '[]', now, now,
-        saved ? saved.getId() : '', file ? file.name : '', file ? file.bytes.length : '']);
+      sh.appendRow([id, v.id, v.name, group, title, map ? 'https://codemaru.kr/v/coding/bounceball/?map=' + id : url, map ? 'parkour' : file ? file.kind : galleryKind_(url), desc, vis, status, '[]', now, now,
+        saved ? saved.getId() : '', file ? file.name : '', file ? file.bytes.length : '', map ? JSON.stringify(map) : '', 0, '']);
     });
     return { id: id, status: status };
+  },
+  parkourInfo(req) { galleryViewer_(req); return { version: 1 }; },
+  parkourSave(req) {
+    const v = galleryStudent_(req), map = parkourMap_(req.map);
+    const day = Utilities.formatDate(new Date(), 'Asia/Seoul', 'yyyy-MM-dd');
+    if (req.day !== day) throw new Error('날짜가 바뀌었어요. 오늘 다시 완주한 뒤 저장해 주세요.');
+    const title = String(req.title || '내 파쿠르 맵').trim().slice(0, 40);
+    let awarded = false, total;
+    withLock_(() => {
+      const now = new Date(), wb = 'parkour-map-saves-v1', found = findWorkbook_(v.id, wb);
+      const line = [v.id, v.name, wb, '파쿠르 맵 만들기', 'coding/bounceball/', 1, 1, found ? found.row[7] : now, now, '학생 로그인', JSON.stringify({day: day, title: title, map: map})];
+      if (found) sheet_('workbooks').getRange(found.index, 1, 1, line.length).setValues([line]);
+      else sheet_('workbooks').appendRow(line);
+      if (!rows_('points').some(r => String(r[0]) === v.id && String(r[2]) === 'parkour' && String(r[3]) === day)) {
+        sheet_('points').appendRow([v.id, now, 'parkour', day, pointsRates_().parkourMap, pointsText_('파쿠르 맵 완주 후 저장 · ' + title), '자동']);awarded = true;
+      }
+      total = pointsTotal_(v.id);
+    });return {awarded: awarded, points: total};
+  },
+  // A play is counted once per Korean calendar day and student. Own/teacher test runs do not count.
+  parkourPlay(req) {
+    const v = galleryViewer_(req);let result;
+    withLock_(() => {
+      const f = galleryFind_(req.id);
+      if (!f) throw new Error('공유 맵을 찾지 못했어요.');
+      const it = galleryItem_(f.row);
+      if (it.kind !== 'parkour' || !galleryCanSee_(v, it)) throw new Error('이 공유 맵은 열 수 없어요.');
+      let map;try { map = parkourMap_(JSON.parse(f.row[16])); } catch(e) { throw new Error('공유 맵 데이터가 올바르지 않아요.'); }
+      let views = it.views, ledger;
+      const day = Utilities.formatDate(new Date(), 'Asia/Seoul', 'yyyy-MM-dd');
+      try { ledger = JSON.parse(f.row[18] || '{}'); } catch(e) { ledger = {}; }
+      if (ledger.day !== day || !Array.isArray(ledger.ids)) ledger = { day: day, ids: [] };
+      if (!v.teacher && v.id !== it.studentId && ledger.ids.indexOf(v.id) < 0) {
+        if (ledger.ids.length >= 2000) throw new Error('오늘 플레이가 많아요. 잠시 뒤 다시 해 주세요.');
+        ledger.ids.push(v.id);views++;
+        gallerySheet_().getRange(f.index, 18, 1, 2).setValues([[views, JSON.stringify(ledger)]]);
+      }
+      result = { rows: map.rows, title: it.title, views: views };
+    });return result;
   },
   // 내 작품 고치기: 제목·소개·공개 범위, 또는 지우기(remove). 함께 보는 작품의 글을 바꾸거나 '나만 보기'에서 넓히면 다시 승인을 기다린다.
   // 선생님 작품은 승인 없이 바로 보이고, '우리 반만'은 group 으로 반을 바꿀 수 있다.
@@ -686,7 +726,7 @@ function gallerySheet_() {   // 예전에 setup 한 시트에도 탭이 없으�
     sh.appendRow(TABS_.gallery);
     sh.getRange(1, 1, 1, TABS_.gallery.length).setFontWeight('bold').setBackground('#e4ece1');
     sh.setFrozenRows(1);
-  } else if (String(sh.getRange(1, 14).getValue()) !== TABS_.gallery[13]) {
+  } else if (String(sh.getRange(1, TABS_.gallery.length).getValue()) !== TABS_.gallery[TABS_.gallery.length - 1]) {
     sh.getRange(1, 1, 1, TABS_.gallery.length).setValues([TABS_.gallery]).setFontWeight('bold').setBackground('#e4ece1');
   }
   return sh;
@@ -718,8 +758,16 @@ function galleryLikes_(v) { try { const a = JSON.parse(v || '[]'); return Array.
 function galleryItem_(r) {
   return { id: String(r[0]), studentId: String(r[1]), name: String(r[2]), group: String(r[3] || '').trim(), title: String(r[4]), url: String(r[5]),
     kind: String(r[6] || 'web'), desc: String(r[7] || ''), vis: String(r[8] || 'me'), status: String(r[9] || '대기'),
-    fileId: String(r[13] || ''), fileName: String(r[14] || ''), fileSize: Number(r[15]) || 0 };
+    fileId: String(r[13] || ''), fileName: String(r[14] || ''), fileSize: Number(r[15]) || 0, views: Math.max(0, Number(r[17]) || 0) };
 }
+function parkourMap_(map) {
+  if (!map || map.version !== 1 || map.completed !== true || !Array.isArray(map.rows) || map.rows.length !== 15 ||
+      map.rows.some(r => typeof r !== 'string' || r.length !== 24 || /[^.#^B*SGCFMVILEAXY]/.test(r))) throw new Error('완주한 24×15 파쿠르 맵만 공유할 수 있어요.');
+  const all = map.rows.join('');
+  if (all.split('S').length !== 2 || all.split('G').length !== 2) throw new Error('시작점과 도착점은 각각 하나씩 필요해요.');
+  return { version: 1, completed: true, rows: map.rows.slice() };
+}
+function parkourPreview_(row) { try { return parkourMap_(JSON.parse(row[16])).rows; } catch(e) { return null; } }
 function galleryFind_(id) {
   const sh = gallerySheet_();
   if (sh.getLastRow() < 2) return null;
@@ -917,7 +965,7 @@ function pointsTotal_(id) { return rows_('points').reduce((sum, r) => sum + (Str
 function pointsText_(s) { return /^[\s]*[=+\-@]/.test(s) ? "'" + s : s; }
 // 활동 1시간에 약 100점이 모이도록 잡은 기본값. 관리 화면의 '점수 설정'에서 저장한 값이 있으면 그 값이 우선한다.
 // 프로그램별로 나눈 점수 항목. 옛 설정(problem, block)은 아래 pointsRates_ 에서 새 항목으로 이어받는다.
-function pointsDefaults_() { return {pythonProblem:12, cosproProblem:7, bebras:10, detective:50, farm:100, playground:10, games:7, pythonUnit:30, cosproUnit:30, entry:100, scratch:100, junior:100, algorithm:35, pythonRobot:100, pythonLesson:100, codingLesson:100, roblox:100, robot:100, web:100, digital:100, adult:100, otherLesson:100, entryWork:40, scratchWork:40, doubleLesson:200, typing:20, typingWord:40, typingSentence:50, koi:30, pythonHigh:200, easyUnit:200, aiProject:100, iot:30, labWork:100}; }
+function pointsDefaults_() { return {pythonProblem:12, cosproProblem:7, bebras:10, detective:50, farm:100, playground:10, games:7, pythonUnit:30, cosproUnit:30, entry:100, scratch:100, junior:100, algorithm:35, pythonRobot:100, pythonLesson:100, codingLesson:100, roblox:100, robot:100, web:100, digital:100, adult:100, otherLesson:100, entryWork:40, scratchWork:40, doubleLesson:200, typing:20, typingWord:40, typingSentence:50, koi:30, pythonHigh:200, easyUnit:200, aiProject:100, iot:30, labWork:100, parkourMap:100}; }
 // 기준: 1차시(50분) = 100점. 농장 1문제 = 1차시(100), 탐정 1차시 = 문제 2개(50×2), 놀이터 1수업 = 10단계(10×10), 게임 1차시 ≈ 14단계(7), COS Pro 1회 = 10문제(7×10+30),
 // 비버 1차시 ≈ 10문제(10), 알고리즘 1차시 ≈ 워크북 3개(35), 엔트리·스크래치 작품 1차시 ≈ 2~3개(40), 2차시에 걸치는 한 쪽(200).
 const POINT_LEGACY_ = { problem:['pythonProblem','cosproProblem','bebras','detective','farm'], block:['playground','games'], pythonUnit:['cosproUnit'] };

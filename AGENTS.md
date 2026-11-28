@@ -425,3 +425,5 @@ curl -s https://patrickdfg.github.io/codingharu-app/version.json
 - 2026-11-26 Codex: inject.js 홈 최근 프로젝트를 블록 코딩 수업/블록 게임 작품별로 표시. class recentProjects() 계약과70개 요약 카탈로그로 기존 학생 로컬 기록을 복원하고 단계별 이어하기·진행률·완료를 구분. 기존 서버 워크북/점수/단계 기록 키 유지. tools/test-project-recents.cjs로 실제 두 교안·모의 기록 서버·홈 복원/제목/진행/이어하기/중복/학생 분리 검증 통과. 실제 학생 서버/실물 기기는 미확인.
 
 - 2026-11-27 Codex: 공개 #/works 아래 PC 응용프로그램 구역에 에픽펜 카드·압축해제 안내·로그인 없는 ZIP 다운로드 추가. class AI자료실 ZIP을 SHA256 동일하게 downloads/에 게시. 학생 작품 목록/API/분류 변경 없음. tools/test-public-epicpen.cjs로375/800/1280px·기존갤러리·다른경로숨김·로그인없는전체다운로드해시·JS오류0 확인. 프로그램 자체 실행/실물기기는 미확인.
+
+- 2026-11-28 Codex: 파쿠르 맵 공유/조회수/일일 저장 포인트 추가. galleryPost map은24×15·허용블록·S/G·클라이언트 완주표시 검증, 기존 승인/숨김 접근 제어 유지. 맵은시트Q, 조회수R,당일중복장부S(외부응답없음). parkourPlay는 다른학생의한국날짜별1회,본인/교사제외. parkourSave는 인증학생·서버한국날짜·잠금장부로일일100점1회,워크북스냅샷저장. 일반pointsAward 직접호출로는지급불가. 완주는클라이언트UI증빙으로서버리플레이검증아님. 공개홈/관리자분류·전체맵썸네일포함. gallery/points/member-delete 검사통과. 서버기존배포업데이트와실계정왕복확인은후속상태참고.

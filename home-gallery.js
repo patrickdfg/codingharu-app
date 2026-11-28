@@ -4,7 +4,7 @@
   const box = document.getElementById('publicGalleryList'), status = document.getElementById('publicGalleryStatus');
   if (!box) return;
   const el = (tag, text) => { const node = document.createElement(tag); if (text) node.textContent = text; return node; };
-  const kinds = { entry: '엔트리', scratch: '스크래치', web: '웹 작품', html: 'HTML 작품', zip: '압축 파일' };
+  const kinds = { entry: '엔트리', scratch: '스크래치', web: '웹 작품', html: 'HTML 작품', zip: '압축 파일', parkour: '파쿠르 맵' };
   let apiUrl, thumbnails = {};
   async function api(action, body = {}) {
     const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action, ...body }) });
@@ -17,9 +17,13 @@
     const article = el('article'); article.className = 'gallery-card';
     const kind = kinds[item.kind] ? item.kind : 'web';
     const cover = el('div'); cover.className = 'gallery-cover'; cover.dataset.kind = kind; cover.setAttribute('aria-hidden', 'true');
-    const symbol = el('span', { entry: 'E', scratch: 'S', web: '</>', html: '</>', zip: 'ZIP' }[kind]); symbol.className = 'gallery-symbol';
+    const symbol = el('span', { entry: 'E', scratch: 'S', web: '</>', html: '</>', zip: 'ZIP', parkour: '↗' }[kind]); symbol.className = 'gallery-symbol';
     const label = el('span', kinds[kind]); label.className = 'gallery-cover-label';
     cover.append(symbol, label);
+    if (kind === 'parkour' && item.map) {
+      const image = el('img'); image.alt = item.title + ' 전체 맵'; image.loading = 'lazy'; cover.append(image);
+      import('./parkour-tools.js').then(m => image.src = m.mapThumbnail(item.map)).catch(() => image.remove());
+    }
     const snapshot = thumbnails[item.id], source = [item.url || '', item.file?.ext || '', item.at || 0].join('|');
     const scratch = !item.file && kind === 'scratch' && String(item.url).match(/^https:\/\/scratch\.mit\.edu\/projects\/(\d+)(?:\/|$)/i);
     if (snapshot?.source === source && /^[a-f0-9]{12}-[a-f0-9]{12}\.jpg$/.test(snapshot.file)) {
@@ -33,7 +37,8 @@
     const body = el('div'); body.className = 'gallery-body';
     const meta = el('span', kinds[kind]); meta.className = 'gallery-kind';
     const title = el('h3', item.title), description = el('p', String(item.desc || '').replace(/^\[연구소:[a-z]+-\d{2}\]\s*/, '')); description.className = 'gallery-description';
-    body.append(meta, title, description); article.append(cover, body);
+    body.append(meta, title, description);
+    if (kind === 'parkour') body.append(el('p', '플레이 조회 '+(item.views||0)+'회 · 로그인 후 플레이')); article.append(cover, body);
     if (item.file) {
       const download = el('button', '작품 파일 받기 (.' + item.file.ext + ')'); download.type = 'button'; download.className = 'gallery-open';
       const note = el('p'); note.className = 'gallery-file-status'; note.setAttribute('role', 'status');
@@ -72,7 +77,7 @@
       let page = 0, category = 'all';
       const categoryOf = item => item.file ? 'file' : (kinds[item.kind] ? item.kind : 'web');
       const filters = document.getElementById('publicGalleryFilters');
-      const categories = [['all', '전체'], ['web', '웹 작품'], ['entry', '엔트리'], ['scratch', '스크래치'], ['file', '파일 작품']];
+      const categories = [['all', '전체'], ['web', '웹 작품'], ['entry', '엔트리'], ['scratch', '스크래치'], ['file', '파일 작품'], ['parkour', '파쿠르 맵']];
       filters.replaceChildren(...categories.filter(([key]) => key === 'all' || items.some(item => categoryOf(item) === key)).map(([key, label]) => {
         const button = el('button', label); button.type = 'button'; button.dataset.category = key;
         button.onclick = () => { category = key; page = 0; render(); };
